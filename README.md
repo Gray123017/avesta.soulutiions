@@ -22,3 +22,11 @@ GitHub deployment is not a direct connection from this chat to Hostinger.
 
 Legacy browser PIN gates have been replaced with authenticated session checks.
 Administrator logout ends the server session. IT question history is excluded.
+
+## Public design update (1 October 2026)
+
+The public homepage now serves the adapted Avesta design. Use `index.php?page=lending`, `how-it-works`, `calculator`, `currency`, `it`, `about` or `contact` for public sections. Query routes require no web-server rewrite changes. `apply.php` uses the existing login gate before opening the existing loan form. Authentication, records, documents, loan processing, staff portal and legal pages retain their PHP implementation.
+
+G.I.T provides local saved guidance with official source links. It does not submit chat messages or access customer records. Live AI/web search is not enabled. Currency conversion reads the existing `api.php?action=rates` response and labels stale data; manual conversion remains available if the feed fails.
+
+Deploy the repository root through the existing Hostinger `main` → `public_html` connection. Node is used only for checks: `npm ci`, `npm run build`, `npm test`. PHP syntax and anonymous route checks run in GitHub Actions. Do not deploy the separate Cloudflare review source as a PHP replacement. Existing production data files and uploads are excluded from Git and must be preserved. The Sites monitoring job does not monitor this Hostinger deployment.
