@@ -1,0 +1,7 @@
+{
+  "name": "avesta-hostinger",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "node scripts/check-build.mjs", "test": "node --test tests/*.test.mjs"},
+  "devDependencies": {"happy-dom": "20.14.5"}
+}
