@@ -1,0 +1,27 @@
+# Server-created account, application, and rate-limit data
+/users.php
+/users.json
+/records_data.php
+/records_data.json
+/enquiries.php
+/enquiries.json
+/password_resets.php
+/password_resets.json
+/audit_log.php
+/audit_log.jsonl
+/login_attempts.json
+/login_attempts.php
+/enquiry_rate.json
+/ithelp_rate.json
+/rates_cache.json
+/rates_cache.php
+*.backup*
+*.tmp
+*.lock
+.env
+.env.*
+/documents/*
+!/documents/.htaccess
+
+/it_questions.json
+/it_questions.php

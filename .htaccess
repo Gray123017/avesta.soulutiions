@@ -1,0 +1,84 @@
+# Data files must never be served over the web.
+# Data files must never be served over the web.
+#
+# Named individually rather than blocking *.json: manifest.json has to be
+# readable or the app cannot be installed on a phone, and a blanket rule
+# silently returns 403 for it. Anything new that stores data goes on this list.
+<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets)\.(json|jsonl)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Applicant documents: see documents/.htaccess, which api.php writes and
+# re-checks on every request. The rule cannot live here — Apache refuses
+# <Directory> inside .htaccess, and "php_flag" fails on PHP-FPM hosts; either
+# one turns every page on the site into "500 Internal Server Error".
+
+
+<FilesMatch "\.(jsonl|lock|tmp)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Compression. Pages are ~373 KB of text and compress to ~92 KB — the single
+# biggest thing you can do for someone on a mobile bundle.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript \
+                                application/javascript application/json \
+                                application/manifest+json image/svg+xml
+</IfModule>
+
+# The manifest and the service worker need the right types to work at all,
+# and the worker must not be cached or updates never reach installed phones.
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+<FilesMatch "^(manifest\.json|sw\.js)$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </IfModule>
+</FilesMatch>
+
+# Icons and images rarely change; let phones keep them.
+<FilesMatch "\.(png|jpe?g|webp|svg|ico|woff2?)$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=2592000"
+  </IfModule>
+</FilesMatch>
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# ── PHP limits ────────────────────────────────────────────────────────────────
+# An application carries the NRC, collateral photos and payslips in one
+# request. Hosts often default to 8 MB for the WHOLE request, and above that
+# PHP silently throws the submission away. .user.ini raises it on PHP-FPM hosts;
+# these lines do the same where PHP runs inside Apache. Each block only applies
+# if that module is present, so neither can break the other kind of host.
+<IfModule mod_php.c>
+  php_value post_max_size 25M
+  php_value upload_max_filesize 20M
+  php_value memory_limit 256M
+  php_value max_execution_time 60
+</IfModule>
+<IfModule mod_php7.c>
+  php_value post_max_size 25M
+  php_value upload_max_filesize 20M
+  php_value memory_limit 256M
+  php_value max_execution_time 60
+</IfModule>

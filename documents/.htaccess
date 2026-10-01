@@ -1,0 +1,10 @@
+# Identity documents and collateral photos. Never served directly:
+# staff and the borrower view them through api.php?action=doc.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
+Options -Indexes

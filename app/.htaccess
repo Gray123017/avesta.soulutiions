@@ -1,0 +1,9 @@
+# The HTML in this folder is served through index.php / portal.php after the
+# session check. Fetching it directly would bypass the login entirely.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>

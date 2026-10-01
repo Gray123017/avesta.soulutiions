@@ -1,0 +1,18 @@
+# Avesta Enterprises — what search engines may look at.
+# The marketing pages are open. Everything that involves a person's details
+# is not, and is refused by the server as well as listed here.
+User-agent: *
+Allow: /$
+Allow: /loans.php
+Allow: /it.php
+Allow: /legal.php
+Disallow: /portal.php
+Disallow: /login.php
+Disallow: /setup.php
+Disallow: /logout.php
+Disallow: /app/
+Disallow: /documents/
+Disallow: /tests/
+Disallow: /api.php
+
+Sitemap: https://www.avesta.solutions/sitemap.xml

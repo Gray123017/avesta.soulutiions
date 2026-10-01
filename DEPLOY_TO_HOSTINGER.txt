@@ -1,0 +1,26 @@
+AVESTA / HARVESTER — HOSTINGER DEPLOYMENT
+
+1. Back up the current public_html folder before replacing it.
+2. Upload the CONTENTS of this ZIP into public_html (not the outer ZIP folder itself).
+3. Keep .htaccess and .user.ini files when extracting.
+4. Visit the home page, loans page, IT services page and login page.
+5. Sign in as an administrator and verify users, applications and IT enquiries.
+6. Configure notification credentials after deployment. No WhatsApp API credential is intentionally shipped in this package.
+7. Confirm PHP upload limits in Hostinger after .user.ini has had time to apply.
+8. Do not expose data files or the documents directory directly.
+
+Default company email: info@avesta.solutions
+Domain: https://www.avesta.solutions/
+
+FINAL CHECKS PERFORMED
+- Recursive PHP syntax validation: PASS
+- Home page HTTP check: PASS (200)
+- Loans page HTTP check: PASS (200)
+- IT page HTTP check: PASS (200)
+- Login page HTTP check: PASS (200)
+- API health check: PASS
+- State-changing application status/delete calls changed to POST
+- Hard-coded WhatsApp API credential removed from browser code
+
+IMPORTANT
+This is a production candidate, not a guarantee of production security. Before handling real borrower identity documents or financial data, run live-host testing for HTTPS, permissions, email/WhatsApp delivery, backups, upload limits, session behavior and recovery procedures.
