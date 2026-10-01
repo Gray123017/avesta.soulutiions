@@ -22,3 +22,7 @@ GitHub deployment is not a direct connection from this chat to Hostinger.
 
 Legacy browser PIN gates have been replaced with authenticated session checks.
 Administrator logout ends the server session. IT question history is excluded.
+
+
+## Latest private Sites version
+The [sites-review](sites-review/README.md) folder contains the updated 13-page Sites implementation, site-wide assistant, official troubleshooting references, health checks and automated tests. It uses Cloudflare Workers, D1 and R2 and must not replace the Hostinger PHP files directly. API activation and Hostinger backend adaptation remain separate steps. No customer data or credentials are included.
