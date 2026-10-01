@@ -1878,7 +1878,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
     <div class="bot-head">
       <div class="bot-avatar" aria-hidden="true">&#128172;</div>
       <div>
-        <h3>IT Help Desk</h3>
+        <h3>G.I.T — Avesta IT Assistant</h3>
         <p>Describe the problem and we will give you the checks worth trying first.
            If it needs a technician, we will say so rather than waste your time.</p>
       </div>
@@ -2120,7 +2120,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
       return;
     }
     if (anyOf(q, GREET) && q.trim().split(/\s+/).length <= 3) {
-      say('bot', 'Hello. What is the machine doing \u2014 or not doing?');
+      say('bot', 'Hi, I\'m G.I.T. What IT problem can I help you with?');
       return;
     }
 
@@ -2168,7 +2168,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
     chips.appendChild(b);
   });
 
-  say('bot', 'Tell me what is going wrong and I will give you the checks worth trying first. '
+  say('bot', 'Hi, I\'m G.I.T. What IT problem can I help you with? '
     + 'Pick one below, or type it in your own words.');
 })();
 </script>
@@ -2180,7 +2180,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
         <div class="ask-head">
           <span class="ask-badge" aria-hidden="true">?</span>
           <div>
-            <h3>What is it doing?</h3>
+            <h3>G.I.T — Avesta IT Assistant</h3>
             <p>Describe the problem and I will tell you what it usually is, and what is
                safe to try before anyone comes out.</p>
           </div>
@@ -6690,6 +6690,8 @@ async function submitToSheet() {
 
   btn.addEventListener('click', function () { ask(box.value); });
   box.addEventListener('keydown', function (e) { if (e.key === 'Enter') ask(box.value); });
+
+  answer({ answer: "Hi, I'm G.I.T. What IT problem can I help you with?" });
 
   // Starting points, so nobody faces an empty box wondering what to type
   [['Computer will not start', 'my computer will not start'],
