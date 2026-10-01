@@ -1,0 +1,34 @@
+# Avesta Sites review source
+
+Tested source from the private Sites version published on 1 October 2026. This uses Cloudflare Workers, D1 and R2 and is NOT a drop-in PHP/Hostinger deployment. The repository root retains the existing Hostinger PHP website.
+
+No customer data, API keys or service credentials are included. Live AI awaits approved API configuration. Monitoring applies to the private Sites deployment, not Hostinger or GitHub.
+
+Local checks: npm ci, npm run build, npm test (Node.js with node:sqlite support). Production deployment requires Sites authentication: do not expose the Worker directly while trusting client-supplied identity headers.
+
+# Avesta Enterprises
+Private Sites review version adapted from Avesta_Enterprise_Updated_Site.zip (22 September 2026).
+The original PHP runtime is replaced by a Cloudflare-compatible Worker, shared JavaScript loan arithmetic, D1 records and R2 documents. Sites owns the deployment access boundary; never make this project public without the owner's express approval.
+## Pages and flows
+Home, Lending, How It Works, Calculator, Currency, Loan Application, IT Services/help/enquiry, About, Contact, Privacy, Terms, Complaints, Private Portal. Legacy PHP page links redirect to their current routes.
+The private portal is scoped to the platform-authenticated user; no legacy borrower/staff account database or customer records is imported. Application submissions here are private review records, not approval or signed lending contracts. Published rates are retained; custom and late charges are deferred to a written agreement instead of carrying over contradictory source calculations.
+Applications include NRC front/back and conditional supporting documents. Upload formats/signatures and size caps are checked server-side. No personal drafts are written to browser storage. Documents are only streamed via authenticated downloads. Status changes, document access, payment changes and submissions have an activity log. Loan arithmetic uses integer ngwee.
+IT enquiries prepare WhatsApp/email links for the visitor to send; they do not send messages automatically. The existing curated IT advice is retained with unsupported hosting/legal assertions removed.
+Currency uses dated indicative ExchangeRate-API data, with explicit manual input when unavailable; no invented rate or Bank of Zambia quote is displayed.
+## Checks
+npm run db:generate generates Drizzle migrations, inspected before deployment. npm test validates arithmetic, endpoint authorization, documents, submissions, payments and client DOM interactions. npm run build embeds public assets in the Worker and includes migrations.
+Native browser visual QA is unavailable in the current managed environment because the required control-browser skill is not exposed. Automated DOM checks cannot establish visual appearance; responsive styles are inspected at the supported breakpoints.
+## Review boundary
+The site is private and requires the owner's ChatGPT sign-in. Sharing settings, public borrower/staff access, production storage location, account migration, real customer imports, and the final lending agreement remain separate owner-authorized production work. The Projects chat placement was not available to this agent; no ChatGPT Project was created.
+
+## Assistant and web sources (October 2026)
+Every page has an accessible Ask Avesta panel. Saved guidance remains available without a provider. Reference links for printer, network, backup and ransomware guidance were checked against Microsoft Support and CISA on 1 October 2026. They are saved references, not live search results. No application records or documents are passed to the assistant.
+Live AI is implemented via the OpenAI Responses API with web_search and official-vendor domain filtering. It is NOT activated or live-tested until the owner enables OpenAI Developers, approves the API key setup and configures OPENAI_API_KEY as a Sites secret. Optional OPENAI_MODEL overrides gpt-4.1-mini. No credentials in browser code. Usage is limited to 20 AI requests per authenticated user per hour through atomic D1 counters. Web mode requires visitor opt-in. Up to six recent messages are sent with a question; API store is false. Provider failure returns labeled saved guidance. Citation annotations become clickable inline source links, and HTML is escaped. The assistant cannot modify loans, repair the site, or access private records.
+
+## Monitoring and bounded repair
+The maintenance agent is a separate Sites cloud task, not the visitor chatbot. Get this exact Site through Sites, inspect current deployment and recent Worker errors, then use the current service credential from get_site to run scripts/check-live.mjs via stdin (never arguments or a saved file). The read-only /api/health endpoint relies on private Sites dispatch, probes database availability and document-storage access, and exposes no customer records. /api/assistant/status reports configuration only, not provider health. The checker checks all 13 pages, core assets, health, assistant configuration and exchange rates. Service access does not supply a customer identity; never invent authenticated headers to read customer records. If service access is unavailable, use available deployment/log evidence and state the limitation.
+For reproducible code faults, open the latest source using the Sites workflow, preserve concurrent edits, make a small reversible repair, build and run npm test, then publish privately using the Sites hosting workflow. Do not change loan terms, payments, applications, documents, access controls, paid-service configuration or authentication. Do not deploy speculative repairs or treat a missing AI key as a code fault. Report blocked, repeated or unresolved failures. Verify a fix against the same failed check. Do not republish when no source change is needed. Source opening, checks, push/deployment and service reads are accessible through the linked Site, without this authoring workspace.
+The checker can run in a fresh checkout using node scripts/check-live.mjs. Supply one stdin line {"url":"<current_live_url>","token":"<current service credential>"}. The credential must remain hidden in transit and is never logged. This file alone does not create a schedule; successful Sites scheduling is the source of truth for whether monitoring is enabled.
+
+## Validation of this update
+19 automated tests pass: original page/form, calculator, upload and repayment tests plus assistant authorization, input limits, source citations, provider-failure fallback, rate limiting, HTML escaping, chat interactions and read-only health. AI provider tests use a mock and do not establish a live connection. Visual browser QA remains unavailable. The new migration adds only assistant_usage; existing customer tables are unchanged.
