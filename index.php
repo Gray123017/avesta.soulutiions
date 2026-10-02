@@ -17,9 +17,9 @@ header('Referrer-Policy: same-origin');
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/avesta/styles.css?v=20261002-guided">
-<script type="module" src="/assets/avesta/app.js?v=20261002-guided"></script>
-<script type="module" src="/assets/avesta/assistant.js?v=20261002-guided"></script>
+<link rel="stylesheet" href="/assets/avesta/styles.css?v=20261002-downloads">
+<script type="module" src="/assets/avesta/app.js?v=20261002-downloads"></script>
+<script type="module" src="/assets/avesta/assistant.js?v=20261002-downloads"></script>
 <link rel="manifest" href="/manifest.json">
 </head>
 <body>

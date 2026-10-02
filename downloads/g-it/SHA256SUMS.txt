@@ -1,0 +1,2 @@
+9a8779339cf27d35865b88719b747aeb5401e480c88ec68226c1c9bc8efd370c  G-IT-Setup-x64.exe
+29c086c359cbbbd201913d146aa6ea28fa34c0a9c9b8270ec3f8b94f6cafed7e  g-it-windows.zip
