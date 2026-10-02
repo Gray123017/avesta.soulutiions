@@ -1,3 +1,4 @@
+import {createGuidedHelp} from './guided.js';
 import {guideAnswer} from './guide.js';
 let guidePromise;
 const escapeChat=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,12 +22,13 @@ function showChat(open){panel.hidden=!open;launcher.setAttribute('aria-expanded'
 launcher.onclick=()=>showChat(panel.hidden);el('chat-close').onclick=()=>showChat(false);panel.addEventListener('keydown',event=>{if(event.key==='Escape'){showChat(false);event.stopPropagation();}});
 function addMessage(role,content){const div=document.createElement('div');div.className='chat-message '+(role==='user'?'chat-user':'');if(role==='user')div.textContent=content;else div.innerHTML=answerHTML(content)+'<p class="chat-note">'+escapeChat(content.notice)+'</p>';el('chat-log').append(div);while(el('chat-log').children.length>20)el('chat-log').firstChild.remove();el('chat-log').scrollTop=el('chat-log').scrollHeight;}
 function setBusy(value){busy=value;el('chat-send').disabled=value;el('chat-send').textContent=value?'Finding an answer…':'Send';el('chat-question').disabled=value;panel.querySelectorAll('[data-chat]').forEach(b=>b.disabled=value);}
-el('chat-clear').onclick=()=>{controller?.abort();controller=null;history=[];el('chat-log').replaceChildren();el('chat-question').value='';el('chat-error').textContent='';setBusy(false);};
+const guided=createGuidedHelp(panel,addMessage);
+el('chat-clear').onclick=()=>{guided.clear();controller?.abort();controller=null;history=[];el('chat-log').replaceChildren();el('chat-question').value='';el('chat-error').textContent='';setBusy(false);};
 panel.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>{el('chat-question').value=b.dataset.chat;el('chat-form').requestSubmit();});
 el('chat-form').onsubmit=async event=>{
  event.preventDefault();if(busy)return;const message=el('chat-question').value.trim();if(!message)return;
  el('chat-error').textContent='';addMessage('user',message);setBusy(true);const current=new AbortController();controller=current;const timer=setTimeout(()=>current.abort(),35000);
- try{if(/\b\d{6}\/\d{2}\/\d\b/.test(message))throw new Error('Please remove your NRC number. Use the secure application form for personal documents.');guidePromise ||= fetch('/assets/avesta/help.json').then(r=>{if(!r.ok)throw new Error('Help guide is unavailable.');return r.json();}).catch(err=>{guidePromise=null;throw err;});const guides=await guidePromise;const data={...guideAnswer(message,guides),notice:'Saved help guide · not a live web search'};if(controller!==current)return;
+ try{if(/\b\d{6}\/\d{2}\/\d\b/.test(message))throw new Error('Please remove your NRC number. Use the secure application form for personal documents.');guidePromise ||= fetch('/assets/avesta/help.json').then(r=>{if(!r.ok)throw new Error('Help guide is unavailable.');return r.json();}).catch(err=>{guidePromise=null;throw err;});const guides=await guidePromise;if(controller!==current)return;if(guided.start(message,guides)){el('chat-question').value='';return;}const data={...guideAnswer(message,guides),notice:'Saved help guide · not a live web search'};
  addMessage('assistant',data);history=[...history,{role:'user',content:message},{role:'assistant',content:data.answer}].slice(-6);el('chat-question').value='';
  }catch(err){if(controller===current)el('chat-error').textContent=current.signal.aborted?'The request timed out. Please retry or contact the team.':err.message;}
  finally{clearTimeout(timer);if(controller===current){setBusy(false);controller=null;}}

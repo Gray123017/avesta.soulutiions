@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Window} from 'happy-dom';
 import * as domain from '../assets/avesta/domain.js';
+import {createGuidedHelp} from '../assets/avesta/guided.js';
 import {guideAnswer} from '../assets/avesta/guide.js';
 const script=readFileSync('assets/avesta/app.js','utf8').replace(/^import .*$/m,'const {money,quote,rates,schedule,today,escapeHTML:e}=window.__domain;');
 const html=readFileSync('index.php','utf8').split('?>')[1].replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
@@ -38,7 +39,7 @@ test('IT service filtering, safe guide and enquiry preparation work without subm
  d.querySelector('#enquiry-form').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.ok(d.querySelector('#enquiry-result a[href^="https://wa.me/"]'));assert.equal(calls.length,2);await w.happyDOM.close();
 });
 test('G.I.T gives source links locally and escapes chat content',async()=>{
- const {w,d,calls}=await boot();w.__guide=guideAnswer;w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/m,'const guideAnswer=window.__guide;'));
+ const {w,d,calls}=await boot();w.__guide=guideAnswer;w.__guided=createGuidedHelp;w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
  d.querySelector('#chat-launch').click();assert.equal(d.querySelector('#avesta-chat').hidden,false);d.querySelector('[data-chat="My printer is offline"]').click();await flush();assert.ok(d.querySelector('#chat-log a[href^="https://support.microsoft.com"]'));assert.equal(d.querySelector('#chat-web').disabled,true);assert.ok(calls.every(c=>c.startsWith('/assets/avesta/')));
  d.querySelector('#chat-question').value='<img src=x onerror=alert(1)>';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();assert.equal(d.querySelectorAll('#chat-log img').length,0);await w.happyDOM.close();
 });
