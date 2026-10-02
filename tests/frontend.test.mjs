@@ -34,7 +34,7 @@ test('PHP exchange rates adapt and stale rates are disclosed; failure enables ma
  for(const fail of [false,true]){const {w,d}=await boot('currency',fail);if(fail){assert.equal(d.querySelector('#fx-mode').value,'manual');assert.equal(d.querySelector('#fx-manual').hidden,false);}else{assert.ok(d.querySelector('#fx-source').textContent.includes('cached'));d.querySelector('#fx-form').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.ok(d.querySelector('#fx-result').textContent.includes('50.00'),d.querySelector('#fx-result').textContent);}await w.happyDOM.close();}
 });
 test('IT service filtering, safe guide and enquiry preparation work without submissions',async()=>{
- const {w,d,calls}=await boot('it');assert.equal(d.querySelectorAll('.service-card').length,11);d.querySelector('[data-help="printer"]').click();assert.ok(d.querySelector('#help-result a[href^="https://support.microsoft.com"]'));
+ const {w,d,calls}=await boot('it');assert.equal(d.querySelectorAll('.service-card').length,12);assert.ok(d.querySelector('.service-card a[href="/downloads.php"]'));d.querySelector('[data-help="printer"]').click();assert.ok(d.querySelector('#help-result a[href^="https://support.microsoft.com"]'));
  for(const [id,v] of [['it-name','Test'],['it-phone','000'],['it-location','Ndola'],['it-details','Printer offline']])d.getElementById(id).value=v;
  d.querySelector('#enquiry-form').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.ok(d.querySelector('#enquiry-result a[href^="https://wa.me/"]'));assert.equal(calls.length,2);await w.happyDOM.close();
 });
