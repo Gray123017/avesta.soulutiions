@@ -1,4 +1,4 @@
-import {money,quote,rates,schedule,today,escapeHTML as e} from './domain.js';
+import {money,quote,rates,schedule,today,escapeHTML as e} from './domain.js?v=20261003-steady-navigation';
 const $=(s,root=document)=>root.querySelector(s);
 const $$=(s,root=document)=>[...root.querySelectorAll(s)];
 const main=$('#main');
@@ -19,7 +19,7 @@ function hostedURL(path){
  return path;
 }
 function mapLinks(){document.querySelectorAll('a[href]').forEach(a=>{const raw=a.getAttribute('href');if(raw.startsWith('/')&&!raw.startsWith('//'))a.setAttribute('href',hostedURL(raw));});}
-function navigate(path,push=true){const target=hostedURL(path);if(!target.startsWith('/index.php')){location.assign(target);return;}if(push)history.pushState({},'',target);route=currentRoute();render();window.scrollTo({top:0,behavior:'instant'});main.focus({preventScroll:true});}
+function navigate(path,push=true){const target=hostedURL(path);if(!target.startsWith('/index.php')){location.assign(target);return;}if(target===location.pathname+location.search+location.hash)return;if(push)history.pushState({},'',target);route=currentRoute();render();window.scrollTo({top:0,behavior:'instant'});main.focus({preventScroll:true});}
 document.addEventListener('click',ev=>{if(ev.defaultPrevented||ev.button>0)return;const a=ev.target.closest('a');if(!a||ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.altKey||a.target||a.hasAttribute('download'))return;const u=new URL(a.href);if(u.origin!==location.origin)return;const mapped=new URL(hostedURL(u.pathname+u.search+u.hash),location.origin);if(mapped.pathname==='/index.php'){ev.preventDefault();const path='/'+(mapped.searchParams.get('page')||'');if(path===route&&mapped.hash){document.getElementById(mapped.hash.slice(1))?.scrollIntoView({behavior:'smooth'});return;}navigate(path+mapped.hash);}});
 window.addEventListener('popstate',()=>{route=currentRoute();render();});
 $('.menu-toggle').addEventListener('click',()=>{const open=$('.menu-toggle').getAttribute('aria-expanded')!=='true';$('.menu-toggle').setAttribute('aria-expanded',String(open));$('.menu-toggle').setAttribute('aria-label',open?'Close navigation':'Open navigation');$('#mobile-nav').hidden=!open;});
@@ -118,5 +118,11 @@ function render(){
  if(route==='/currency')bindFX();
  mapLinks();
 }
-async function start(){try{[services,help]=await Promise.all([request('/assets/avesta/services.json'),request('/assets/avesta/help.json')]);render();}catch(err){main.innerHTML=head('Avesta Enterprises','We couldn’t load the page.','Please reload or contact Avesta on 0971 013 108.')+`<section class="section"><div class="wrap"><p class="error">${e(err.message)}</p><button class="button secondary" id="reload-page">Reload</button></div></section>`;$('#reload-page').onclick=()=>location.reload();}}
+async function start(){
+ try{
+  const data=JSON.parse($('#avesta-public-data')?.textContent||'null');
+  if(Array.isArray(data?.services)&&Array.isArray(data?.help)){services=data.services;help=data.help;render();return;}
+ }catch{/* Older HTML can still use the static JSON fallback. */}
+ try{[services,help]=await Promise.all([request('/assets/avesta/services.json'),request('/assets/avesta/help.json')]);render();}catch(err){main.innerHTML=head('Avesta Enterprises','We couldn’t load the page.','Please reload or contact Avesta on 0971 013 108.')+`<section class="section"><div class="wrap"><p class="error">${e(err.message)}</p><button class="button secondary" id="reload-page">Reload</button></div></section>`;$('#reload-page').onclick=()=>location.reload();}
+}
 start();
