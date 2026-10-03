@@ -3606,7 +3606,7 @@ function renderRecords(records) {
           const hasDoc = !!(r[k+'_base64'] || r[k+'_url']);
           const fname = r[k+'_filename'] || meta.label;
           const mime  = r[k+'_mimetype'] || '';
-          return `<div class="rv-doc-tile ${hasDoc?'rv-doc-has':''}" onclick="${hasDoc?`viewDoc(${staffAllRecords.indexOf(r)},'${k}','${fname.replace(/'/g,"\\'")}','${mime}')`:''}" style="${hasDoc?'cursor:pointer':'cursor:default'}">
+          return `<div class="rv-doc-tile ${hasDoc?'rv-doc-has':''}" ${hasDoc?`data-document-field="${k}" data-record-index="${staffAllRecords.indexOf(r)}" role="button" tabindex="0"`:''} style="${hasDoc?'cursor:pointer':'cursor:default'}">
             <div class="rv-doc-icon">${meta.icon}</div>
             <div class="rv-doc-label">${meta.label}</div>
             <div class="rv-doc-status">${hasDoc?'✅ View':'—'}</div>
@@ -4006,8 +4006,23 @@ function staffClearImport() {
 function backupRecords() { openStaffBackupModal(); }
 
 // ── DOCUMENT VIEWER ────────────────────────────────────────────────────────
+function activateStaffDocumentTile(event) {
+  if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+  const tile = event.target.closest('[data-document-field][data-record-index]');
+  if (!tile) return;
+  event.preventDefault();
+  const idx = Number(tile.dataset.recordIndex);
+  const r = staffAllRecords[idx];
+  const field = tile.dataset.documentField;
+  if (!r || !DOC_LABELS[field]) return;
+  viewDoc(idx, field, r[field + '_filename'] || DOC_LABELS[field].label, r[field + '_mimetype'] || '');
+}
+document.addEventListener('click', activateStaffDocumentTile);
+document.addEventListener('keydown', activateStaffDocumentTile);
+
 function viewDoc(recIdx, docKey, filename, mimetype) {
   const r = staffAllRecords[recIdx];
+  if (!r) return;
   const b64 = r[docKey + '_base64'];
   const docUrl = r[docKey + '_url']; // server-hosted file (works across devices)
 
@@ -4015,13 +4030,14 @@ function viewDoc(recIdx, docKey, filename, mimetype) {
   if (b64) {
     src = b64.startsWith('data:') ? b64 : `data:${mimetype};base64,${b64}`;
   } else if (docUrl) {
-    src = docUrl; // relative path served by api.php on the server
+    src = getStaffScriptUrl() + '?action=doc&key=' + encodeURIComponent(r._key)
+        + '&field=' + encodeURIComponent(docKey);
   } else {
     return; // no document available
   }
 
   document.getElementById('doc-viewer-title').textContent = filename;
-  document.getElementById('doc-viewer-download').href = src;
+  document.getElementById('doc-viewer-download').href = docUrl && !b64 ? src + '&download=1' : src;
   document.getElementById('doc-viewer-download').download = filename;
   const body = document.getElementById('doc-viewer-body');
   if (mimetype.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(filename)) {
