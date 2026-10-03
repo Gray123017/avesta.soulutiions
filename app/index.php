@@ -6831,6 +6831,20 @@ async function submitToSheet() {
     a.textContent = 'Change my password';
     var out = menu.querySelector('.mob-out');
     if (out) menu.insertBefore(a, out); else menu.appendChild(a);
+    var recovery = a.cloneNode(false);
+    recovery.href = 'recovery.php?setup=1';
+    recovery.textContent = 'Recovery email';
+    if (out) menu.insertBefore(recovery, out); else menu.appendChild(recovery);
+  }
+  if (window.AV_USER) {
+    var desktopOut = document.querySelector('.office-out');
+    if (desktopOut) {
+      var link = document.createElement('a');
+      link.href = 'recovery.php?setup=1';
+      link.className = 'office-out';
+      link.textContent = 'Recovery email';
+      desktopOut.parentNode.insertBefore(link, desktopOut);
+    }
   }
 })();
 </script>

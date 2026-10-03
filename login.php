@@ -74,13 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'The two passwords do not match.';
         } else {
             $r = av_create_user((string) ($_POST['username'] ?? ''), $p1,
-                                (string) ($_POST['name'] ?? ''), 'borrower');
+                                (string) ($_POST['name'] ?? ''), 'borrower', (string) ($_POST['email'] ?? ''));
             if (!$r['ok']) {
                 $error = $r['error'];
             } else {
                 av_audit('user.self_registered', $r['user']['username']);
                 $li = av_login((string) $_POST['username'], $p1);
-                if ($li['ok']) { header('Location: index.php'); exit; }
+                if ($li['ok']) { header('Location: ' . (trim((string) ($_POST['email'] ?? '')) !== '' ? 'recovery.php?setup=1' : 'index.php')); exit; }
                 $notice = 'Account created. Please sign in.';
                 $mode = 'in';
             }
@@ -210,6 +210,9 @@ button.go:hover{background:var(--navy-2)}
         <input type="text" id="up_username" name="username" required autocomplete="username"
                value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
         <p class="hint">3&ndash;32 characters. Letters, numbers, dot, dash or underscore.</p>
+        <label for="up_email">Recovery email (optional)</label>
+        <input type="email" id="up_email" name="email" autocomplete="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+        <p class="hint">Verify this email after creating your account to enable reset codes.</p>
         <label for="up_password">Password</label>
         <input type="password" id="up_password" name="password" required
                autocomplete="new-password" minlength="10">
@@ -222,7 +225,9 @@ button.go:hover{background:var(--navy-2)}
 
     <?php elseif ($mode === 'forgot'): ?>
       <h2>Forgotten password</h2>
-      <p class="sub">Tell us who you are and we will arrange a new password by phone.</p>
+      <p class="sub">Use a verified recovery email, or ask the office for help.</p>
+      <p class="msg info"><a href="recovery.php">Reset with an email code</a><br>For accounts with a verified email address.</p>
+      <h2>Ask an administrator for help</h2>
       <form method="post" autocomplete="on">
         <input type="hidden" name="do" value="forgot">
         <label for="fg_username">Username</label>
@@ -233,8 +238,8 @@ button.go:hover{background:var(--navy-2)}
         <button class="go" type="submit">Send request</button>
       </form>
       <div class="alt">
-        We do not send password links by email. Someone at the office will confirm who you are
-        first, then give you a temporary password to change straight away.
+        If email recovery fails or you have no verified email, the office can confirm your identity
+        and give you a temporary password to change at your next sign-in.
       </div>
       <div class="alt"><a href="login.php">Back to sign in</a></div>
 

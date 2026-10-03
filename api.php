@@ -520,6 +520,7 @@ if ($action === 'ping') {
         'records' => count($records),
         'php'     => phpversion(),
         'docs_writable'    => is_writable(DOCS_DIR),
+        'recovery_mail_available' => function_exists('mail'),
         'post_max_size'    => ini_get('post_max_size'),
         'upload_max_filesize' => ini_get('upload_max_filesize'),
         'memory_limit'     => ini_get('memory_limit'),
@@ -928,7 +929,7 @@ if ($action === 'users') {
     requireRole(['admin']);
     $out = [];
     foreach (av_load_users() as $u) {
-        unset($u['pass_hash']);          // never leaves the server
+        unset($u['pass_hash'], $u['auth_version']);          // never leaves the server
         $out[] = $u;
     }
     jsonOut(['ok' => true, 'users' => $out, 'total' => count($out)]);
@@ -939,7 +940,7 @@ if ($action === 'createUser') {
     if ($method !== 'POST') jsonOut(['ok' => false, 'error' => 'POST required'], 405);
     $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
     $r = av_create_user((string) ($b['username'] ?? ''), (string) ($b['password'] ?? ''),
-                        (string) ($b['name'] ?? ''), (string) ($b['role'] ?? 'staff'));
+                        (string) ($b['name'] ?? ''), (string) ($b['role'] ?? 'staff'), (string) ($b['email'] ?? ''));
     if ($r['ok']) av_audit('user.created', $r['user']['username'], ['role' => $r['user']['role']]);
     jsonOut($r, $r['ok'] ? 200 : 400);
 }
@@ -1614,17 +1615,20 @@ if ($action === 'accounts') {
     }
     $openResets = [];
     foreach (av_resets_load() as $row) {
-        if (($row['status'] ?? '') === 'open') $openResets[$row['username']] = $row['requested_at'] ?? '';
+        if (($row['status'] ?? '') === 'open') $openResets[strtolower($row['username'])] = $row['requested_at'] ?? '';
     }
 
+    $recoveryEvents = array_values(array_filter(av_audit_read(2000), function ($row) {
+        return in_array($row['action'] ?? '', ['user.self_password_reset', 'user.password_reset', 'recovery.mail_failed', 'recovery.email_verified'], true);
+    }));
     $out = [];
     foreach (av_load_users() as $u) {
-        unset($u['pass_hash']);
+        unset($u['pass_hash'], $u['auth_version']);
         $id = $u['id'] ?? '';
         $u['applications']   = $apps[$id]['count'] ?? 0;
         $u['latest_apply']   = $apps[$id]['latest'] ?? null;
         $u['latest_status']  = $apps[$id]['status'] ?? null;
-        $u['reset_pending']  = $openResets[$u['username'] ?? ''] ?? null;
+        $u['reset_pending']  = $openResets[strtolower($u['username'] ?? '')] ?? null;
         $u['must_change']    = !empty($u['must_change']);
         $out[] = $u;
     }
@@ -1638,7 +1642,8 @@ if ($action === 'accounts') {
     }
     av_audit('accounts.list');
     jsonOut(['ok' => true, 'accounts' => $out, 'total' => count($out),
-             'counts' => $counts, 'open_resets' => count($openResets)]);
+             'counts' => $counts, 'open_resets' => count($openResets),
+             'recovery_events' => array_slice($recoveryEvents, 0, 100)]);
 }
 
 // ── DEFAULT ───────────────────────────────────────────────────────────────────

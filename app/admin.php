@@ -7,7 +7,7 @@
 require_once __DIR__ . '/../auth.php';
 $me = av_require_login(['admin', 'staff'], '../login.php');
 echo '<script>window.AV_USER=' . json_encode([
-    'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
+    'id' => $me['id'], 'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES) . ';</script>';
 ?>
 <!DOCTYPE html>
@@ -891,6 +891,8 @@ window.avFetchJson = async function (url, opts, ms) {
         <span class="nav-icon">&#128100;</span> Accounts
       </a>
       <div class="nav-section">Settings</div>
+      <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
+      <a class="nav-item" href="/login.php?change=1"><span class="nav-icon">🔑</span> Change password</a>
       <a class="nav-item" onclick="showPage('settings')" href="javascript:void(0)">
         <span class="nav-icon">⚙️</span> Sync Settings
       </a>
@@ -1020,17 +1022,19 @@ window.avFetchJson = async function (url, opts, ms) {
           <div id="acct-reset-list"></div>
         </div>
 
+        <div id="acct-temp-output" aria-live="polite"></div>
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Username</th><th>Role</th><th>Registered</th>
+                <th>Name</th><th>Username</th><th>Recovery email</th><th>Role</th><th>Registered</th>
                 <th>Last signed in</th><th>Applications</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="acct-tbody"></tbody>
           </table>
         </div>
+        <div class="acct-resets" style="margin-top:20px"><h3>Recent account recovery activity</h3><div id="acct-recovery-history"></div></div>
       </div>
 
       <div class="page active" id="page-dashboard">
@@ -3647,6 +3651,14 @@ function afxInit(){
       stats.appendChild(box);
     });
 
+    var history = $('acct-recovery-history');
+    history.textContent = '';
+    var labels = {'user.self_password_reset':'Password reset by email', 'user.password_reset':'Administrator reset', 'recovery.mail_failed':'Email sending failed', 'recovery.email_verified':'Recovery email verified'};
+    (d.recovery_events || []).forEach(function (event) {
+      history.appendChild(el('div', 'acct-reset-row', (labels[event.action] || event.action) + ' · ' + event.target + ' · ' + new Date(event.ts).toLocaleString('en-GB') + ' · By ' + ((event.detail && event.detail.by) || event.user)));
+    });
+    if (!history.childNodes.length) history.textContent = 'No recovery activity recorded yet.';
+
     // Those waiting for help, first
     var pending = (d.accounts || []).filter(function (u) { return u.reset_pending; });
     $('acct-resets').hidden = pending.length === 0;
@@ -3672,6 +3684,10 @@ function afxInit(){
       var tr = el('tr');
       tr.appendChild(el('td', null, u.name || '—'));
       tr.appendChild(el('td', null, u.username));
+      var email = el('td');
+      email.appendChild(document.createTextNode(u.email || 'Not added'));
+      email.appendChild(el('div', 'when', u.email_verified_at ? 'Verified' : 'Not verified'));
+      tr.appendChild(email);
 
       var role = el('td');
       role.appendChild(el('span', 'acct-pill ' + u.role, u.role));
@@ -3736,9 +3752,10 @@ function afxInit(){
       box.appendChild(document.createTextNode(
         'Read it out now — it is not shown again and is not stored anywhere. They must change it ' +
         'when they sign in.'));
-      var host = $('acct-reset-list');
-      host.insertBefore(box, host.firstChild);
-      $('acct-resets').hidden = false;
+      var host = $('acct-temp-output');
+      host.textContent = '';
+      host.appendChild(box);
+      setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 300000);
       avToast('Password reset', 'ok');
       load();
     } catch (e) {

@@ -17,7 +17,7 @@ if (!$done && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'The two passwords do not match.';
     } else {
         $r = av_create_user((string) ($_POST['username'] ?? ''), $p1,
-                            (string) ($_POST['name'] ?? ''), 'admin');
+                            (string) ($_POST['name'] ?? ''), 'admin', (string) ($_POST['email'] ?? ''));
         if (!$r['ok']) {
             $error = $r['error'];
         } else {
@@ -72,6 +72,9 @@ a{color:#B26F26;font-weight:700}
     <label for="username">Username</label>
     <input type="text" id="username" name="username" required autocapitalize="none"
            value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
+    <label for="email">Recovery email (optional)</label>
+    <input type="email" id="email" name="email" autocomplete="email">
+    <p class="hint">Verify this email after signing in to enable password recovery.</p>
     <label for="password">Password</label>
     <input type="password" id="password" name="password" required minlength="10">
     <p class="hint">At least 10 characters. A short phrase you will remember works well.</p>
