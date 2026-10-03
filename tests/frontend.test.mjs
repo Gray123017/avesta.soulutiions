@@ -6,11 +6,12 @@ import * as domain from '../assets/avesta/domain.js';
 import {createGuidedHelp} from '../assets/avesta/guided.js';
 import {guideAnswer} from '../assets/avesta/guide.js';
 const script=readFileSync('assets/avesta/app.js','utf8').replace(/^import .*$/m,'const {money,quote,rates,schedule,today,escapeHTML:e}=window.__domain;');
-const html=readFileSync('index.php','utf8').split('?>')[1].replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
+const html=readFileSync('index.php','utf8').replace(/^<\?php[\s\S]*?\?>/,'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
 const flush=()=>new Promise(r=>setTimeout(r,20));
-async function boot(page='',ratesFail=false,width=1024){
+async function boot(page='',ratesFail=false,width=1024,inline=false){
  const w=new Window({url:'https://avesta.test/index.php'+(page?'?page='+page:''),settings:{enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
  w.happyDOM.setWindowSize({width,height:800});w.__domain=domain;w.document.write(html);const calls=[];
+ if(inline){const data=w.document.createElement('script');data.id='avesta-public-data';data.type='application/json';data.textContent=JSON.stringify({services:JSON.parse(readFileSync('assets/avesta/services.json','utf8')),help:JSON.parse(readFileSync('assets/avesta/help.json','utf8'))});w.document.body.append(data);}
  w.fetch=async url=>{calls.push(url);if(url==='/assistant-api.php?action=status')return new Response(JSON.stringify({configured:false,webAvailable:false}));if(url==='/api.php?action=rates')return new Response(JSON.stringify(ratesFail?{ok:false,error:'Feed unavailable'}:{ok:true,table:{USD:1,ZMW:20,EUR:.9,GBP:.8,ZAR:18,BWP:13},as_of:'2026-10-01',feed:'Test feed',stale:true}),{status:ratesFail?502:200});if(url.startsWith('/assets/avesta/'))return new Response(readFileSync('.'+url,'utf8'));throw new Error('Unexpected endpoint '+url);};
  w.eval(script);await flush();return {w,d:w.document,calls};
 }
@@ -20,6 +21,20 @@ test('All eight redesigned public pages render and link to PHP destinations',asy
  for(const a of d.querySelectorAll('a[href^="/"]')){const u=new URL(a.href);assert.ok(u.pathname==='/'||u.pathname.endsWith('.php'),a.href);}
  assert.ok(d.querySelector('a[href="/apply.php"]'));assert.ok(d.querySelector('a[href="/login.php"]'));assert.ok(d.querySelector('a[href="/legal.php?p=privacy"]'));assert.ok(calls.every(c=>!c.startsWith('/api/')));
  await w.happyDOM.close();}
+});
+test('Inline public data renders immediately without extra fetches; same-page navigation preserves inputs',async()=>{
+ for(const page of ['','it','calculator']){
+  const {w,d,calls}=await boot(page,false,390,true);
+  assert.equal(calls.length,0,'No public-data network request should delay first render');
+  assert.equal(d.querySelectorAll('main h1').length,1);
+  if(page==='it')assert.equal(d.querySelectorAll('.service-card').length,12);
+  if(page==='calculator'){
+   d.querySelector('#calc-amount').value='2400';d.querySelector('#calc-amount').dispatchEvent(new w.Event('input'));
+   d.querySelector('.subnav a[href="/index.php?page=calculator"]').click();
+   assert.equal(d.querySelector('#calc-amount').value,'2400');
+  }
+  await w.happyDOM.close();
+ }
 });
 test('Navigation, browser history and mobile menu remain usable',async()=>{
  const {w,d}=await boot();d.querySelector('.desktop-nav a').click();await flush();assert.equal(w.location.search,'?page=lending');assert.ok(d.querySelector('.quote-card'));
