@@ -215,3 +215,7 @@ dialog h3{margin:28px 0 14px}
 .chat-brand{display:flex;align-items:center;gap:12px;min-width:0}
 .chat-brand>div{min-width:0;overflow-wrap:anywhere}
 .chat-header>button{flex-shrink:0}
+
+.chat-window-controls{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.chat-header{gap:8px}
+.chat-window-controls button:hover{background:#ffffff1c;border-radius:8px}
