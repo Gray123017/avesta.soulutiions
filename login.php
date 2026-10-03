@@ -177,6 +177,7 @@ button.go:hover{background:var(--navy-2)}
 <meta name="apple-mobile-web-app-title" content="Avesta">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
 </head>
 <body>
 <div class="wrap">

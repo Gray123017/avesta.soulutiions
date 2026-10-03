@@ -21,6 +21,7 @@ header('Referrer-Policy: same-origin');
 <script type="module" src="/assets/avesta/app.js?v=20261002-downloads"></script>
 <script type="module" src="/assets/avesta/assistant.js?v=20261002-downloads"></script>
 <link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

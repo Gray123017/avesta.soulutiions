@@ -804,6 +804,8 @@ window.avFetchJson = async function (url, opts, ms) {
 .acct-temp code{display:block;font-size:16pt;font-weight:800;letter-spacing:1px;
   color:var(--av-gold-light,#E8AE6E);margin:8px 0;font-family:ui-monospace,Menlo,Consolas,monospace}
 </style>
+<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
+<script src="/assets/avesta/device-layout.js?v=20261003" defer></script>
 </head>
 <body>
 
