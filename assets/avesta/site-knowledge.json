@@ -1,0 +1,49 @@
+{
+  "company": {
+    "name": "Avesta Enterprises",
+    "description": "Short-term lending and IT consulting serving Zambia, based in Kansenshi, Ndola.",
+    "email": "info@avesta.solutions",
+    "phones": [
+      "0971 013 108",
+      "0769 974 200"
+    ],
+    "it_support_phone": "0769 974 200",
+    "address": "House No. 3, Thom Avenue, Kansenshi, Ndola, Zambia",
+    "hours": "Monday–Saturday, 08:00–17:00",
+    "page": "/index.php?page=contact"
+  },
+  "lending": {
+    "page": "/index.php?page=lending",
+    "terms_page": "/legal.php?p=terms",
+    "calculator": "/index.php?page=calculator",
+    "apply": "/apply.php",
+    "how_it_works": "/index.php?page=how-it-works",
+    "currency": "ZMW",
+    "terms": "1–4 weeks. Simple flat interest applied once to principal: 1 week 15%, 2 weeks 20%, 3 weeks 25%, 4 weeks 30%. Calculator outputs are estimates subject to assessment and written agreement.",
+    "example": "ZMW 1,000 for 2 weeks: interest ZMW 200, estimated total ZMW 1,200.",
+    "process": "Complete application with supporting documents; Avesta assesses it; terms and security confirmed in signed agreement; disbursement after approval and signing. Application is not approval.",
+    "documents": "Full name, NRC and contact details; NRC front/back images; occupation, employer and income; loan amount, purpose and repayment plan; relevant payslip and collateral, salary check-off, employer letter or guarantor details where applicable. Submit documents only through secure application, never chat.",
+    "payments": "Cash, bank transfer, Airtel Money, MTN MoMo or Zamtel.",
+    "late_or_early_payment": "Contact the team early if repayment is difficult. Late charges and revised arrangements follow written agreement. Request an early settlement figure from the team. No promises about eligibility, maximum amounts, approval time or waiving interest."
+  },
+  "it": {
+    "page": "/index.php?page=it",
+    "support_desk": "/it.php#services",
+    "downloads": "/downloads.php",
+    "enquiries": "Choose service and describe issue, location and contact details in enquiry form; review prepared message before sending via WhatsApp or email. Service pricing requires team quotation.",
+    "software": "Software tabs on Downloads reveal details and download options when selected. G.I.T Device Health Monitoring is an unsigned Windows x64 test build. Asset Tracker is also listed; do not claim download availability or other architectures without checking."
+  },
+  "accounts": {
+    "sign_in": "/login.php",
+    "portal": "/portal.php",
+    "recovery": "/recovery.php",
+    "setup_recovery_email": "/recovery.php?setup=1",
+    "help": "Sign in to access private portal. Verify recovery email while signed in before using email password reset. Administrator-assisted resets remain available. Chatbot cannot access private applications, balances, reset codes, account histories or documents."
+  },
+  "policies": {
+    "privacy": "/legal.php?p=privacy",
+    "terms": "/legal.php?p=terms",
+    "complaints": "/legal.php?p=complaints",
+    "help": "Use published policy pages for details. Contact team for complaints; do not claim regulatory approval, compliance or hosting location based on this knowledge."
+  }
+}

@@ -28,6 +28,7 @@ $('.dialog-close').addEventListener('click',()=>$('#dialog').close());
 $('#dialog').addEventListener('click',ev=>{if(ev.target===$('#dialog'))$('#dialog').close();});
 $('#year').textContent=new Date().getFullYear();
 function shell(){
+ document.dispatchEvent(new CustomEvent('avesta:route',{detail:{route}}));
  document.title=(pageTitles[route]||'Page not found')+' · Avesta Enterprises';
  $$('.desktop-nav a').forEach(a=>{const active=new URL(a.href).searchParams.get('page')===route.slice(1) || a.getAttribute('href')===route||(a.dataset.nav==='lending'&&lendingPaths.includes(route));a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  $('#mobile-nav').hidden=true;$('.menu-toggle').setAttribute('aria-expanded','false');
