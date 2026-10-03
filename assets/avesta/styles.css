@@ -248,3 +248,6 @@ dialog h3{margin:28px 0 14px}
 }
 
 .service-toggle>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+
+.footer-section-icon{flex-shrink:0;color:var(--gold,#D98E3B)}
+.footer-toggle>span:first-of-type{min-width:0;overflow-wrap:anywhere}
