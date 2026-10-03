@@ -874,7 +874,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <a class="nav-item" onclick="fetchRemoteRecords(false)" href="javascript:void(0)">
         <span class="nav-icon">🔄</span> Sync Now
       </a>
-      <a class="nav-item" onclick="showPage('fx')" href="javascript:void(0)">
+      <a clasem" onclick="showPage('fx')" href="javascript:void(0)">
         <span class="nav-icon">💱</span> Currency Rates
       </a>
       <a class="nav-item" onclick="openBackupModal()" href="javascript:void(0)">
@@ -1869,7 +1869,7 @@ function applyFilters() {
 
   filteredRecords = allRecords.filter(r => {
     if (status && r.status !== status) return false;
-    if (dur && !(r.loan_duration||'').startsWith(dur.slice(0,1))) return false;
+    if (dur &&  false;
     if (search) {
       const hay = [r.full_name,r.national_id,r.phone,r.address,r.loan_purpose,r.email].join(' ').toLowerCase();
       if (!hay.includes(search)) return false;
@@ -2208,8 +2208,7 @@ function openModal(key) {
         const has = !!((r[k+'_base64'] && r[k+'_base64'].length > 0) || r[k+'_url']);
         const fname = r[k+'_filename'] || meta.label;
         const mime  = r[k+'_mimetype'] || '';
-        const onclick = has ? 'openDV("'+r._key+'","'+k+'","'+escAttr(fname)+'","'+mime+'")' : '';
-        return '<div class="doc-tile ' + (has?'has-doc':'') + '"' + (has?' onclick="'+onclick+'"':'') + '>' +
+        return '<div class="doc-tile ' + (has?'has-doc':'') + '"' + (has?' data-document-field="'+k+'" role="button" tabindex="0"':'') + '>' +
           '<div class="doc-tile-icon">' + meta.icon + '</div>' +
           '<div class="doc-tile-label">' + meta.label + '</div>' +
           '<div class="doc-tile-status" style="color:' + (has?'#198754':'#ccc') + '">' + (has?'✅ View / Download':'Not uploaded') + '</div>' +
@@ -2299,6 +2298,20 @@ function printRecord() {
 }
 
 // ─── DOC VIEWER ───────────────────────────────────────────────────────────────
+function activateDocumentTile(event) {
+  if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+  const tile = event.target.closest('[data-document-field]');
+  if (!tile || !tile.closest('#modal-body')) return;
+  event.preventDefault();
+  const key = document.getElementById('modal-body').dataset.recordKey;
+  const r = allRecords.find(record => record._key === key);
+  const field = tile.dataset.documentField;
+  if (!r || !DOC_LABELS[field]) return;
+  openDV(key, field, r[field + '_filename'] || DOC_LABELS[field].label, r[field + '_mimetype'] || '');
+}
+document.addEventListener('click', activateDocumentTile);
+document.addEventListener('keydown', activateDocumentTile);
+
 function openDV(key, docKey, filename, mimetype) {
   const r = allRecords.find(r => r._key === key);
   if (!r) return;
@@ -2318,7 +2331,7 @@ function openDV(key, docKey, filename, mimetype) {
   }
 
   document.getElementById('dv-title').textContent = filename;
-  document.getElementById('dv-dl').href = src;
+  document.getElementById('dv-dl').href = docUrl && !b64 ? src + '&download=1' : src;
   document.getElementById('dv-dl').download = filename;
   const body = document.getElementById('dv-body');
   if (mimetype.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(filename)) {
@@ -2901,8 +2914,7 @@ function afxFillSelects(){
         o.textContent = c + ' — ' + afxName(c);
         grp.appendChild(o);
       });
-      sel.appendChild(grp);
-    });
+      sel    });
     sel.value = p[1];
   });
 }

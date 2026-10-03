@@ -1526,7 +1526,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
     <button data-site="lending" class="nav-tab nav-tab-apply" onclick="showTab('apply')" id="ntab-apply">Apply Now</button>
     <button data-site="lending" class="nav-tab" onclick="showStaffLogin()" id="ntab-staff" style="font-size:8.5pt;letter-spacing:.5px">🔐 Staff</button>
   </div>
-  <button class="nav-toggle" onclick="toggleMobileNav()" aria-label="Open menu" id="nav-toggle-btn">
+  <button class="nav-toggle" onclick="toggleMobileNav()" aria-label="Open meu" id="nav-toggle-btn">
     <span></span><span></span><span></span>
   </button>
 </nav>
@@ -2319,8 +2319,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
           <span id="fx_eff">&mdash;</span>
           <span>You lose <b id="fx_loss">&mdash;</b> to the spread</span>
         </div>
-      </div>
-
+  
       <div class="fxc-foot">
         <button type="button" class="fxc-refresh" id="fx_refresh">Refresh rates</button>
         <span class="fxc-stamp" id="fx_stamp"><i class="fxc-dot"></i>Loading rates&hellip;</span>
@@ -2890,7 +2889,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
     <!-- Our Story -->
     <div class="about-team">
       <h3>Our Story</h3>
-      <p>Avesta Enterprises was founded with a clear vision: to bridge the gap between everyday Zambians and accessible finance. We noticed that many hard-working people were being turned away by large banks due to lengthy processes and rigid requirements. We set out to create a different kind of lending company — one that treats every client with dignity, moves fast, and keeps things simple.</p>
+      <p>Avesta Enterprises was founded with a clear vision: tble finance. We noticed that many hard-working people were being turned away by large banks due to lengthy processes and rigid requirements. We set out to create a different kind of lending company — one that treats every client with dignity, moves fast, and keeps things simple.</p>
       <p style="margin-top:12px">Operating from our office on Thom Avenue in Kansenshi, Ndola, we serve clients from across the Copperbelt. Whether you need funds for a school fee, medical emergency, business stock, or home improvement — Avesta is here for you.</p>
       <p style="margin-top:12px"><strong style="color:var(--navy)">Office Hours:</strong> Monday – Saturday, 08:00 – 17:00 &nbsp;|&nbsp; <strong style="color:var(--navy)">Location:</strong> House No. 3, Thom Avenue, Kansenshi, Ndola &nbsp;|&nbsp; <strong style="color:var(--navy)">Phones:</strong> 0971 013 108 / 0769 974 200</p>
     </div>
@@ -3606,7 +3605,7 @@ function renderRecords(records) {
           const hasDoc = !!(r[k+'_base64'] || r[k+'_url']);
           const fname = r[k+'_filename'] || meta.label;
           const mime  = r[k+'_mimetype'] || '';
-          return `<div class="rv-doc-tile ${hasDoc?'rv-doc-has':''}" onclick="${hasDoc?`viewDoc(${staffAllRecords.indexOf(r)},'${k}','${fname.replace(/'/g,"\\'")}','${mime}')`:''}" style="${hasDoc?'cursor:pointer':'cursor:default'}">
+          return `<div class="rv-doc-tile ${hasDoc?'rv-doc-has':''}" ${hasDoc?`data-document-field="${k}" data-record-index="${staffAllRecords.indexOf(r)}" role="button" tabindex="0"`:''} style="${hasDoc?'cursor:pointer':'cursor:default'}">
             <div class="rv-doc-icon">${meta.icon}</div>
             <div class="rv-doc-label">${meta.label}</div>
             <div class="rv-doc-status">${hasDoc?'✅ View':'—'}</div>
@@ -3722,8 +3721,7 @@ function toggleRecord(idx) {
 }
 
 // ── STATUS UPDATE ──────────────────────────────────────────────────────────
-function staffUpdateStatus(key, newStatus) {
-  const r = staffAllRecords.find(x => x._key === key);
+function staffUpdateStatus(key => x._key === key);
   if (!r) return;
   const prevStatus = r.status;
   r.status = newStatus;
@@ -4006,8 +4004,23 @@ function staffClearImport() {
 function backupRecords() { openStaffBackupModal(); }
 
 // ── DOCUMENT VIEWER ────────────────────────────────────────────────────────
+function activateStaffDocumentTile(event) {
+  if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+  const tile = event.target.closest('[data-document-field][data-record-index]');
+  if (!tile) return;
+  event.preventDefault();
+  const idx = Number(tile.dataset.recordIndex);
+  const r = staffAllRecords[idx];
+  const field = tile.dataset.documentField;
+  if (!r || !DOC_LABELS[field]) return;
+  viewDoc(idx, field, r[field + '_filename'] || DOC_LABELS[field].label, r[field + '_mimetype'] || '');
+}
+document.addEventListener('click', activateStaffDocumentTile);
+document.addEventListener('keydown', activateStaffDocumentTile);
+
 function viewDoc(recIdx, docKey, filename, mimetype) {
   const r = staffAllRecords[recIdx];
+  if (!r) return;
   const b64 = r[docKey + '_base64'];
   const docUrl = r[docKey + '_url']; // server-hosted file (works across devices)
 
@@ -4015,13 +4028,14 @@ function viewDoc(recIdx, docKey, filename, mimetype) {
   if (b64) {
     src = b64.startsWith('data:') ? b64 : `data:${mimetype};base64,${b64}`;
   } else if (docUrl) {
-    src = docUrl; // relative path served by api.php on the server
+    src = getStaffScriptUrl() + '?action=doc&key=' + encodeURIComponent(r._key)
+        + '&field=' + encodeURIComponent(docKey);
   } else {
     return; // no document available
   }
 
   document.getElementById('doc-viewer-title').textContent = filename;
-  document.getElementById('doc-viewer-download').href = src;
+  document.getElementById('doc-viewer-download').href = docUrl && !b64 ? src + '&download=1' : src;
   document.getElementById('doc-viewer-download').download = filename;
   const body = document.getElementById('doc-viewer-body');
   if (mimetype.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(filename)) {
@@ -4682,7 +4696,7 @@ function addReference() {
 const sigCanvases = {};
 const sigHistory = {}; // { borrower: { undoStack: [dataURL,...], redoStack: [...] } }
 const sigSigned = { borrower: false, lender: false };
-const LENDER_SIG_DATA = "data:image/png;base64,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";
+const LENDER_SIG_DATA = "data:image/png;base64,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";
 
 function drawLenderDefaultSig(retries) {
   retries = retries || 0;
@@ -5810,7 +5824,7 @@ async function submitToSheet() {
     if (apiJson && apiJson._key) data._key = apiJson._key;
     if (typeof avBusy === 'function') avBusy(btn, false);
     btn.textContent = '✅ Submitted!';
-    btn.style.background = '#198754';
+   btn.style.background = '#198754';
     btn.disabled = false;
     // Save submission record to localStorage for staff dashboard
     data._notify_pending = true;

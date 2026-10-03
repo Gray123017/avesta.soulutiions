@@ -199,25 +199,32 @@ function extractDocuments(array $payload, string $recordKey) {
         // Strip any whitespace/newlines that may have crept in (some browsers/
         // proxies wrap long base64 strings), then decode permissively.
         $b64 = preg_replace('/\s+/', '', $b64);
-        $bytes = base64_decode($b64, false);
+        $bytes = base64_decode($b64, true);
         if ($bytes === false || strlen($bytes) === 0) {
-            unset($payload[$b64Key]);
-            continue;
+            throw new RuntimeException('A document could not be decoded. Please select the file again and retry.', 422);
+        }
+        if (safeExtFromMime($mime) === 'bin') {
+            throw new RuntimeException('Unsupported document format. Please upload a PDF, JPEG, PNG, GIF or WebP file.', 422);
         }
 
-        if (!is_dir($folder)) {
-            @mkdir($folder, 0755, true);
+        if (!is_dir($folder) && !@mkdir($folder, 0755, true) && !is_dir($folder)) {
+            throw new RuntimeException('Documents could not be saved. Please contact Avesta to check server storage permissions.', 500);
         }
 
         $ext      = safeExtFromMime($mime);
         $filename = $field . '.' . $ext;
         $filepath = $folder . '/' . $filename;
 
-        if (file_put_contents($filepath, $bytes) !== false) {
-            // Store a relative URL the browser can fetch directly
-            $payload[$field . '_url'] = 'documents/' .
-                rawurlencode(basename($folder)) . '/' . rawurlencode($filename);
+        // Write beside the destination and rename only after every byte is saved.
+        // A failed upload must not erase an existing document or report success.
+        $tmp = @tempnam($folder, '.upload-');
+        if (!$tmp || @file_put_contents($tmp, $bytes, LOCK_EX) !== strlen($bytes)
+            || !@rename($tmp, $filepath)) {
+            if ($tmp && is_file($tmp)) @unlink($tmp);
+            throw new RuntimeException('Documents could not be saved. Please contact Avesta to check server storage permissions.', 500);
         }
+        $payload[$field . '_url'] = 'documents/' .
+            rawurlencode(basename($folder)) . '/' . rawurlencode($filename);
 
         // Remove the heavy base64 blob from the JSON record
         unset($payload[$b64Key]);
@@ -611,7 +618,11 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
     }
 
     // Extract base64 documents to real files, replace with URLs
-    $payload = extractDocuments($payload, $payload['_key']);
+    try {
+        $payload = extractDocuments($payload, $payload['_key']);
+    } catch (RuntimeException $e) {
+        jsonOut(['ok' => false, 'error' => $e->getMessage()], $e->getCode() === 422 ? 422 : 500);
+    }
 
     $records[] = $payload;
 
@@ -722,7 +733,11 @@ if ($action === 'updateRecord') {
     }
 
     // If new documents were attached during edit, extract them too
-    $payload = extractDocuments($payload, $payload['_key']);
+    try {
+        $payload = extractDocuments($payload, $payload['_key']);
+    } catch (RuntimeException $e) {
+        jsonOut(['ok' => false, 'error' => $e->getMessage()], $e->getCode() === 422 ? 422 : 500);
+    }
 
     $records = loadRecords();
     $found = false;
@@ -1529,7 +1544,12 @@ if ($action === 'doc') {
     header_remove('Content-Type');
     header('Content-Type: ' . $types[$ext]);
     header('Content-Length: ' . filesize($path));
-    header('Content-Disposition: inline; filename="' . $field . '.' . $ext . '"');
+    $disposition = ($_GET['download'] ?? '') === '1' ? 'attachment' : 'inline';
+    $originalName = basename(str_replace('\\', '/', (string) ($record[$field . '_filename'] ?? '')));
+    $originalName = preg_replace('/[\x00-\x1F\x7F]/', '', $originalName);
+    if ($originalName === '') $originalName = $field . '.' . $ext;
+    header('Content-Disposition: ' . $disposition . '; filename="' . $field . '.' . $ext
+        . '"; filename*=UTF-8\'\'' . rawurlencode($originalName));
     header('Cache-Control: private, no-store');
     header('X-Content-Type-Options: nosniff');
     readfile($path);
