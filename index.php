@@ -3,6 +3,12 @@
 require_once __DIR__ . '/auth.php';
 // Public: this is the front door, and the page a search engine lands on.
 $me = av_user();
+// Embed only the same public data already available as static JSON. Rendering
+// should not wait for another mobile-network round trip after the HTML loads.
+$public_data = json_encode([
+    'services' => json_decode(file_get_contents(__DIR__ . '/assets/avesta/services.json'), true),
+    'help' => json_decode(file_get_contents(__DIR__ . '/assets/avesta/help.json'), true)
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store, private');
@@ -17,8 +23,8 @@ header('Referrer-Policy: same-origin');
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/avesta/styles.css?v=20261003-footer-icons">
-<script type="module" src="/assets/avesta/app.js?v=20261003-mobile-tabs"></script>
+<link rel="stylesheet" href="/assets/avesta/styles.css?v=20261003-steady-navigation">
+<script type="module" src="/assets/avesta/app.js?v=20261003-steady-navigation"></script>
 <script type="module" src="/assets/avesta/assistant.js?v=20261003-chat-minimize"></script>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
@@ -44,5 +50,6 @@ header('Referrer-Policy: same-origin');
 <div id="toast" role="status" aria-live="polite"></div>
 <dialog id="dialog"><div id="dialog-content"></div><button class="dialog-close" aria-label="Close dialog" type="button">×</button></dialog>
 <noscript><p class="wrap">Please enable JavaScript to use the calculators, application and portal. Call <a href="tel:+260971013108">0971 013 108</a> or email <a href="mailto:info@avesta.solutions">info@avesta.solutions</a> for help.</p></noscript>
+<script id="avesta-public-data" type="application/json"><?= $public_data ?></script>
 </body>
 </html>
