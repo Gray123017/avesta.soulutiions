@@ -18,8 +18,8 @@ header('Referrer-Policy: same-origin');
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/assets/avesta/styles.css?v=20261002-downloads">
-<script type="module" src="/assets/avesta/app.js?v=20261002-downloads"></script>
-<script type="module" src="/assets/avesta/assistant.js?v=20261003-openai"></script>
+<script type="module" src="/assets/avesta/app.js?v=20261003-site-scope"></script>
+<script type="module" src="/assets/avesta/assistant.js?v=20261003-site-scope"></script>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
 </head>

@@ -34,8 +34,39 @@ for(const fail of [false,true])test('AI mode sends only the opted-in question; '
  w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
  await new Promise(r=>setTimeout(r,20));const d=w.document;assert.equal(d.querySelector('#chat-web').disabled,false);assert.equal(calls.filter(c=>c.opts?.method==='POST').length,0);
  d.querySelector('#chat-web').checked=true;d.querySelector('#chat-question').value='My printer is offline';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,20));
- const req=calls.find(c=>c.opts?.method==='POST');assert.deepEqual(JSON.parse(req.opts.body),{message:'My printer is offline',web:true});assert.equal(req.opts.headers['X-Avesta-Chat'],'1');assert.equal(d.querySelector('#chat-send').disabled,false);
+ const req=calls.find(c=>c.opts?.method==='POST');assert.deepEqual(JSON.parse(req.opts.body),{message:'My printer is offline',web:true,scope:'site'});assert.equal(req.opts.headers['X-Avesta-Chat'],'1');assert.equal(d.querySelector('#chat-send').disabled,false);
  if(fail){assert.match(d.querySelector('#chat-error').textContent,/server key/);d.querySelector('#chat-web').checked=false;d.querySelector('[data-chat="My printer is offline"]').click();await new Promise(r=>setTimeout(r,20));assert.match(d.querySelector('#chat-log').textContent,/Guided saved advice/);}
  else{assert.equal(d.querySelector('#chat-log img'),null);assert.ok(d.querySelector('#chat-log a[href="https://support.microsoft.com/test"]'));assert.equal(d.querySelector('#chat-log a[href^="javascript:"]'),null);}
  await w.happyDOM.close();
+});
+
+test('IT consultation redirects loan questions; general site keeps loan and software guidance',()=>{
+ assert.match(guideAnswer('How do I apply for a loan?',[],'site').answer,/15%/);
+ assert.doesNotMatch(guideAnswer('How do I apply for a loan?',[],'it').answer,/15%|30%/);
+ assert.match(guideAnswer('How do I apply for a loan?',[],'it').answer,/IT consultation/);
+ assert.match(guideAnswer('What IT services do you offer?',[],'it').answer,/backup and recovery/);
+ assert.equal(guideAnswer('Where can I download Asset Tracker?',[],'site').sources[0].url,'/downloads.php');
+});
+
+test('Navigation changes chatbot scope, clears old answers, and sends the correct API mode',async()=>{
+ const w=new Window({url:'https://avesta.solutions/',settings:{enableJavaScriptEvaluation:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.__guide=guideAnswer;w.__guided=createGuidedHelp;const calls=[];
+ w.fetch=async(url,opts)=>{if(opts?.method==='POST')calls.push(JSON.parse(opts.body));return new Response(JSON.stringify(url.includes('status')?{configured:true}:{answer:'IT support answer'}));};
+ w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
+ await new Promise(r=>setTimeout(r,20));const d=w.document;
+ d.querySelector('#chat-log').append(d.createTextNode('old loan discussion'));
+ w.history.pushState({},'', '/index.php?page=it');d.dispatchEvent(new w.CustomEvent('avesta:route'));
+ assert.match(d.querySelector('#chat-mode').textContent,/IT consultation only/);
+ assert.doesNotMatch(d.querySelector('#chat-log').textContent,/old loan/);
+ assert.equal(d.querySelector('[data-chat="How do I apply for a loan?"]'),null);
+ d.querySelector('#chat-web').checked=true;d.querySelector('#chat-question').value='Help with Wi-Fi';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));
+ await new Promise(r=>setTimeout(r,20));assert.equal(calls[0].scope,'it');
+ w.history.pushState({},'', '/index.php?page=lending');d.dispatchEvent(new w.CustomEvent('avesta:route'));
+ assert.match(d.querySelector('#chat-mode').textContent,/loans & IT/);
+ assert.ok(d.querySelector('[data-chat="How do I apply for a loan?"]'));
+ await w.happyDOM.close();
+});
+
+test('Server scopes exclude lending data from IT prompts',{skip:spawnSync(php,['-v']).status!==0},()=>{
+ const script=`require ${JSON.stringify(resolve('assistant-lib.php'))}; $root=${JSON.stringify(resolve('.'))}; $site=av_chat_instructions($root,'site'); $it=av_chat_instructions($root,'it'); if(strpos($site,'15%')===false || strpos($site,'Airtel Money')===false || strpos($it,'15%')!==false || strpos($it,'CURRENT SCOPE: IT CONSULTATION ONLY')===false || strpos($it,'Cybersecurity')===false || av_chat_scope(['scope'=>'it'])!=='it' || av_chat_scope(['scope'=>'arbitrary'])!=='site')throw new Exception('scope failure'); echo 'passed';`;
+ const r=spawnSync(php,['-r',script],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);assert.equal(r.stdout,'passed');
 });

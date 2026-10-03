@@ -1,6 +1,8 @@
 import {createGuidedHelp} from './guided.js';
-import {guideAnswer} from './guide.js';
+import {guideAnswer} from './guide.js?v=20261003-site-scope';
 let guidePromise;
+const chatScope=()=>location.pathname==='/it.php'||location.pathname==='/it'||new URLSearchParams(location.search).get('page')==='it'?'it':'site';
+let scope=chatScope();
 const escapeChat=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function chatURL(value){try{const u=new URL(value,location.origin);return (u.origin===location.origin&&value.startsWith('/')&&!value.startsWith('//'))||u.protocol==='https:'?u.href:null;}catch{return null;}}
 function answerHTML(data){
@@ -28,11 +30,25 @@ panel.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>{el('chat-questio
 el('chat-form').onsubmit=async event=>{
  event.preventDefault();if(busy)return;const message=el('chat-question').value.trim();if(!message)return;
  el('chat-error').textContent='';addMessage('user',message);setBusy(true);const current=new AbortController();controller=current;const timer=setTimeout(()=>current.abort(),35000);
- try{if(el('chat-web').checked){guided.clear();const res=await fetch('/assistant-api.php',{method:'POST',headers:{'Content-Type':'application/json','X-Avesta-Chat':'1'},signal:current.signal,body:JSON.stringify({message,web:true})});const data=await res.json();if(!res.ok)throw new Error(data.error||'AI could not respond.');if(controller!==current)return;addMessage('assistant',data);el('chat-question').value='';return;}if(/\b\d{6}\/\d{2}\/\d\b/.test(message))throw new Error('Please remove your NRC number. Use the secure application form for personal documents.');guidePromise ||= fetch('/assets/avesta/help.json').then(r=>{if(!r.ok)throw new Error('Help guide is unavailable.');return r.json();}).catch(err=>{guidePromise=null;throw err;});const guides=await guidePromise;if(controller!==current)return;if(guided.start(message,guides)){el('chat-question').value='';return;}const data={...guideAnswer(message,guides),notice:'Saved help guide · not a live web search'};
+ try{if(el('chat-web').checked){guided.clear();const res=await fetch('/assistant-api.php',{method:'POST',headers:{'Content-Type':'application/json','X-Avesta-Chat':'1'},signal:current.signal,body:JSON.stringify({message,web:true,scope})});const data=await res.json();if(!res.ok)throw new Error(data.error||'AI could not respond.');if(controller!==current)return;addMessage('assistant',data);el('chat-question').value='';return;}if(/\b\d{6}\/\d{2}\/\d\b/.test(message))throw new Error('Please remove your NRC number. Use the secure application form for personal documents.');guidePromise ||= fetch('/assets/avesta/help.json').then(r=>{if(!r.ok)throw new Error('Help guide is unavailable.');return r.json();}).catch(err=>{guidePromise=null;throw err;});const guides=await guidePromise;if(controller!==current)return;const business=/\b(loan|borrow|interest|repay|lending|guarantor|collateral|salary check|finance|contact|hours|address|services|consulting|consultation|offer|software|download|asset tracker|device health)\b/i.test(message);if(business)guided.clear();if(!business&&guided.start(message,guides)){el('chat-question').value='';return;}const data={...guideAnswer(message,guides,scope),notice:'Saved help guide · not a live web search'};
  addMessage('assistant',data);history=[...history,{role:'user',content:message},{role:'assistant',content:data.answer}].slice(-6);el('chat-question').value='';
  }catch(err){if(controller===current)el('chat-error').textContent=current.signal.aborted?'The request timed out. Please retry or contact the team.':err.message;}
  finally{clearTimeout(timer);if(controller===current){setBusy(false);controller=null;}}
 };
 document.addEventListener('click',event=>{if(event.target.closest('[data-open-assistant]'))showChat(true);});
+
+function updateScope(){
+ const next=chatScope();
+ if(next!==scope){guided.clear();controller?.abort();controller=null;history=[];el('chat-log').replaceChildren();el('chat-error').textContent='';el('chat-question').value='';setBusy(false);scope=next;}
+ const it=scope==='it';
+ el('chat-mode').textContent=it?'IT consultation only':'Avesta loans & IT services';
+ el('chat-question').placeholder=it?'Describe your IT problem and device model':'Ask about loans, IT services or using this website';
+ panel.querySelector('.chat-chips').innerHTML=it?'<button type="button" data-chat="My printer is offline">Printer help</button><button type="button" data-chat="What IT services do you offer?">IT services</button><button type="button" data-chat="How do I contact IT support?">IT support</button>':'<button type="button" data-chat="How do I apply for a loan?">Loan questions</button><button type="button" data-chat="My printer is offline">Printer help</button><button type="button" data-chat="How do I contact Avesta?">Contact us</button>';
+ panel.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>{el('chat-question').value=b.dataset.chat;el('chat-form').requestSubmit();});
+ if(el('chat-log').children.length<=1){el('chat-log').replaceChildren();addMessage('assistant',{answer:it?'Ask about IT services, software or a technology problem. For loans, use the homepage assistant or Lending page.':'Ask about Avesta loans, applications, IT services, software or using this website.',notice:it?'IT consultation only':'Avesta loans & IT services'});}
+}
+updateScope();
+document.addEventListener('avesta:route',updateScope);
+window.addEventListener('popstate',updateScope);
 
 fetch('/assistant-api.php?action=status',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.configured){el('chat-web').disabled=false;el('chat-availability').textContent='AI setup ready. Choose AI and online sources to send this question to OpenAI.';}else if(data?.reason==='missing_curl'){el('chat-availability').textContent='AI needs the PHP cURL extension enabled. Saved guidance is available.';}}).catch(()=>{});
