@@ -4,7 +4,7 @@
 # Named individually rather than blocking *.json: manifest.json has to be
 # readable or the app cannot be installed on a phone, and a blanket rule
 # silently returns 403 for it. Anything new that stores data goes on this list.
-<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets)\.(json|jsonl)$">
+<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets|assistant_rate)\.(json|jsonl)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -82,3 +82,7 @@ Options -Indexes
   php_value memory_limit 256M
   php_value max_execution_time 60
 </IfModule>
+
+<Files "avesta-secrets.php">
+  Require all denied
+</Files>

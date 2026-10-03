@@ -11,7 +11,7 @@ const flush=()=>new Promise(r=>setTimeout(r,20));
 async function boot(page='',ratesFail=false){
  const w=new Window({url:'https://avesta.test/index.php'+(page?'?page='+page:''),settings:{enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
  w.__domain=domain;w.document.write(html);const calls=[];
- w.fetch=async url=>{calls.push(url);if(url==='/api.php?action=rates')return new Response(JSON.stringify(ratesFail?{ok:false,error:'Feed unavailable'}:{ok:true,table:{USD:1,ZMW:20,EUR:.9,GBP:.8,ZAR:18,BWP:13},as_of:'2026-10-01',feed:'Test feed',stale:true}),{status:ratesFail?502:200});if(url.startsWith('/assets/avesta/'))return new Response(readFileSync('.'+url,'utf8'));throw new Error('Unexpected endpoint '+url);};
+ w.fetch=async url=>{calls.push(url);if(url==='/assistant-api.php?action=status')return new Response(JSON.stringify({configured:false,webAvailable:false}));if(url==='/api.php?action=rates')return new Response(JSON.stringify(ratesFail?{ok:false,error:'Feed unavailable'}:{ok:true,table:{USD:1,ZMW:20,EUR:.9,GBP:.8,ZAR:18,BWP:13},as_of:'2026-10-01',feed:'Test feed',stale:true}),{status:ratesFail?502:200});if(url.startsWith('/assets/avesta/'))return new Response(readFileSync('.'+url,'utf8'));throw new Error('Unexpected endpoint '+url);};
  w.eval(script);await flush();return {w,d:w.document,calls};
 }
 test('All eight redesigned public pages render and link to PHP destinations',async()=>{
@@ -40,6 +40,6 @@ test('IT service filtering, safe guide and enquiry preparation work without subm
 });
 test('G.I.T gives source links locally and escapes chat content',async()=>{
  const {w,d,calls}=await boot();w.__guide=guideAnswer;w.__guided=createGuidedHelp;w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
- d.querySelector('#chat-launch').click();assert.equal(d.querySelector('#avesta-chat').hidden,false);d.querySelector('[data-chat="My printer is offline"]').click();await flush();assert.ok(d.querySelector('#chat-log a[href^="https://support.microsoft.com"]'));assert.equal(d.querySelector('#chat-web').disabled,true);assert.ok(calls.every(c=>c.startsWith('/assets/avesta/')));
+ d.querySelector('#chat-launch').click();assert.equal(d.querySelector('#avesta-chat').hidden,false);d.querySelector('[data-chat="My printer is offline"]').click();await flush();assert.ok(d.querySelector('#chat-log a[href^="https://support.microsoft.com"]'));assert.equal(d.querySelector('#chat-web').disabled,true);assert.ok(calls.every(c=>c.startsWith('/assets/avesta/')||c==='/assistant-api.php?action=status'));
  d.querySelector('#chat-question').value='<img src=x onerror=alert(1)>';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();assert.equal(d.querySelectorAll('#chat-log img').length,0);await w.happyDOM.close();
 });
