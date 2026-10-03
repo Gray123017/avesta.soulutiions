@@ -8,9 +8,9 @@ import {guideAnswer} from '../assets/avesta/guide.js';
 const script=readFileSync('assets/avesta/app.js','utf8').replace(/^import .*$/m,'const {money,quote,rates,schedule,today,escapeHTML:e}=window.__domain;');
 const html=readFileSync('index.php','utf8').split('?>')[1].replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
 const flush=()=>new Promise(r=>setTimeout(r,20));
-async function boot(page='',ratesFail=false){
+async function boot(page='',ratesFail=false,width=1024){
  const w=new Window({url:'https://avesta.test/index.php'+(page?'?page='+page:''),settings:{enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
- w.__domain=domain;w.document.write(html);const calls=[];
+ w.happyDOM.setWindowSize({width,height:800});w.__domain=domain;w.document.write(html);const calls=[];
  w.fetch=async url=>{calls.push(url);if(url==='/assistant-api.php?action=status')return new Response(JSON.stringify({configured:false,webAvailable:false}));if(url==='/api.php?action=rates')return new Response(JSON.stringify(ratesFail?{ok:false,error:'Feed unavailable'}:{ok:true,table:{USD:1,ZMW:20,EUR:.9,GBP:.8,ZAR:18,BWP:13},as_of:'2026-10-01',feed:'Test feed',stale:true}),{status:ratesFail?502:200});if(url.startsWith('/assets/avesta/'))return new Response(readFileSync('.'+url,'utf8'));throw new Error('Unexpected endpoint '+url);};
  w.eval(script);await flush();return {w,d:w.document,calls};
 }
@@ -42,4 +42,25 @@ test('G.I.T gives source links locally and escapes chat content',async()=>{
  const {w,d,calls}=await boot();w.__guide=guideAnswer;w.__guided=createGuidedHelp;w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
  d.querySelector('#chat-launch').click();assert.equal(d.querySelector('#avesta-chat').hidden,false);d.querySelector('[data-chat="My printer is offline"]').click();await flush();assert.ok(d.querySelector('#chat-log a[href^="https://support.microsoft.com"]'));assert.equal(d.querySelector('#chat-web').disabled,true);assert.ok(calls.every(c=>c.startsWith('/assets/avesta/')||c==='/assistant-api.php?action=status'));
  d.querySelector('#chat-question').value='<img src=x onerror=alert(1)>';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();assert.equal(d.querySelectorAll('#chat-log img').length,0);await w.happyDOM.close();
+});
+
+test('Phone service and footer sections start collapsed, expand on tap and retain links',async()=>{
+ const {w,d}=await boot('it',false,390);
+ // Initialize happy-dom's media listener state at the starting phone width.
+ w.dispatchEvent(new w.Event('resize'));await flush();
+ const services=[...d.querySelectorAll('#service-grid [data-compact-toggle]')];assert.equal(services.length,12);
+ for(const button of services){assert.equal(button.getAttribute('aria-expanded'),'false');assert.equal(d.getElementById(button.getAttribute('aria-controls')).hidden,true);}
+ services[0].click();assert.equal(services[0].getAttribute('aria-expanded'),'true');assert.equal(d.getElementById(services[0].getAttribute('aria-controls')).hidden,false);
+ services[1].click();assert.equal(services[0].getAttribute('aria-expanded'),'false');assert.equal(services[1].getAttribute('aria-expanded'),'true');
+ services[1].click();assert.equal(services[1].getAttribute('aria-expanded'),'false');
+ const software=services.at(-1);software.click();const details=d.getElementById(software.getAttribute('aria-controls'));assert.ok(details.querySelector('a[href="/downloads.php"]'));
+ details.querySelector('[data-enquire]').click();assert.equal(d.querySelector('#it-service').value,'G.I.T Device Health Monitoring');
+ const footer=[...d.querySelectorAll('.footer-grid [data-compact-toggle]')];assert.equal(footer.length,3);
+ for(const button of footer)assert.equal(button.getAttribute('aria-expanded'),'false');
+ footer[0].click();assert.equal(d.getElementById(footer[0].getAttribute('aria-controls')).hidden,false);
+ footer[1].click();assert.equal(footer[0].getAttribute('aria-expanded'),'false');assert.ok(d.getElementById(footer[1].getAttribute('aria-controls')).querySelector('a[href="mailto:info@avesta.solutions"]'));
+ d.querySelector('#service-search').value='printer';d.querySelector('#service-search').dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('#service-grid .service-card').length,1);assert.equal(d.querySelector('#service-grid [data-compact-toggle]').getAttribute('aria-expanded'),'false');
+ w.happyDOM.setWindowSize({width:1280,height:800});await flush();for(const button of d.querySelectorAll('[data-compact-toggle]'))assert.equal(button.getAttribute('aria-expanded'),'true');
+ w.happyDOM.setWindowSize({width:320,height:800});await flush();for(const button of d.querySelectorAll('[data-compact-toggle]'))assert.equal(button.getAttribute('aria-expanded'),'false');
+ await w.happyDOM.close();
 });
