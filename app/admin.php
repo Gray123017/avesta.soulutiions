@@ -874,7 +874,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <a class="nav-item" onclick="fetchRemoteRecords(false)" href="javascript:void(0)">
         <span class="nav-icon">🔄</span> Sync Now
       </a>
-      <a clasem" onclick="showPage('fx')" href="javascript:void(0)">
+      <a class="nav-item" onclick="showPage('fx')" href="javascript:void(0)">
         <span class="nav-icon">💱</span> Currency Rates
       </a>
       <a class="nav-item" onclick="openBackupModal()" href="javascript:void(0)">
@@ -1869,7 +1869,7 @@ function applyFilters() {
 
   filteredRecords = allRecords.filter(r => {
     if (status && r.status !== status) return false;
-    if (dur &&  false;
+    if (dur && !(r.loan_duration||'').startsWith(dur.slice(0,1))) return false;
     if (search) {
       const hay = [r.full_name,r.national_id,r.phone,r.address,r.loan_purpose,r.email].join(' ').toLowerCase();
       if (!hay.includes(search)) return false;
@@ -2914,7 +2914,8 @@ function afxFillSelects(){
         o.textContent = c + ' — ' + afxName(c);
         grp.appendChild(o);
       });
-      sel    });
+      sel.appendChild(grp);
+    });
     sel.value = p[1];
   });
 }
