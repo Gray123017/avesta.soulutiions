@@ -2535,7 +2535,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
           <div class="f-grid" style="margin-top:14px">
             <div class="f-group auto-field"><label for="total_int">Total Interest Amount (ZMW)</label><input id="total_int" placeholder="Auto-calculated" readonly></div>
             <div class="f-group auto-field"><label for="total_repay">Total Repayment Amount (ZMW)</label><input id="total_repay" placeholder="Auto-calculated" readonly></div>
-            <div class="f-group"><label for="num_inst">Number of Installments</label><input type="number" placeholder="e.g. 4" id="num_inst" oninput="updateInstallment()"></div>
+            <div class="f-group auto-field"><label for="num_inst">Number of Installments</label><input type="number" placeholder="Choose a repayment schedule" id="num_inst" readonly></div>
             <div class="f-group auto-field"><label for="inst_amt">Installment Amount (ZMW)</label><input id="inst_amt" placeholder="Auto-calculated" readonly></div>
             <div class="f-group auto-field"><label for="late_rate_display">Late Payment Interest Rate</label><input id="late_rate_display" placeholder="Auto: 7.5% per week overdue" readonly></div>
             <div class="f-group"><label for="weeks_overdue">Weeks Overdue <span style="color:#999;font-weight:normal">(for illustration)</span></label><input id="weeks_overdue" type="number" min="0" step="1" placeholder="0" oninput="updateLateFee()"></div>
@@ -2551,13 +2551,15 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
             </div>
             <div class="f-group full"><label>Repayment Schedule</label>
               <div class="check-pills" style="margin-top:8px">
-                <label class="check-pill"><input type="checkbox" value="Weekly"> <span>📅 Weekly</span></label>
-                <label class="check-pill"><input type="checkbox" value="Bi-Weekly"> <span>📅 Bi-Weekly</span></label>
-                <label class="check-pill"><input type="checkbox" value="Monthly"> <span>📅 Monthly</span></label>
-                <label class="check-pill"><input type="checkbox" value="Lump Sum"> <span>💰 Lump Sum at End</span></label>
+                <label class="check-pill"><input type="checkbox" value="Weekly" onchange="updateRepaymentSchedule(this)"> <span>📅 Weekly</span></label>
+                <label class="check-pill"><input type="checkbox" value="Bi-Weekly" onchange="updateRepaymentSchedule(this)"> <span>📅 Bi-Weekly</span></label>
+                <label class="check-pill"><input type="checkbox" value="Monthly" onchange="updateRepaymentSchedule(this)"> <span>📅 Monthly</span></label>
+                <label class="check-pill"><input type="checkbox" value="Lump Sum" onchange="updateRepaymentSchedule(this)"> <span>💰 Lump Sum at End</span></label>
               </div>
+              <p id="repayment-plan-summary" aria-live="polite" style="font-size:8.5pt;color:#555;margin-top:10px">Choose one repayment schedule to see the payment count and amounts. The monthly option uses four-week intervals, with the final payment due at the end of the term.</p>
             </div>
           </div>
+          <p style="font-size:8.5pt;color:#666;margin-top:12px">Late-charge illustration: the fields above use 7.5% of the scheduled total repayment for each week entered. This example does not account for partial payments or the grace period. Your signed agreement confirms any actual late charges.</p>
           <div class="f-sub" style="margin-top:18px" data-req="1">How Borrower Will Make Repayments <span style="color:#c0392b">*</span></div>
           <div class="method-grid">
             <label class="method-card mc-light"><input type="radio" name="repay_method" value="cash" onchange="showRepayDetail(this)"><span class="mc-icon">💵</span><span class="mc-name">Cash</span><span class="mc-desc">Pay at our office</span></label>
@@ -2612,13 +2614,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
               <div class="upload-filename" id="nrc-back-name"></div>
             </div>
 
-            <div class="upload-item" id="passport-box">
-              <input type="file" id="doc_passport" accept="image/*,.pdf" onchange="handleUpload(this,'passport-box','passport-name')" aria-label="Upload Passport Photo">
-              <div class="upload-icon">🖼️</div>
-              <div class="upload-label">Passport Photo <span style="color:#6c757d;font-size:7.5pt;font-weight:700">OPTIONAL</span></div>
-              <div class="upload-hint">Recent passport-size<br>photograph (colour)</div>
-              <div class="upload-filename" id="passport-name"></div>
-            </div>
+
 
           </div>
 
@@ -2654,11 +2650,19 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
             <p id="collateral-photo-err" class="f-err" style="display:none;margin-top:8px;font-size:8.5pt"></p>
           </div>
 
-          <!-- ── OPTIONAL ───────────────────────────────────────────────── -->
-          <div style="font-size:8pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">
-            Optional — Additional Supporting Documents
-          </div>
+          <!-- Optional evidence stays available without crowding the required uploads. -->
+          <details id="optional-supporting-documents" style="margin:16px 0">
+          <summary style="font-weight:700;cursor:pointer;padding:12px 0">Optional supporting documents</summary>
+          <p style="font-size:8.5pt;color:#666;margin:8px 0 14px">Upload only documents relevant to your application. A recent payslip or bank statement can support your income details; you do not need to upload the same document twice. Security documents are requested when you choose that security arrangement.</p>
           <div class="upload-grid">
+
+            <div class="upload-item" id="passport-box">
+              <input type="file" id="doc_passport" accept="image/*,.pdf" onchange="handleUpload(this,'passport-box','passport-name')" aria-label="Upload Passport Photo">
+              <div class="upload-icon">🖼️</div>
+              <div class="upload-label">Passport Photo <span style="color:#6c757d;font-size:7.5pt;font-weight:700">OPTIONAL</span></div>
+              <div class="upload-hint">Recent passport-size<br>photograph (colour)</div>
+              <div class="upload-filename" id="passport-name"></div>
+            </div>
 
             <div class="upload-item" id="salary1-box">
               <input type="file" id="doc_salary1" accept="image/*,.pdf" onchange="handleUpload(this,'salary1-box','salary1-name')" aria-label="Upload Salary Proof – Month 1">
@@ -2715,6 +2719,8 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
             </div>
 
           </div>
+
+          </details>
 
           <p id="doc-upload-err" class="f-err" style="display:none;margin-top:12px;font-size:8.5pt"></p>
           <p class="doc-note" style="margin-top:12px">✱ Both sides of your NRC are mandatory. The passport photo and other documents are optional but help speed up your approval. All files are kept securely.</p>
@@ -4417,24 +4423,31 @@ function addWeeksToDate(dateStr, weeks) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function repaymentPlan() {
+  const weeks = selectedDurationWeeks;
+  const choice = document.querySelector('#wiz-3 .check-pills input:checked');
+  if (!choice || !weeks) return null;
+  const interval = choice.value === 'Weekly' ? 1 : choice.value === 'Bi-Weekly' ? 2 : choice.value === 'Monthly' ? 4 : weeks;
+  return { count: Math.ceil(weeks / interval), firstWeeks: Math.min(interval, weeks) };
+}
+
+function updateRepaymentSchedule(changed) {
+  document.querySelectorAll('#wiz-3 .check-pills input').forEach(input => {
+    if (input !== changed) input.checked = false;
+  });
+  updateInstallment();
+  updateRepaymentDates();
+  updateFieldCounter();
+  saveProgress();
+}
+
 function updateRepaymentDates() {
   const disburseDate = document.getElementById('disburse_date').value;
-  const weeks = selectedDurationWeeks;
-  if (!disburseDate || !weeks) return;
-
-  const firstPaymentEl = document.getElementById('first_payment');
-  const lastPaymentEl  = document.getElementById('last_payment');
-
-  // First payment: one week after disbursement (or full term if loan is 1 week)
-  if (!userEditedDates.first_payment) {
-    const firstWeeks = Math.min(1, weeks);
-    firstPaymentEl.value = addWeeksToDate(disburseDate, firstWeeks);
-  }
-
-  // Last payment: disbursement date + full loan duration
-  if (!userEditedDates.last_payment) {
-    lastPaymentEl.value = addWeeksToDate(disburseDate, weeks);
-  }
+  const plan = repaymentPlan();
+  const first = document.getElementById('first_payment');
+  const last = document.getElementById('last_payment');
+  if (!userEditedDates.first_payment) first.value = disburseDate && plan ? addWeeksToDate(disburseDate, plan.firstWeeks) : '';
+  if (!userEditedDates.last_payment) last.value = disburseDate && plan ? addWeeksToDate(disburseDate, selectedDurationWeeks) : '';
 }
 const LATE_RATE_PER_WEEK = 7.5; // % increment per week overdue
 function updateLateFee() {
@@ -4452,9 +4465,25 @@ function updateLateFee() {
   }
 }
 function updateInstallment() {
-  const total = parseFloat(document.getElementById('total_repay').value) || 0;
-  const inst  = parseInt(document.getElementById('num_inst').value) || 0;
-  document.getElementById('inst_amt').value = (total > 0 && inst > 0) ? (total/inst).toFixed(2) : '';
+  // Normalize older drafts that allowed several schedules to be checked.
+  const choices = [...document.querySelectorAll('#wiz-3 .check-pills input:checked')];
+  choices.slice(1).forEach(input => { input.checked = false; });
+  const plan = repaymentPlan();
+  const total = Math.round((parseFloat(document.getElementById('total_repay').value) || 0) * 100);
+  const summary = document.getElementById('repayment-plan-summary');
+  document.getElementById('num_inst').value = plan ? plan.count : '';
+  if (!plan || total <= 0) {
+    document.getElementById('inst_amt').value = '';
+    if (summary) summary.textContent = 'Choose one repayment schedule to see the payment count and amounts. The monthly option uses four-week intervals, with the final payment due at the end of the term.';
+    return;
+  }
+  const regular = Math.floor(total / plan.count);
+  const last = total - regular * (plan.count - 1);
+  document.getElementById('inst_amt').value = (regular / 100).toFixed(2);
+  const money = cents => 'K' + (cents / 100).toFixed(2);
+  if (summary) summary.textContent = last === regular
+    ? plan.count + ' payment' + (plan.count === 1 ? '' : 's') + ' of ' + money(regular) + '. Total: ' + money(total) + '.'
+    : (plan.count - 1) + ' payments of ' + money(regular) + ' and a final payment of ' + money(last) + '. Total: ' + money(total) + '. The final payment includes the rounding adjustment.';
 }
 async function clearForm() {
   const go = await avConfirm('Clear the form?',
@@ -4466,6 +4495,7 @@ async function clearForm() {
     else i.value = '';
   });
   selectedDurationWeeks = 0;
+  updateTotals();
   userEditedDates.first_payment = false;
   userEditedDates.last_payment = false;
   const lw = document.getElementById('loan_words');
@@ -5073,6 +5103,11 @@ function validateStep(step) {
       } else { durErr.style.display = 'none'; }
     } else { durErr.style.display = 'none'; }
 
+    if (!repaymentPlan()) {
+      errorMessages.push('Choose one repayment schedule');
+      ok = false;
+    }
+
     // Repayment method
     const repayErr  = document.getElementById('repay-err');
     const repayGrid = panel.querySelector('.method-grid');
@@ -5286,7 +5321,7 @@ function renderReview() {
   html += rv('Late Interest Amount', gv('late_fee') ? 'ZMW ' + gv('late_fee') : '');
   html += rv('First Payment', gv('first_payment'));
   html += rv('Last Payment', gv('last_payment'));
-  html += rv('Repayment Schedule', getCheckboxes('#wiz-3 .check-row'));
+  html += rv('Repayment Schedule', getCheckboxes('#wiz-3 .check-pills'));
   html += rv('Repayment Method', getChecked('repay_method'));
   html += `</div></div>`;
 
@@ -5768,7 +5803,7 @@ async function submitToSheet() {
     late_fee:         gv('late_fee'),
     first_payment:    gv('first_payment'),
     last_payment:     gv('last_payment'),
-    repay_schedule:   getCheckboxes('#wiz-3 .check-row'),
+    repay_schedule:   getCheckboxes('#wiz-3 .check-pills'),
     repay_method:     getChecked('repay_method'),
     // Signatures
     borrower_signature: sigSigned.borrower ? sigCanvases.borrower.toDataURL() : '—',

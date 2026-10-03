@@ -186,7 +186,8 @@ footer a{color:var(--gold-deep)}
   </table>
   <p>Interest is <strong>simple and flat</strong>, applied once to the principal.
      We do not charge compound interest. The total you will repay is stated in your
-     agreement before you sign it, and it does not change.</p>
+     agreement before you sign it. Any late charges are separate and must be
+     confirmed in that agreement.</p>
 
   <h3>What you must do</h3>
   <ul>
@@ -199,6 +200,11 @@ footer a{color:var(--gold-deep)}
   <p>A grace period of three days applies before any late charge. After that, a
      late penalty is applied as set out in your agreement. Interest on an overdue
      amount continues at the rate in the contract and is not increased.</p>
+  <p>The application includes a late-charge illustration using 7.5% of the
+     scheduled total repayment for each overdue week entered. It does not account
+     for partial payments or the grace period, and is not a statement of your
+     actual balance or a final charge. Your signed agreement confirms the
+     applicable late charges and how they are calculated.</p>
   <p>If you are struggling, tell us early. We would far rather agree a revised
      schedule than pursue a default.</p>
 
