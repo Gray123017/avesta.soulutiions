@@ -70,3 +70,21 @@ test('Server scopes exclude lending data from IT prompts',{skip:spawnSync(php,['
  const script=`require ${JSON.stringify(resolve('assistant-lib.php'))}; $root=${JSON.stringify(resolve('.'))}; $site=av_chat_instructions($root,'site'); $it=av_chat_instructions($root,'it'); if(strpos($site,'15%')===false || strpos($site,'Airtel Money')===false || strpos($it,'15%')!==false || strpos($it,'CURRENT SCOPE: IT CONSULTATION ONLY')===false || strpos($it,'Cybersecurity')===false || av_chat_scope(['scope'=>'it'])!=='it' || av_chat_scope(['scope'=>'arbitrary'])!=='site')throw new Exception('scope failure'); echo 'passed';`;
  const r=spawnSync(php,['-r',script],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);assert.equal(r.stdout,'passed');
 });
+
+test('Minimize and reopen preserve answers; Avesta links minimize without clearing chat',async()=>{
+ const w=new Window({url:'https://avesta.solutions/',settings:{enableJavaScriptEvaluation:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.__guide=guideAnswer;w.__guided=createGuidedHelp;
+ w.fetch=async(url)=>new Response(JSON.stringify(url.includes('status')?{configured:true}:{answer:'Read [Lending](/index.php?page=lending), then /apply.php. <img src=x onerror=alert(1)>',sources:[{url:'https://support.microsoft.com/test',title:'Official vendor'},{url:'/index.php?page=calculator',title:'Loan calculator'}]}));
+ w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
+ await new Promise(r=>setTimeout(r,20));const d=w.document;
+ d.querySelector('#chat-launch').click();d.querySelector('#chat-web').checked=true;d.querySelector('#chat-question').value='Where are the loan pages?';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));
+ await new Promise(r=>setTimeout(r,20));const panel=d.querySelector('#avesta-chat'),log=d.querySelector('#chat-log');const original=log.textContent;
+ assert.equal(panel.hidden,false,'answers stay visible');assert.equal(log.querySelector('img'),null);
+ d.querySelector('#chat-minimize').click();assert.equal(panel.hidden,true);assert.equal(d.querySelector('#chat-launch').getAttribute('aria-expanded'),'false');
+ d.querySelector('#chat-launch').click();assert.equal(panel.hidden,false);assert.equal(log.textContent,original);
+ const external=log.querySelector('a[href="https://support.microsoft.com/test"]');assert.equal(external.target,'_blank');external.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true}));assert.equal(panel.hidden,false);
+ const internal=log.querySelector('a[href="https://avesta.solutions/index.php?page=lending"]');assert.equal(internal.target,'');internal.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true}));assert.equal(panel.hidden,true);assert.equal(log.textContent,original);
+ w.history.pushState({},'', '/index.php?page=lending');d.dispatchEvent(new w.CustomEvent('avesta:route'));d.querySelector('#chat-launch').click();assert.equal(log.textContent,original);
+ assert.ok(log.querySelector('a[href="https://avesta.solutions/apply.php"]'));
+ d.querySelector('#chat-question').value='Another question';d.querySelector('#chat-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,20));assert.match(log.textContent,/Another question/);
+ await w.happyDOM.close();
+});
