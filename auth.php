@@ -122,6 +122,13 @@ function av_session_start(): void {
 function av_user(): ?array {
     av_session_start();
     if (empty($_SESSION['uid'])) return null;
+    $account = av_find_user((string) ($_SESSION['username'] ?? ''));
+    if ($account && isset($account['auth_version'])
+        && ($account['auth_version'] !== ($_SESSION['auth_version'] ?? ''))) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+        return null;
+    }
     return [
         'id'       => $_SESSION['uid'],
         'username' => $_SESSION['username'] ?? '',
@@ -202,7 +209,7 @@ function av_password_problem(string $p, string $username = ''): ?string {
 }
 
 function av_create_user(string $username, string $password, string $name,
-                        string $role = 'borrower'): array {
+                        string $role = 'borrower', string $email = ''): array {
     $username = trim($username);
     if (!av_username_ok($username)) {
         return ['ok' => false, 'error' => 'Username must be 3–32 letters, numbers, dot, dash or underscore.'];
@@ -212,6 +219,10 @@ function av_create_user(string $username, string $password, string $name,
     }
     if (($why = av_password_problem($password, $username)) !== null) {
         return ['ok' => false, 'error' => $why];
+    }
+    $email = strtolower(trim($email));
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['ok' => false, 'error' => 'Enter a valid recovery email address.'];
     }
     if (!in_array($role, ['admin', 'staff', 'borrower'], true)) $role = 'borrower';
 
@@ -225,6 +236,8 @@ function av_create_user(string $username, string $password, string $name,
         'active'     => true,
         'created_at' => date('c'),
         'last_login' => null,
+        'email'      => $email,
+        'email_verified_at' => null,
     ];
     $users[] = $row;
     if (!av_save_users($users)) {
@@ -242,10 +255,14 @@ function av_set_password(string $userId, string $newPassword): array {
                 return ['ok' => false, 'error' => $why];
             }
             $u['pass_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            $u['auth_version'] = bin2hex(random_bytes(16));
+            $version = $u['auth_version'];
             unset($u);
-            return av_save_users($users)
-                ? ['ok' => true]
-                : ['ok' => false, 'error' => 'Could not save the change.'];
+            if (!av_save_users($users)) return ['ok' => false, 'error' => 'Could not save the change.'];
+            if (session_status() === PHP_SESSION_ACTIVE && ($_SESSION['uid'] ?? '') === $userId) {
+                $_SESSION['auth_version'] = $version;
+            }
+            return ['ok' => true];
         }
     }
     return ['ok' => false, 'error' => 'User not found.'];
@@ -253,8 +270,8 @@ function av_set_password(string $userId, string $newPassword): array {
 
 // ── login throttling ─────────────────────────────────────────────────────────
 /* ── PASSWORD RESETS ─────────────────────────────────────────────────────────
- * There is no email server, and a borrower who has forgotten their password
- * usually phones the office anyway. So a reset is a request the admin sees,
+ * Manual fallback: if an email code fails or no verified email is available,
+ * a reset is a request the admin sees,
  * verifies against the person's NRC and phone number, and then acts on by
  * issuing a temporary password. The temporary password must be changed at the
  * next sign-in, so it cannot quietly become someone's permanent password.
@@ -340,13 +357,13 @@ function av_admin_reset_password(string $userId, string $byUsername): array {
         if (($u['id'] ?? '') === $userId) { $u['must_change'] = true; break; }
     }
     unset($u);
-    av_save_users($users);
+    if (!av_save_users($users)) return ['ok' => false, 'error' => 'Could not save the temporary-password requirement. Please retry.'];
 
     // Close any open requests for this person
     $rows = av_resets_load();
     $changed = false;
     foreach ($rows as &$row) {
-        if (($row['username'] ?? '') === ($target['username'] ?? '') && ($row['status'] ?? '') === 'open') {
+        if (strcasecmp($row['username'] ?? '', $target['username'] ?? '') === 0 && ($row['status'] ?? '') === 'open') {
             $row['status'] = 'done';
             $row['handled_by'] = $byUsername;
             $row['handled_at'] = date('c');
@@ -496,6 +513,7 @@ function av_login(string $username, string $password): array {
     $_SESSION['username'] = $user['username'];
     $_SESSION['name']     = $user['name'];
     $_SESSION['role']     = $user['role'];
+    $_SESSION['auth_version'] = $user['auth_version'] ?? '';
     $_SESSION['must_change'] = !empty($user['must_change']);
     $_SESSION['started']  = time();
     $_SESSION['seen']     = time();
