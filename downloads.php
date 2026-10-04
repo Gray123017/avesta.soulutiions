@@ -1,10 +1,110 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Software Downloads · Avesta Enterprises</title><meta name="description" content="Explore Avesta software: G.I.T device health reporting and GIT Asset Tracker for Windows."><link rel="stylesheet" href="/assets/avesta/styles.css?v=20261002-guided"><link rel="icon" href="/icons/icon-192.png"><link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003"><script src="/assets/avesta/software-tabs.js?v=20261003" defer></script></head>
-<body><header class="wrap" style="padding:24px"><a class="link" href="/">Avesta Enterprises</a> · <a class="link" href="/index.php?page=it">IT services</a></header>
-<main><section class="section soft"><div class="wrap narrow"><div class="eyebrow">Avesta software</div><h1>Software &amp; downloads</h1><p style="margin-top:20px">Tools for your IT inventory and device health, with setup support from Avesta.</p><div class="software-tabs" role="tablist" aria-label="Avesta software"><button type="button" class="software-tab" id="tab-asset-tracker" role="tab" aria-selected="false" aria-controls="asset-tracker">GIT Asset Tracker</button><button type="button" class="software-tab" id="tab-device-health" role="tab" aria-selected="false" aria-controls="device-health">G.I.T device health reporting</button></div><p class="software-empty" id="software-prompt">Select a software tab to see its features, requirements and download options.</p></div></section><section class="section software-panel" id="asset-tracker" role="tabpanel" aria-labelledby="tab-asset-tracker" tabindex="0" hidden><div class="wrap narrow"><div class="eyebrow">Windows x64 · Version 1.5.1</div><h2>GIT Asset Tracker</h2><p style="margin-top:20px">Keep computers, printers, networking equipment and other IT assets in one inventory. Use an optional company profile, search your records, export Excel and PDF reports, and create or restore JSON backups.</p><ul style="padding-left:24px;line-height:1.8"><li>Inventory categories, dashboard and change history</li><li>Excel import/export and PDF reports</li><li>Backup and recovery copies before replacement</li><li>Optional server/client operation on a trusted local network</li></ul><div class="notice">Download the complete installer ZIP below. No separate installer parts are needed. Extract the downloaded ZIP on your Windows PC before running setup.</div><p>Version 1.5.1 improves readability and adjusts the workspace when toolbar controls wrap. The rebuild includes its source verification tests. All 23 targeted application checks passed; Windows installation and real multi-PC operation still require testing. The package is unsigned and reuses the supplied Windows runtime.</p><p style="margin-top:16px">Before upgrading, back up your register and close the app. LAN mode uses HTTP and a shared key; keep it on a trusted network and do not expose it to the internet. Local records are not encrypted.</p><div class="actions"><a class="button blue" href="/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" download>Download Asset Tracker ZIP</a><a class="link" href="mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1">Request setup support</a></div></div></section><section class="section software-panel" id="device-health" role="tabpanel" aria-labelledby="tab-device-health" tabindex="0" hidden><div class="wrap narrow"><div class="eyebrow">Avesta Consulting · Software & support</div><h2>G.I.T device health reporting</h2><p style="margin-top:24px">Help your IT team see device health, disk space, CPU and memory usage, network status and Microsoft Defender status. Avesta offers setup and support for authorized device monitoring.</p>
-<div class="notice">Unsigned test build · Windows validation pending. Designed for Windows 10/11 on Intel/AMD x64 PCs; 32-bit Windows and ARM are not supported. Requires Windows PowerShell 5.1 and administrator permission.</div>
-<h2>Download for Windows</h2><div class="actions"><a class="button blue" href="/downloads/g-it/G-IT-Setup-x64.exe" download>Download Windows installer</a><a class="button secondary" href="/downloads/g-it/g-it-windows.zip" download>Download ZIP package</a></div><p style="margin-top:16px">The ZIP includes the installer, instructions, source and Windows validation checklist. This build has not been executed on Windows here and is not approved for wider deployment yet.</p>
-<p style="margin-top:16px"><a class="link" href="/downloads/g-it/README.txt">Read installation instructions</a> · <a class="link" href="/downloads/g-it/SHA256SUMS.txt">Download checksums</a></p>
-<h2 style="margin-top:40px">Before you install</h2><ol style="padding-left:24px;line-height:1.8"><li>Contact Avesta to arrange a compatible HTTPS G.I.T server and a one-time enrollment code. Downloading alone does not connect your PC.</li><li>Use an authorized test PC and review the included collection notice and validation checklist.</li><li>Open the installer, approve the disclosed installation and enter your server URL and enrollment code.</li><li>Complete the Windows checks before deploying to other PCs. If security software blocks this unsigned build, contact IT; do not bypass security controls.</li></ol>
-<h2 style="margin-top:40px">What it reports</h2><p>Device identifiers (including hostname and serial number), operating system and hardware details, aggregate performance, disk health, network route presence and Defender status, including active threat names. A visible scheduled task reports at startup and every five minutes to your configured server.</p><p style="margin-top:16px">It does not collect keystrokes, passwords, browsing history, screenshots or file contents. This package reports health; it does not perform remote repairs, backup or recovery. Remove it through Windows Installed apps when no longer needed.</p>
-<div class="actions"><a class="button blue" href="mailto:info@avesta.solutions?subject=G.I.T%20setup%20and%20support">Request G.I.T setup support</a><a class="link" href="tel:+260769974200">Call 0769 974 200</a></div></div></section></main><footer class="wrap" style="padding:24px">Avesta Enterprises · <a href="mailto:info@avesta.solutions">info@avesta.solutions</a></footer></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Avesta Software · Applications & Downloads</title>
+<meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker and G.I.T Device Health Monitoring, with Windows downloads and setup support.">
+<meta name="theme-color" content="#234f3f">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004">
+<script src="/assets/avesta/software-hub.js?v=20261004" defer></script>
+</head>
+<body class="software-hub-page">
+<div class="hub-shell">
+<header class="hub-topbar">
+  <div class="hub-topbar-inner">
+    <a class="hub-brand" href="/" aria-label="Avesta Enterprises home">
+      <span class="hub-brand-mark">AE</span>
+      <span>AVESTA <small>SOFTWARE</small></span>
+    </a>
+    <nav class="hub-nav" aria-label="Software navigation">
+      <a href="#products">Products</a>
+      <a href="/index.php?page=it">IT Services</a>
+      <a href="mailto:info@avesta.solutions?subject=Avesta%20Software%20support">Support</a>
+      <a class="hub-home" href="/">Back to Avesta</a>
+    </nav>
+  </div>
+</header>
+
+<main class="hub-main">
+  <section class="hub-hero" aria-labelledby="software-title">
+    <div class="hub-hero-copy">
+      <span class="hub-kicker">Avesta software ecosystem</span>
+      <h1 id="software-title">Tools that keep your <span>operations visible.</span></h1>
+      <p>One Avesta software hub for inventory operations, IT asset tracking and device-health monitoring. Each product keeps its own workflow while sharing a consistent Avesta experience.</p>
+      <div class="hub-hero-actions">
+        <a class="hub-button primary" href="#products">Explore software</a>
+        <a class="hub-button secondary" href="mailto:info@avesta.solutions?subject=Avesta%20Software%20consultation">Request setup support</a>
+      </div>
+    </div>
+    <aside class="hub-hero-panel" aria-label="Software catalogue status">
+      <div class="hub-status-title">Catalogue status</div>
+      <div class="hub-status-grid">
+        <div class="hub-stat"><strong>3</strong><span>Avesta software products</span></div>
+        <div class="hub-stat"><strong>2</strong><span>Windows download packages</span></div>
+        <div class="hub-stat"><strong>1.5.1</strong><span>Asset Tracker release</span></div>
+        <div class="hub-stat"><strong>x64</strong><span>Primary Windows target</span></div>
+      </div>
+      <p class="hub-panel-note">The software hub is structured so future Avesta applications can be added without redesigning the main company website.</p>
+    </aside>
+  </section>
+
+  <section id="products" aria-labelledby="products-title">
+    <div class="hub-section-head">
+      <div><span class="hub-kicker">Product catalogue</span><h2 id="products-title">Avesta applications</h2></div>
+      <p>Choose a product for its dedicated interface, installer, technical notes or Avesta setup support.</p>
+    </div>
+
+    <div class="hub-products">
+      <article class="hub-product featured" data-product-card data-product-href="/sentinel/" tabindex="0" aria-label="Avanto Sentinel">
+        <div class="hub-product-top"><div class="hub-product-icon">AS</div><span class="hub-chip">Featured</span></div>
+        <h3>Avanto Sentinel</h3>
+        <p class="hub-product-desc">Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.</p>
+        <div class="hub-meta"><span>WINDOWS X64</span><span>LOCAL NETWORK</span><span>OPERATIONS</span></div>
+        <ul class="hub-feature-list"><li>Dedicated Sentinel product interface</li><li>Stock, purchasing, orders and team requests</li><li>Windows x64 deployment package</li></ul>
+        <div class="hub-product-actions">
+          <a class="hub-button primary" href="/sentinel/">Open Sentinel</a>
+          <a class="hub-button secondary" href="/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar" download>Download</a>
+        </div>
+      </article>
+
+      <article class="hub-product" data-product-card data-product-href="/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" tabindex="0" aria-label="GIT Asset Tracker">
+        <div class="hub-product-top"><div class="hub-product-icon">AT</div><span class="hub-chip">v1.5.1</span></div>
+        <h3>GIT Asset Tracker</h3>
+        <p class="hub-product-desc">Track computers, printers, networking equipment and other IT assets with searchable records, reporting and backup tools.</p>
+        <div class="hub-meta"><span>WINDOWS</span><span>INVENTORY</span><span>REPORTING</span></div>
+        <ul class="hub-feature-list"><li>Inventory categories and change history</li><li>Excel import/export and PDF reports</li><li>JSON backup and recovery</li></ul>
+        <div class="hub-product-actions">
+          <a class="hub-button primary" href="/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" download>Download ZIP</a>
+          <a class="hub-button secondary" href="mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1">Setup support</a>
+        </div>
+      </article>
+
+      <article class="hub-product" data-product-card data-product-href="/downloads/g-it/G-IT-Setup-x64.exe" tabindex="0" aria-label="G.I.T Device Health Monitoring">
+        <div class="hub-product-top"><div class="hub-product-icon">GH</div><span class="hub-chip">Test build</span></div>
+        <h3>G.I.T Device Health</h3>
+        <p class="hub-product-desc">Authorized device-health reporting for IT teams that need visibility into performance, disk status, network reachability and Defender health.</p>
+        <div class="hub-meta"><span>WINDOWS 10/11</span><span>X64</span><span>MONITORING</span></div>
+        <ul class="hub-feature-list"><li>CPU, memory, disk and network health</li><li>Microsoft Defender status reporting</li><li>Visible scheduled health reports</li></ul>
+        <div class="hub-product-actions">
+          <a class="hub-button primary" href="/downloads/g-it/G-IT-Setup-x64.exe" download>Download installer</a>
+          <a class="hub-button secondary" href="/downloads/g-it/README.txt">Read setup notes</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="hub-support" aria-labelledby="support-title">
+    <div><h2 id="support-title">Need help choosing or deploying?</h2><p>Avesta can help with installation, local-network setup, configuration, validation and user onboarding for supported products.</p></div>
+    <a class="hub-button primary" href="mailto:info@avesta.solutions?subject=Avesta%20Software%20support">Contact software support</a>
+  </section>
+
+  <footer class="hub-footer">
+    <span>Avesta Enterprises · Software &amp; IT Solutions</span>
+    <span><a href="mailto:info@avesta.solutions">info@avesta.solutions</a> · <a href="/">avesta.solutions</a></span>
+  </footer>
+</main>
+</div>
+</body>
+</html>
