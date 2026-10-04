@@ -949,11 +949,16 @@ if ($action === 'users') {
 }
 
 if ($action === 'createUser') {
-    requireRole(['admin']);
+    $me = requireRole(['admin']);
     if ($method !== 'POST') jsonOut(['ok' => false, 'error' => 'POST required'], 405);
     $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $requestedRole = (string) ($b['role'] ?? 'staff');
+    if ($requestedRole === 'super_admin' && ($me['role'] ?? '') !== 'super_admin') {
+        av_audit('api.forbidden_super_admin_create', (string) ($b['username'] ?? ''));
+        jsonOut(['ok' => false, 'error' => 'Only a Super Admin can create a Super Admin account.'], 403);
+    }
     $r = av_create_user((string) ($b['username'] ?? ''), (string) ($b['password'] ?? ''),
-                        (string) ($b['name'] ?? ''), (string) ($b['role'] ?? 'staff'), (string) ($b['email'] ?? ''));
+                        (string) ($b['name'] ?? ''), $requestedRole, (string) ($b['email'] ?? ''));
     if ($r['ok']) av_audit('user.created', $r['user']['username'], ['role' => $r['user']['role']]);
     jsonOut($r, $r['ok'] ? 200 : 400);
 }
