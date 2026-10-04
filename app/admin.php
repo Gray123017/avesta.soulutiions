@@ -805,6 +805,7 @@ window.avFetchJson = async function (url, opts, ms) {
 .acct-reset-row .when{font-size:8.5pt;color:var(--av-muted,#66766F)}
 .acct-pill{display:inline-block;font-size:7.5pt;font-weight:700;letter-spacing:.4px;
   text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.acct-pill.super_admin{background:rgba(22,62,51,.14);color:var(--av-navy,#163E33);border:1px solid rgba(22,62,51,.22)}
 .acct-pill.admin{background:rgba(217,142,59,.18);color:var(--av-gold-deep,#96591A)}
 .acct-pill.staff{background:rgba(91,155,255,.18);color:#1F5FA8}
 .acct-pill.borrower{background:rgba(30,122,76,.14);color:#1E7A4C}
@@ -3613,7 +3614,7 @@ function afxInit(){
   // The page exists in the markup for everyone, but only an admin is shown the
   // way in and only an admin gets past the server check.
   var role = (window.AV_USER && window.AV_USER.role) || 'staff';
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'super_admin') {
     ['nav-accounts', 'nav-accounts-section', 'page-accounts'].forEach(function (id) {
       var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
     });
@@ -3659,7 +3660,7 @@ function afxInit(){
 
     var stats = $('acct-stats');
     stats.textContent = '';
-    [['Borrowers', c.borrower || 0], ['Staff', c.staff || 0], ['Admins', c.admin || 0],
+    [['Borrowers', c.borrower || 0], ['Staff', c.staff || 0], ['Admins', c.admin || 0], ['Super Admins', c.super_admin || 0],
      ['Never signed in', c.never_signed_in || 0], ['Switched off', c.inactive || 0]
     ].forEach(function (p) {
       var box = el('div', 'acct-stat');
@@ -3729,7 +3730,9 @@ function afxInit(){
       tr.appendChild(st);
 
       var act = el('td');
-      if (u.id !== (window.AV_USER && window.AV_USER.id)) {
+      var canManage = u.id !== (window.AV_USER && window.AV_USER.id) &&
+        (u.role !== 'super_admin' || role === 'super_admin');
+      if (canManage) {
         var r = el('button', 'btn btn-ghost btn-sm', 'Reset password');
         r.type = 'button';
         r.addEventListener('click', function () { reset(u); });
@@ -3741,7 +3744,7 @@ function afxInit(){
         t.addEventListener('click', function () { toggle(u); });
         act.appendChild(t);
       } else {
-        act.appendChild(el('span', 'when', 'This is you'));
+        act.appendChild(el('span', 'when', u.id === (window.AV_USER && window.AV_USER.id) ? 'This is you' : 'Super Admin only'));
       }
       tr.appendChild(act);
       tb.appendChild(tr);
