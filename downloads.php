@@ -1,3 +1,64 @@
+<?php
+$products = [
+  [
+    'id' => 'sentinel',
+    'name' => 'Avanto Sentinel',
+    'short' => 'Sentinel',
+    'icon' => 'AS',
+    'badge' => 'Featured',
+    'description' => 'Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.',
+    'meta' => ['WINDOWS X64', 'LOCAL NETWORK', 'OPERATIONS'],
+    'features' => [
+      'Dedicated Sentinel product interface',
+      'Stock, purchasing, orders and team requests',
+      'Windows x64 deployment package',
+    ],
+    'primary_label' => 'Open Sentinel',
+    'primary_href' => '/sentinel/',
+    'secondary_label' => 'Download',
+    'secondary_href' => '/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar',
+    'download' => true,
+  ],
+  [
+    'id' => 'asset-tracker',
+    'name' => 'GIT Asset Tracker',
+    'short' => 'Asset Tracker',
+    'icon' => 'AT',
+    'badge' => 'v1.5.1',
+    'description' => 'Track computers, printers, networking equipment and other IT assets with searchable records, reporting and backup tools.',
+    'meta' => ['WINDOWS', 'INVENTORY', 'REPORTING'],
+    'features' => [
+      'Inventory categories and change history',
+      'Excel import/export and PDF reports',
+      'JSON backup and recovery',
+    ],
+    'primary_label' => 'Download ZIP',
+    'primary_href' => '/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip',
+    'primary_download' => true,
+    'secondary_label' => 'Setup support',
+    'secondary_href' => 'mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1',
+  ],
+  [
+    'id' => 'device-health',
+    'name' => 'G.I.T Device Health',
+    'short' => 'Device Health',
+    'icon' => 'GH',
+    'badge' => 'Test build',
+    'description' => 'Authorized device-health reporting for IT teams that need visibility into performance, disk status, network reachability and Defender health.',
+    'meta' => ['WINDOWS 10/11', 'X64', 'MONITORING'],
+    'features' => [
+      'CPU, memory, disk and network health',
+      'Microsoft Defender status reporting',
+      'Visible scheduled health reports',
+    ],
+    'primary_label' => 'Download installer',
+    'primary_href' => '/downloads/g-it/G-IT-Setup-x64.exe',
+    'primary_download' => true,
+    'secondary_label' => 'Read setup notes',
+    'secondary_href' => '/downloads/g-it/README.txt',
+  ],
+];
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,8 +68,8 @@
 <meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker and G.I.T Device Health Monitoring, with Windows downloads and setup support.">
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004">
-<script src="/assets/avesta/software-hub.js?v=20261004" defer></script>
+<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004b">
+<script src="/assets/avesta/software-hub.js?v=20261004b" defer></script>
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">
@@ -32,7 +93,7 @@
     <div class="hub-hero-copy">
       <span class="hub-kicker">Avesta software ecosystem</span>
       <h1 id="software-title">Tools that keep your <span>operations visible.</span></h1>
-      <p>One Avesta software hub for inventory operations, IT asset tracking and device-health monitoring. Each product keeps its own workflow while sharing a consistent Avesta experience.</p>
+      <p>One Avesta software hub for inventory operations, IT asset tracking and device-health monitoring. Select a product tab to view only the information you need.</p>
       <div class="hub-hero-actions">
         <a class="hub-button primary" href="#products">Explore software</a>
         <a class="hub-button secondary" href="mailto:info@avesta.solutions?subject=Avesta%20Software%20consultation">Request setup support</a>
@@ -41,57 +102,70 @@
     <aside class="hub-hero-panel" aria-label="Software catalogue status">
       <div class="hub-status-title">Catalogue status</div>
       <div class="hub-status-grid">
-        <div class="hub-stat"><strong>3</strong><span>Avesta software products</span></div>
-        <div class="hub-stat"><strong>2</strong><span>Windows download packages</span></div>
-        <div class="hub-stat"><strong>1.5.1</strong><span>Asset Tracker release</span></div>
+        <div class="hub-stat"><strong><?= count($products) ?></strong><span>Avesta software products</span></div>
+        <div class="hub-stat"><strong>Tabbed</strong><span>Compact product interface</span></div>
+        <div class="hub-stat"><strong>1</strong><span>Detail panel at a time</span></div>
         <div class="hub-stat"><strong>x64</strong><span>Primary Windows target</span></div>
       </div>
-      <p class="hub-panel-note">The software hub is structured so future Avesta applications can be added without redesigning the main company website.</p>
+      <p class="hub-panel-note">Future software entries inherit the same tab, information panel and action layout automatically.</p>
     </aside>
   </section>
 
-  <section id="products" aria-labelledby="products-title">
+  <section id="products" aria-labelledby="products-title" class="hub-catalogue">
     <div class="hub-section-head">
       <div><span class="hub-kicker">Product catalogue</span><h2 id="products-title">Avesta applications</h2></div>
-      <p>Choose a product for its dedicated interface, installer, technical notes or Avesta setup support.</p>
+      <p>Choose one product. Its description, features and actions open below without adding extra page length.</p>
     </div>
 
-    <div class="hub-products">
-      <article class="hub-product featured" data-product-card data-product-href="/sentinel/" tabindex="0" aria-label="Avanto Sentinel">
-        <div class="hub-product-top"><div class="hub-product-icon">AS</div><span class="hub-chip">Featured</span></div>
-        <h3>Avanto Sentinel</h3>
-        <p class="hub-product-desc">Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.</p>
-        <div class="hub-meta"><span>WINDOWS X64</span><span>LOCAL NETWORK</span><span>OPERATIONS</span></div>
-        <ul class="hub-feature-list"><li>Dedicated Sentinel product interface</li><li>Stock, purchasing, orders and team requests</li><li>Windows x64 deployment package</li></ul>
-        <div class="hub-product-actions">
-          <a class="hub-button primary" href="/sentinel/">Open Sentinel</a>
-          <a class="hub-button secondary" href="/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar" download>Download</a>
-        </div>
-      </article>
+    <div class="hub-product-tabs" role="tablist" aria-label="Avesta software products">
+      <?php foreach ($products as $index => $product): ?>
+      <button
+        class="hub-product-tab<?= $index === 0 ? ' active' : '' ?>"
+        type="button"
+        role="tab"
+        id="tab-<?= htmlspecialchars($product['id']) ?>"
+        aria-controls="panel-<?= htmlspecialchars($product['id']) ?>"
+        aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"
+        tabindex="<?= $index === 0 ? '0' : '-1' ?>"
+        data-product-tab="<?= htmlspecialchars($product['id']) ?>">
+        <span class="hub-tab-icon"><?= htmlspecialchars($product['icon']) ?></span>
+        <span class="hub-tab-copy"><strong><?= htmlspecialchars($product['short']) ?></strong><small><?= htmlspecialchars($product['badge']) ?></small></span>
+      </button>
+      <?php endforeach; ?>
+    </div>
 
-      <article class="hub-product" data-product-card data-product-href="/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" tabindex="0" aria-label="GIT Asset Tracker">
-        <div class="hub-product-top"><div class="hub-product-icon">AT</div><span class="hub-chip">v1.5.1</span></div>
-        <h3>GIT Asset Tracker</h3>
-        <p class="hub-product-desc">Track computers, printers, networking equipment and other IT assets with searchable records, reporting and backup tools.</p>
-        <div class="hub-meta"><span>WINDOWS</span><span>INVENTORY</span><span>REPORTING</span></div>
-        <ul class="hub-feature-list"><li>Inventory categories and change history</li><li>Excel import/export and PDF reports</li><li>JSON backup and recovery</li></ul>
-        <div class="hub-product-actions">
-          <a class="hub-button primary" href="/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" download>Download ZIP</a>
-          <a class="hub-button secondary" href="mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1">Setup support</a>
+    <div class="hub-product-panels">
+      <?php foreach ($products as $index => $product): ?>
+      <article
+        class="hub-product-panel<?= $index === 0 ? ' active featured' : '' ?>"
+        role="tabpanel"
+        id="panel-<?= htmlspecialchars($product['id']) ?>"
+        aria-labelledby="tab-<?= htmlspecialchars($product['id']) ?>"
+        <?= $index === 0 ? '' : 'hidden' ?>
+        data-product-panel="<?= htmlspecialchars($product['id']) ?>">
+        <div class="hub-product-panel-main">
+          <div class="hub-product-top">
+            <div class="hub-product-icon"><?= htmlspecialchars($product['icon']) ?></div>
+            <span class="hub-chip"><?= htmlspecialchars($product['badge']) ?></span>
+          </div>
+          <h3><?= htmlspecialchars($product['name']) ?></h3>
+          <p class="hub-product-desc"><?= htmlspecialchars($product['description']) ?></p>
+          <div class="hub-meta">
+            <?php foreach ($product['meta'] as $meta): ?><span><?= htmlspecialchars($meta) ?></span><?php endforeach; ?>
+          </div>
         </div>
-      </article>
 
-      <article class="hub-product" data-product-card data-product-href="/downloads/g-it/G-IT-Setup-x64.exe" tabindex="0" aria-label="G.I.T Device Health Monitoring">
-        <div class="hub-product-top"><div class="hub-product-icon">GH</div><span class="hub-chip">Test build</span></div>
-        <h3>G.I.T Device Health</h3>
-        <p class="hub-product-desc">Authorized device-health reporting for IT teams that need visibility into performance, disk status, network reachability and Defender health.</p>
-        <div class="hub-meta"><span>WINDOWS 10/11</span><span>X64</span><span>MONITORING</span></div>
-        <ul class="hub-feature-list"><li>CPU, memory, disk and network health</li><li>Microsoft Defender status reporting</li><li>Visible scheduled health reports</li></ul>
-        <div class="hub-product-actions">
-          <a class="hub-button primary" href="/downloads/g-it/G-IT-Setup-x64.exe" download>Download installer</a>
-          <a class="hub-button secondary" href="/downloads/g-it/README.txt">Read setup notes</a>
+        <div class="hub-product-panel-side">
+          <ul class="hub-feature-list">
+            <?php foreach ($product['features'] as $feature): ?><li><?= htmlspecialchars($feature) ?></li><?php endforeach; ?>
+          </ul>
+          <div class="hub-product-actions">
+            <a class="hub-button primary" href="<?= htmlspecialchars($product['primary_href']) ?>"<?= !empty($product['primary_download']) ? ' download' : '' ?>><?= htmlspecialchars($product['primary_label']) ?></a>
+            <a class="hub-button secondary" href="<?= htmlspecialchars($product['secondary_href']) ?>"<?= !empty($product['download']) ? ' download' : '' ?>><?= htmlspecialchars($product['secondary_label']) ?></a>
+          </div>
         </div>
       </article>
+      <?php endforeach; ?>
     </div>
   </section>
 
