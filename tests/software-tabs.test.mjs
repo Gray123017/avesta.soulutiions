@@ -4,22 +4,31 @@ import {readFileSync} from 'node:fs';
 import {Window} from 'happy-dom';
 
 test('Software details stay closed until selected; tabs support switching, keyboard and direct links', async () => {
-  for (const hash of ['', '#asset-tracker', '#device-health']) {
+  for (const hash of ['', '#asset-tracker', '#sentinel', '#device-health']) {
     const w = new Window({url: 'https://avesta.test/downloads.php' + hash, settings: {enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
     w.document.write(readFileSync('downloads.php','utf8'));
     w.eval(readFileSync('assets/avesta/software-tabs.js','utf8'));
+
     const panels = [...w.document.querySelectorAll('[role="tabpanel"]')];
     assert.equal(panels.filter(p => !p.hidden).length, hash ? 1 : 0);
     if (hash) assert.equal(w.document.querySelector(hash).hidden, false);
+
     const tabs = [...w.document.querySelectorAll('[role="tab"]')];
-    tabs[0].click();
-    assert.equal(panels[0].hidden,false);assert.equal(panels[1].hidden,true);
-    assert.equal(tabs[0].getAttribute('aria-selected'),'true');
-    assert.ok(panels[0].querySelector('a[download]').href.endsWith('GIT-Asset-Tracker-1.5.1-Windows.zip'));
-    tabs[0].dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
-    assert.equal(panels[0].hidden,true);assert.equal(panels[1].hidden,false);
-    assert.equal(w.document.activeElement,tabs[1]);
-    assert.equal(panels[1].querySelectorAll('a[download]').length,2);
+    const assetTab = tabs.find(tab => tab.getAttribute('aria-controls') === 'asset-tracker');
+    const sentinelTab = tabs.find(tab => tab.getAttribute('aria-controls') === 'sentinel');
+
+    assetTab.click();
+    assert.equal(w.document.querySelector('#asset-tracker').hidden, false);
+    assert.equal(w.document.querySelector('#sentinel').hidden, true);
+    assert.equal(assetTab.getAttribute('aria-selected'),'true');
+    assert.ok(w.document.querySelector('#asset-tracker a[download]').href.endsWith('GIT-Asset-Tracker-1.5.1-Windows.zip'));
+
+    assetTab.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+    assert.equal(w.document.activeElement, sentinelTab);
+    assert.equal(w.document.querySelector('#asset-tracker').hidden, true);
+    assert.equal(w.document.querySelector('#sentinel').hidden, false);
+    assert.ok(w.document.querySelector('#sentinel a[download]').href.endsWith('Avanto-Sentinel-Windows-x64.rar'));
+
     await w.happyDOM.close();
   }
 });
