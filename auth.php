@@ -7,7 +7,8 @@
  * Passwords are stored as bcrypt hashes — never in plain text, never recoverable.
  *
  * Roles
- *   admin     full access, manages users
+ *   super_admin security owner; manages privileged accounts and permissions
+ *   admin     operational administration; manages standard users
  *   staff     views and edits applications, cannot manage users
  *   borrower  sees only their own application
  *
@@ -142,6 +143,43 @@ function av_is(string ...$roles): bool {
     return $u !== null && in_array($u['role'], $roles, true);
 }
 
+/**
+ * Central role hierarchy. Keep authorization decisions server-side so hiding
+ * a button in the browser is never treated as a security boundary.
+ */
+function av_role_level(string $role): int {
+    return [
+        'borrower'    => 10,
+        'staff'       => 20,
+        'admin'       => 30,
+        'super_admin' => 40,
+    ][$role] ?? 0;
+}
+
+function av_at_least(string $role): bool {
+    $u = av_user();
+    return $u !== null && av_role_level((string) ($u['role'] ?? '')) >= av_role_level($role);
+}
+
+function av_can(string $permission): bool {
+    $u = av_user();
+    if ($u === null) return false;
+    $role = (string) ($u['role'] ?? 'borrower');
+
+    $permissions = [
+        'borrower' => ['own_application'],
+        'staff' => ['own_application', 'applications.view', 'applications.edit'],
+        'admin' => [
+            'own_application', 'applications.view', 'applications.edit',
+            'users.view', 'users.manage_standard', 'password_resets.manage'
+        ],
+        'super_admin' => ['*'],
+    ];
+
+    $allowed = $permissions[$role] ?? [];
+    return in_array('*', $allowed, true) || in_array($permission, $allowed, true);
+}
+
 function av_client_ip(): string {
     foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $k) {
         if (!empty($_SERVER[$k])) {
@@ -224,7 +262,7 @@ function av_create_user(string $username, string $password, string $name,
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return ['ok' => false, 'error' => 'Enter a valid recovery email address.'];
     }
-    if (!in_array($role, ['admin', 'staff', 'borrower'], true)) $role = 'borrower';
+    if (!in_array($role, ['super_admin', 'admin', 'staff', 'borrower'], true)) $role = 'borrower';
 
     $users = av_load_users();
     $row = [
