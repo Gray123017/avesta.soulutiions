@@ -68,8 +68,8 @@ $products = [
 <meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker and G.I.T Device Health Monitoring, with Windows downloads and setup support.">
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004c">
-<script src="/assets/avesta/software-tabs.js?v=20261004c" defer></script>
+<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004d">
+<script src="/assets/avesta/software-tabs.js?v=20261004d" defer></script>
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">
