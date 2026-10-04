@@ -57,7 +57,7 @@ button:not(:disabled):active{transform:scale(.97)}
 #app{display:none;min-height:100vh}
 
 /* ── SIDEBAR ── */
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--navy2);display:flex;flex-direction:column;z-index:160;overflow-y:auto;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--navy2);display:flex;flex-direction:column;z-index:220;overflow-y:auto;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
 .sidebar-header{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-logo{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .sb-ae{background:var(--gold);color:var(--navy);font-weight:700;font-size:13pt;padding:3px 8px;border-radius:4px;font-family:Georgia,serif}
@@ -216,6 +216,17 @@ tr:last-child td{border-bottom:none}
   .main{margin-left:0}
   .stats-row{grid-template-columns:1fr 1fr}
   .detail-grid{grid-template-columns:1fr 1fr}
+}
+
+
+/* Keep the mobile header compact and notification settings within the viewport. */
+#wa-panel{max-height:calc(100dvh - 160px);overflow-y:auto!important}
+@media(max-width:768px){
+  .topbar{height:auto;min-height:60px;flex-wrap:wrap;gap:12px;padding:12px 16px}
+  .topbar-right{width:100%;flex-wrap:wrap;gap:10px}
+  .topbar-search{flex:1;min-width:0;width:auto}
+  .topbar-date{width:100%}
+  #wa-panel{top:100%!important;right:12px!important;width:min(340px,calc(100vw - 24px))!important}
 }
 
 /* ── ADMIN FINE POLISH ─────────────────────────────────────────────────────── */
@@ -910,7 +921,7 @@ window.avFetchJson = async function (url, opts, ms) {
     <!-- TOP BAR -->
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:10px">
-      <button id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;align-items:center;justify-content:center;background:var(--navy);border:none;cursor:pointer;padding:8px 10px;border-radius:8px;color:var(--gold);font-size:16pt;line-height:1;min-width:42px;min-height:42px;flex-shrink:0" title="Open menu" aria-label="Open sidebar menu">☰</button>
+      <button id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;align-items:center;justify-content:center;background:var(--navy);border:none;cursor:pointer;padding:8px 10px;border-radius:8px;color:var(--gold);font-size:16pt;line-height:1;min-width:42px;min-height:42px;flex-shrink:0" title="Open menu" aria-label="Open sidebar menu" aria-controls="sidebar" aria-expanded="false">☰</button>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
       <span id="live-dot" title="Live sync active" style="width:8px;height:8px;background:#25D366;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px rgba(37,211,102,.3);animation:pulse-dot 2s infinite"></span>
     </div>
@@ -969,36 +980,6 @@ window.avFetchJson = async function (url, opts, ms) {
         </div>
       </div>
 
-      <!-- ── BORROWER NOTIFICATIONS ─────────────────────────────────────────── -->
-      <div class="card" style="margin-top:14px">
-        <div class="card-header" style="background:#163E33">
-          <div class="card-title" style="color:white">📱 Borrower Notifications</div>
-          <div style="font-size:8pt;color:rgba(255,255,255,.6)">Notify borrowers when their loan status changes</div>
-        </div>
-        <div style="padding:18px 18px 14px">
-          <div style="background:#e8f5e9;border-radius:8px;padding:12px 14px;font-size:8pt;color:#1b5e20;line-height:1.9;margin-bottom:14px">
-            <strong>How it works:</strong><br>
-            When you change a borrower's status to <strong>Under Review, Approved, Disbursed</strong> or <strong>Rejected</strong>, an automatic WhatsApp message is sent to their registered phone number using the same TextMeBot API key saved above.<br><br>
-            ✅ <strong>Approved</strong> — Congratulations message + disbursement notice<br>
-            💰 <strong>Disbursed</strong> — Confirmation + repayment reminder<br>
-            🔄 <strong>Under Review</strong> — Application received confirmation<br>
-            ❌ <strong>Rejected</strong> — Polite decline with contact details
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8f8f8;border-radius:7px;border:1px solid #e0e0e0">
-            <span style="font-size:14pt">📱</span>
-            <div style="flex:1">
-              <div style="font-size:9pt;font-weight:700;color:#163E33">Auto-notify borrowers on status change</div>
-              <div style="font-size:8pt;color:#888;margin-top:2px">Requires TextMeBot to be configured above (WhatsApp tab)</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-              <input type="checkbox" id="borrower-notif-enabled" aria-label="Notify borrowers automatically" onchange="saveBorrowerNotifPref()"
-                style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer">
-              <span style="font-size:9pt;font-weight:700;color:#163E33">Enabled</span>
-            </label>
-          </div>
-          <div id="borrower-notif-status" style="font-size:8pt;color:#888;margin-top:10px;text-align:center"></div>
-        </div>
-      </div>
     </div>
 
     <!-- CONTENT -->
@@ -1125,6 +1106,36 @@ window.avFetchJson = async function (url, opts, ms) {
           <div class="card-header"><div class="card-title">💳 Disbursement Methods Breakdown</div></div>
           <div style="padding:20px"><div class="mini-bar-wrap" id="chart-methods"></div></div>
         </div>
+      <!-- ── BORROWER NOTIFICATIONS ─────────────────────────────────────────── -->
+      <div class="card" id="borrower-notifications" style="margin-top:14px">
+        <div class="card-header" style="background:#163E33">
+          <div class="card-title" style="color:white">📱 Borrower Notifications</div>
+          <div style="font-size:8pt;color:rgba(255,255,255,.6)">Notify borrowers when their loan status changes</div>
+        </div>
+        <div style="padding:18px 18px 14px">
+          <div style="background:#e8f5e9;border-radius:8px;padding:12px 14px;font-size:8pt;color:#1b5e20;line-height:1.9;margin-bottom:14px">
+            <strong>How it works:</strong><br>
+            When you change a borrower's status to <strong>Under Review, Approved, Disbursed</strong> or <strong>Rejected</strong>, an automatic WhatsApp message is sent to their registered phone number using the same TextMeBot API key saved in Notification Settings.<br><br>
+            ✅ <strong>Approved</strong> — Congratulations message + disbursement notice<br>
+            💰 <strong>Disbursed</strong> — Confirmation + repayment reminder<br>
+            🔄 <strong>Under Review</strong> — Application received confirmation<br>
+            ❌ <strong>Rejected</strong> — Polite decline with contact details
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8f8f8;border-radius:7px;border:1px solid #e0e0e0">
+            <span style="font-size:14pt">📱</span>
+            <div style="flex:1">
+              <div style="font-size:9pt;font-weight:700;color:#163E33">Auto-notify borrowers on status change</div>
+              <div style="font-size:8pt;color:#888;margin-top:2px">Requires TextMeBot in Notification Settings (WhatsApp tab)</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="borrower-notif-enabled" aria-label="Notify borrowers automatically" onchange="saveBorrowerNotifPref()"
+                style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer">
+              <span style="font-size:9pt;font-weight:700;color:#163E33">Enabled</span>
+            </label>
+          </div>
+          <div id="borrower-notif-status" style="font-size:8pt;color:#888;margin-top:10px;text-align:center"></div>
+        </div>
+      </div>
       </div>
 
       <!-- ── APPLICATIONS PAGE ── -->
@@ -1433,13 +1444,17 @@ function toggleSidebar(force_close) {
   const sb = document.querySelector('.sidebar');
   const ov = document.getElementById('sidebar-overlay');
   if (!sb || !ov) return;
+  const btn = document.getElementById('sidebar-toggle');
   const isOpen = sb.classList.contains('open');
   if (force_close || isOpen) {
     sb.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
     ov.style.display = 'none';
     document.body.style.overflow = '';
   } else {
+    toggleWaPanel(true);
     sb.classList.add('open');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
     ov.style.display = 'block';
     document.body.style.overflow = 'hidden';
   }
@@ -2405,7 +2420,7 @@ document.getElementById('detail-modal').addEventListener('click', function(e) {
 
 // Keyboard
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeDV(); toggleWaPanel(true); }
+  if (e.key === 'Escape') { closeModal(); closeDV(); toggleWaPanel(true); toggleSidebar(true); }
 });
 
 // Click outside WA panel to close
@@ -3103,7 +3118,7 @@ function afxInit(){
   </div>
 </div>
 
-<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:155;backdrop-filter:blur(2px)"></div>
+<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:210;backdrop-filter:blur(2px)"></div>
 
 <!-- ═══ AVESTA UI KIT — behaviour ═══════════════════════════════════════ -->
 <script id="av-ui-kit-js">
