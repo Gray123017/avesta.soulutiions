@@ -1,12 +1,14 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import {Window} from 'happy-dom';
 
 test('Software details stay closed until selected; tabs support switching, keyboard and direct links', async () => {
+  const downloadsHtml = execFileSync('php', ['downloads.php'], {encoding: 'utf8'});
   for (const hash of ['', '#asset-tracker', '#sentinel', '#device-health']) {
     const w = new Window({url: 'https://avesta.test/downloads.php' + hash, settings: {enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
-    w.document.write(readFileSync('downloads.php','utf8'));
+    w.document.write(downloadsHtml);
     w.eval(readFileSync('assets/avesta/software-tabs.js','utf8'));
 
     const panels = [...w.document.querySelectorAll('[role="tabpanel"]')];
