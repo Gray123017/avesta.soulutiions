@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import {Window} from 'happy-dom';
 
 const admin = readFileSync('app/admin.php', 'utf8');
@@ -70,7 +71,7 @@ for (const mode of ['admin', 'staff']) {
 
 test('Asset Tracker has a direct ZIP download without the pending-upload notice', () => {
   const w = new Window();
-  w.document.write(readFileSync('downloads.php','utf8'));
+  w.document.write(execFileSync('php', ['downloads.php'], {encoding: 'utf8'}));
   const a = w.document.querySelector('#asset-tracker a[download]');
   assert.equal(a.getAttribute('href'), '/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip');
   assert.ok(!w.document.querySelector('#asset-tracker').textContent.includes('upload to this website is pending'));
