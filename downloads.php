@@ -1,25 +1,6 @@
 <?php
 $products = [
   [
-    'id' => 'sentinel',
-    'name' => 'Avanto Sentinel',
-    'short' => 'Sentinel',
-    'icon' => 'AS',
-    'badge' => 'Featured',
-    'description' => 'Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.',
-    'meta' => ['WINDOWS X64', 'LOCAL NETWORK', 'OPERATIONS'],
-    'features' => [
-      'Dedicated Sentinel product interface',
-      'Stock, purchasing, orders and team requests',
-      'Windows x64 deployment package',
-    ],
-    'primary_label' => 'Open Sentinel',
-    'primary_href' => '/sentinel/',
-    'secondary_label' => 'Download',
-    'secondary_href' => '/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar',
-    'download' => true,
-  ],
-  [
     'id' => 'asset-tracker',
     'name' => 'GIT Asset Tracker',
     'short' => 'Asset Tracker',
@@ -37,6 +18,25 @@ $products = [
     'primary_download' => true,
     'secondary_label' => 'Setup support',
     'secondary_href' => 'mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1',
+  ],
+  [
+    'id' => 'sentinel',
+    'name' => 'Avanto Sentinel',
+    'short' => 'Sentinel',
+    'icon' => 'AS',
+    'badge' => 'Featured',
+    'description' => 'Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.',
+    'meta' => ['WINDOWS X64', 'LOCAL NETWORK', 'OPERATIONS'],
+    'features' => [
+      'Dedicated Sentinel product interface',
+      'Stock, purchasing, orders and team requests',
+      'Windows x64 deployment package',
+    ],
+    'primary_label' => 'Open Sentinel',
+    'primary_href' => '/sentinel/',
+    'secondary_label' => 'Download package',
+    'secondary_href' => '/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar',
+    'secondary_download' => true,
   ],
   [
     'id' => 'device-health',
@@ -68,8 +68,8 @@ $products = [
 <meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker and G.I.T Device Health Monitoring, with Windows downloads and setup support.">
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004b">
-<script src="/assets/avesta/software-hub.js?v=20261004b" defer></script>
+<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004c">
+<script src="/assets/avesta/software-tabs.js?v=20261004c" defer></script>
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">
@@ -120,29 +120,31 @@ $products = [
     <div class="hub-product-tabs" role="tablist" aria-label="Avesta software products">
       <?php foreach ($products as $index => $product): ?>
       <button
-        class="hub-product-tab<?= $index === 0 ? ' active' : '' ?>"
+        class="software-tab hub-product-tab"
         type="button"
         role="tab"
         id="tab-<?= htmlspecialchars($product['id']) ?>"
-        aria-controls="panel-<?= htmlspecialchars($product['id']) ?>"
-        aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"
-        tabindex="<?= $index === 0 ? '0' : '-1' ?>"
-        data-product-tab="<?= htmlspecialchars($product['id']) ?>">
+        aria-controls="<?= htmlspecialchars($product['id']) ?>"
+        aria-selected="false"
+        tabindex="<?= $index === 0 ? '0' : '-1' ?>">
         <span class="hub-tab-icon"><?= htmlspecialchars($product['icon']) ?></span>
         <span class="hub-tab-copy"><strong><?= htmlspecialchars($product['short']) ?></strong><small><?= htmlspecialchars($product['badge']) ?></small></span>
       </button>
       <?php endforeach; ?>
     </div>
 
+    <div id="software-prompt" class="hub-product-prompt">
+      Select a software tab to view its features, version details and download or support actions.
+    </div>
+
     <div class="hub-product-panels">
-      <?php foreach ($products as $index => $product): ?>
+      <?php foreach ($products as $product): ?>
       <article
-        class="hub-product-panel<?= $index === 0 ? ' active featured' : '' ?>"
+        class="hub-product-panel<?= $product['id'] === 'sentinel' ? ' featured' : '' ?>"
         role="tabpanel"
-        id="panel-<?= htmlspecialchars($product['id']) ?>"
+        id="<?= htmlspecialchars($product['id']) ?>"
         aria-labelledby="tab-<?= htmlspecialchars($product['id']) ?>"
-        <?= $index === 0 ? '' : 'hidden' ?>
-        data-product-panel="<?= htmlspecialchars($product['id']) ?>">
+        hidden>
         <div class="hub-product-panel-main">
           <div class="hub-product-top">
             <div class="hub-product-icon"><?= htmlspecialchars($product['icon']) ?></div>
@@ -154,14 +156,13 @@ $products = [
             <?php foreach ($product['meta'] as $meta): ?><span><?= htmlspecialchars($meta) ?></span><?php endforeach; ?>
           </div>
         </div>
-
         <div class="hub-product-panel-side">
           <ul class="hub-feature-list">
             <?php foreach ($product['features'] as $feature): ?><li><?= htmlspecialchars($feature) ?></li><?php endforeach; ?>
           </ul>
           <div class="hub-product-actions">
             <a class="hub-button primary" href="<?= htmlspecialchars($product['primary_href']) ?>"<?= !empty($product['primary_download']) ? ' download' : '' ?>><?= htmlspecialchars($product['primary_label']) ?></a>
-            <a class="hub-button secondary" href="<?= htmlspecialchars($product['secondary_href']) ?>"<?= !empty($product['download']) ? ' download' : '' ?>><?= htmlspecialchars($product['secondary_label']) ?></a>
+            <a class="hub-button secondary" href="<?= htmlspecialchars($product['secondary_href']) ?>"<?= !empty($product['secondary_download']) ? ' download' : '' ?>><?= htmlspecialchars($product['secondary_label']) ?></a>
           </div>
         </div>
       </article>
