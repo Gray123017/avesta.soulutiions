@@ -1,0 +1,23 @@
+name: Isolated portal browser QA
+on:
+  push:
+    branches: ['qa/portal-layout-20261004']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/portal-browser-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portal-layout-screenshots
+          path: qa-screenshots/
