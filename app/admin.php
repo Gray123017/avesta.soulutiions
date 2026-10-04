@@ -891,7 +891,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <a class="nav-item" onclick="showPage('fx')" href="javascript:void(0)">
         <span class="nav-icon">💱</span> Currency Rates
       </a>
-      <a class="nav-item" onclick="openBackupModal()" href="javascript:void(0)">
+      <a class="nav-item admin-only" onclick="openBackupModal()" href="javascript:void(0)">
         <span class="nav-icon">📦</span> Backup / Restore
       </a>
       <a class="nav-item" onclick="exportCSV()" href="javascript:void(0)">
@@ -907,7 +907,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
       <a class="nav-item" href="/login.php?change=1"><span class="nav-icon">🔑</span> Change password</a>
-      <a class="nav-item" onclick="showPage('settings')" href="javascript:void(0)">
+      <a class="nav-item admin-only" onclick="showPage('settings')" href="javascript:void(0)">
         <span class="nav-icon">⚙️</span> Sync Settings
       </a>
     </nav>
@@ -1145,7 +1145,7 @@ window.avFetchJson = async function (url, opts, ms) {
           <div class="card-header">
             <div class="card-title">All Loan Applications</div>
             <div class="card-actions">
-              <button class="btn btn-primary btn-sm" onclick="openBackupModal()">📦 Backup / Restore</button>
+              <button class="btn btn-primary btn-sm admin-only" onclick="openBackupModal()">📦 Backup / Restore</button>
               <button class="btn btn-gold btn-sm" onclick="exportCSV()">📤 Export CSV</button>
               <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear Filters</button>
               <span id="app-count" style="font-size:8.5pt;color:#888"></span>
@@ -1436,6 +1436,9 @@ function doLogin() {
   }
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  if (window.AV_USER.role === 'staff') {
+    document.querySelectorAll('.admin-only').forEach(function (el) { el.remove(); });
+  }
   init();
   startIdleWatch();
 }
@@ -1767,6 +1770,9 @@ function showToast(msg, color) {
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(id) {
+  if (window.AV_USER && window.AV_USER.role === 'staff' && (id === 'settings' || id === 'accounts')) {
+    avToast('This section is available to administrators only.', 'warn'); id = 'dashboard';
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
@@ -2649,6 +2655,9 @@ function testBrowserNotif() {
 let adminImportData = null;
 
 function openBackupModal() {
+  if (!window.AV_USER || !['admin', 'super_admin'].includes(window.AV_USER.role)) {
+    avToast('Backup and restore is available to administrators only.', 'warn'); return;
+  }
   const m = document.getElementById('backup-modal');
   m.style.display = 'flex';
   document.getElementById('admin-export-status').textContent = '';
