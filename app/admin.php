@@ -36,26 +36,6 @@ body{font-family:Arial,sans-serif;background:#eef1f5;color:var(--dgray);min-heig
 button,.nav-item,.record-card,.doc-tile,.stat-card{transition:transform .15s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,opacity .2s ease}
 button:not(:disabled):active{transform:scale(.97)}
 
-/* ── LOGIN ── */
-#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy2) 0%,var(--navy) 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-card{background:white;border-radius:20px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.28),0 4px 12px rgba(0,0,0,.1);text-align:center}
-.login-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px}
-.login-ae{background:var(--gold);color:var(--navy);font-weight:700;font-size:22pt;padding:6px 12px;border-radius:6px;font-family:Georgia,serif}
-.login-brand{text-align:left}
-.login-brand-name{color:var(--navy);font-weight:700;font-size:13pt;font-family:Georgia,serif}
-.login-brand-sub{color:var(--gold);font-size:7pt;letter-spacing:2px;text-transform:uppercase}
-.login-title{color:var(--navy);font-size:14pt;font-weight:700;margin-bottom:6px}
-.login-desc{color:#888;font-size:9pt;margin-bottom:28px}
-.login-input{width:100%;padding:14px 16px;border:2px solid var(--mgray);border-radius:8px;font-size:14pt;letter-spacing:8px;text-align:center;outline:none;font-family:monospace;margin-bottom:14px;transition:border-color .2s}
-.login-input:focus{border-color:var(--gold)}
-.login-btn{width:100%;background:var(--navy);color:white;border:none;padding:14px;border-radius:8px;font-size:11pt;font-weight:700;cursor:pointer;transition:background .2s}
-.login-btn:hover{background:var(--gold);color:var(--navy)}
-.login-err{color:var(--red);font-size:8.5pt;margin-top:10px;display:none;font-weight:600}
-.login-footer{color:#bbb;font-size:7pt;margin-top:24px}
-
-/* ── APP SHELL ── */
-#app{display:none;min-height:100vh}
-
 /* ── SIDEBAR ── */
 .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--navy2);display:flex;flex-direction:column;z-index:220;overflow-y:auto;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
 .sidebar-header{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -831,26 +811,6 @@ window.avFetchJson = async function (url, opts, ms) {
 </head>
 <body>
 
-<!-- ═══ LOGIN SCREEN ═══ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="login-ae">AE</div>
-      <div class="login-brand">
-        <div class="login-brand-name">Avesta Enterprises</div>
-        <div class="login-brand-sub">Admin Portal</div>
-      </div>
-    </div>
-    <div class="login-title">Secure Admin Access</div>
-    <div class="login-desc">Enter your administrator PIN to continue</div>
-    <input type="password" id="pin-input" class="login-input" maxlength="6" placeholder="● ● ● ●"
-      onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">🔐 Sign In</button>
-    <div class="login-err" id="login-err">❌ Incorrect PIN. Please try again.</div>
-    <div class="login-footer">Authorised Avesta Enterprises administrators only</div>
-  </div>
-</div>
-
 <!-- ═══ APP ═══ -->
 <div id="app">
 
@@ -1444,7 +1404,6 @@ function doLogin() {
     window.location.href = '../login.php';
     return;
   }
-  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   if (window.AV_USER.role === 'staff') {
     document.querySelectorAll('.admin-only').forEach(function (el) { el.remove(); });
