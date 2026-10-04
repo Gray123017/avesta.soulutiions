@@ -5,7 +5,7 @@
  * web server to hide it. Fetching it directly still hits the login.
  */
 require_once __DIR__ . '/../auth.php';
-$me = av_require_login(['admin', 'staff'], '../login.php');
+$me = av_require_login(['super_admin', 'admin', 'staff'], '../login.php');
 echo '<script>window.AV_USER=' . json_encode([
     'id' => $me['id'], 'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES) . ';</script>';
@@ -35,26 +35,6 @@ body{font-family:Arial,sans-serif;background:#eef1f5;color:var(--dgray);min-heig
 /* ── GLOBAL MOTION BASELINE ─────────────────────────────────────────────── */
 button,.nav-item,.record-card,.doc-tile,.stat-card{transition:transform .15s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,opacity .2s ease}
 button:not(:disabled):active{transform:scale(.97)}
-
-/* ── LOGIN ── */
-#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy2) 0%,var(--navy) 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-card{background:white;border-radius:20px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.28),0 4px 12px rgba(0,0,0,.1);text-align:center}
-.login-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px}
-.login-ae{background:var(--gold);color:var(--navy);font-weight:700;font-size:22pt;padding:6px 12px;border-radius:6px;font-family:Georgia,serif}
-.login-brand{text-align:left}
-.login-brand-name{color:var(--navy);font-weight:700;font-size:13pt;font-family:Georgia,serif}
-.login-brand-sub{color:var(--gold);font-size:7pt;letter-spacing:2px;text-transform:uppercase}
-.login-title{color:var(--navy);font-size:14pt;font-weight:700;margin-bottom:6px}
-.login-desc{color:#888;font-size:9pt;margin-bottom:28px}
-.login-input{width:100%;padding:14px 16px;border:2px solid var(--mgray);border-radius:8px;font-size:14pt;letter-spacing:8px;text-align:center;outline:none;font-family:monospace;margin-bottom:14px;transition:border-color .2s}
-.login-input:focus{border-color:var(--gold)}
-.login-btn{width:100%;background:var(--navy);color:white;border:none;padding:14px;border-radius:8px;font-size:11pt;font-weight:700;cursor:pointer;transition:background .2s}
-.login-btn:hover{background:var(--gold);color:var(--navy)}
-.login-err{color:var(--red);font-size:8.5pt;margin-top:10px;display:none;font-weight:600}
-.login-footer{color:#bbb;font-size:7pt;margin-top:24px}
-
-/* ── APP SHELL ── */
-#app{display:none;min-height:100vh}
 
 /* ── SIDEBAR ── */
 .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--navy2);display:flex;flex-direction:column;z-index:220;overflow-y:auto;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
@@ -211,8 +191,8 @@ tr:last-child td{border-bottom:none}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
+  .sidebar{transform:translateX(-100%);z-index:1002;visibility:hidden;pointer-events:none;box-shadow:10px 0 32px rgba(0,0,0,.28)}
+  .sidebar.open{transform:translateX(0);visibility:visible;pointer-events:auto}
   .main{margin-left:0}
   .stats-row{grid-template-columns:1fr 1fr}
   .detail-grid{grid-template-columns:1fr 1fr}
@@ -222,11 +202,21 @@ tr:last-child td{border-bottom:none}
 /* Keep the mobile header compact and notification settings within the viewport. */
 #wa-panel{max-height:calc(100dvh - 160px);overflow-y:auto!important}
 @media(max-width:768px){
-  .topbar{height:auto;min-height:60px;flex-wrap:wrap;gap:12px;padding:12px 16px}
-  .topbar-right{width:100%;flex-wrap:wrap;gap:10px}
-  .topbar-search{flex:1;min-width:0;width:auto}
-  .topbar-date{width:100%}
-  #wa-panel{top:100%!important;right:12px!important;width:min(340px,calc(100vw - 24px))!important}
+  .topbar{height:auto;min-height:60px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 12px}
+  .topbar>div:first-child{min-width:0}
+  .topbar-title{font-size:11pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-right{grid-column:1/-1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .topbar-search{width:100%;min-width:0;min-height:42px;font-size:16px}
+  #wa-btn{min-width:44px;min-height:42px}
+  .topbar-date{grid-column:1/-1;width:100%;font-size:7.5pt}
+  .content{padding:16px 12px}
+  #wa-panel{position:fixed!important;top:12px!important;right:12px!important;left:12px!important;width:auto!important;max-height:calc(100dvh - 24px);z-index:1100!important;border-radius:14px!important}
+}
+@media(max-width:520px){
+  .stats-row,.detail-grid{grid-template-columns:1fr}
+  .card-header{align-items:flex-start}
+  .card-actions{width:100%}
+  .card-actions .btn{flex:1 1 140px}
 }
 
 /* ── ADMIN FINE POLISH ─────────────────────────────────────────────────────── */
@@ -805,6 +795,7 @@ window.avFetchJson = async function (url, opts, ms) {
 .acct-reset-row .when{font-size:8.5pt;color:var(--av-muted,#66766F)}
 .acct-pill{display:inline-block;font-size:7.5pt;font-weight:700;letter-spacing:.4px;
   text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.acct-pill.super_admin{background:rgba(22,62,51,.14);color:var(--av-navy,#163E33);border:1px solid rgba(22,62,51,.22)}
 .acct-pill.admin{background:rgba(217,142,59,.18);color:var(--av-gold-deep,#96591A)}
 .acct-pill.staff{background:rgba(91,155,255,.18);color:#1F5FA8}
 .acct-pill.borrower{background:rgba(30,122,76,.14);color:#1E7A4C}
@@ -819,26 +810,6 @@ window.avFetchJson = async function (url, opts, ms) {
 <script src="/assets/avesta/device-layout.js?v=20261003" defer></script>
 </head>
 <body>
-
-<!-- ═══ LOGIN SCREEN ═══ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="login-ae">AE</div>
-      <div class="login-brand">
-        <div class="login-brand-name">Avesta Enterprises</div>
-        <div class="login-brand-sub">Admin Portal</div>
-      </div>
-    </div>
-    <div class="login-title">Secure Admin Access</div>
-    <div class="login-desc">Enter your administrator PIN to continue</div>
-    <input type="password" id="pin-input" class="login-input" maxlength="6" placeholder="● ● ● ●"
-      onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">🔐 Sign In</button>
-    <div class="login-err" id="login-err">❌ Incorrect PIN. Please try again.</div>
-    <div class="login-footer">Authorised Avesta Enterprises administrators only</div>
-  </div>
-</div>
 
 <!-- ═══ APP ═══ -->
 <div id="app">
@@ -890,7 +861,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <a class="nav-item" onclick="showPage('fx')" href="javascript:void(0)">
         <span class="nav-icon">💱</span> Currency Rates
       </a>
-      <a class="nav-item" onclick="openBackupModal()" href="javascript:void(0)">
+      <a class="nav-item admin-only" onclick="openBackupModal()" href="javascript:void(0)">
         <span class="nav-icon">📦</span> Backup / Restore
       </a>
       <a class="nav-item" onclick="exportCSV()" href="javascript:void(0)">
@@ -906,7 +877,7 @@ window.avFetchJson = async function (url, opts, ms) {
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
       <a class="nav-item" href="/login.php?change=1"><span class="nav-icon">🔑</span> Change password</a>
-      <a class="nav-item" onclick="showPage('settings')" href="javascript:void(0)">
+      <a class="nav-item admin-only" onclick="showPage('settings')" href="javascript:void(0)">
         <span class="nav-icon">⚙️</span> Sync Settings
       </a>
     </nav>
@@ -1144,7 +1115,7 @@ window.avFetchJson = async function (url, opts, ms) {
           <div class="card-header">
             <div class="card-title">All Loan Applications</div>
             <div class="card-actions">
-              <button class="btn btn-primary btn-sm" onclick="openBackupModal()">📦 Backup / Restore</button>
+              <button class="btn btn-primary btn-sm admin-only" onclick="openBackupModal()">📦 Backup / Restore</button>
               <button class="btn btn-gold btn-sm" onclick="exportCSV()">📤 Export CSV</button>
               <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear Filters</button>
               <span id="app-count" style="font-size:8.5pt;color:#888"></span>
@@ -1429,12 +1400,14 @@ function stopIdleWatch() {
 }
 
 function doLogin() {
-  if (!window.AV_USER || !['admin', 'staff'].includes(window.AV_USER.role)) {
+  if (!window.AV_USER || !['super_admin', 'admin', 'staff'].includes(window.AV_USER.role)) {
     window.location.href = '../login.php';
     return;
   }
-  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  if (window.AV_USER.role === 'staff') {
+    document.querySelectorAll('.admin-only').forEach(function (el) { el.remove(); });
+  }
   init();
   startIdleWatch();
 }
@@ -1450,12 +1423,14 @@ function toggleSidebar(force_close) {
     sb.classList.remove('open');
     if (btn) btn.setAttribute('aria-expanded', 'false');
     ov.style.display = 'none';
+    ov.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
   } else {
     toggleWaPanel(true);
     sb.classList.add('open');
     if (btn) btn.setAttribute('aria-expanded', 'true');
     ov.style.display = 'block';
+    ov.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
   }
 }
@@ -1764,6 +1739,9 @@ function showToast(msg, color) {
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(id) {
+  if (window.AV_USER && window.AV_USER.role === 'staff' && (id === 'settings' || id === 'accounts')) {
+    avToast('This section is available to administrators only.', 'warn'); id = 'dashboard';
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
@@ -1780,6 +1758,7 @@ function showPage(id) {
   if (id === 'settings') { showPage_settings_init(); }
   if (id === 'dashboard') renderDashboard();
   if (id === 'fx') afxInit();
+  if (window.innerWidth <= 768) toggleSidebar(true);
 }
 
 function updateNavBadge() {
@@ -2435,7 +2414,7 @@ document.addEventListener('click', e => {
 function toggleWaPanel(forceClose) {
   const p = document.getElementById('wa-panel');
   if (!p) return;
-  if (forceClose || p.style.display !== 'none') { p.style.display = 'none'; return; }
+  if (forceClose || p.style.display !== 'none') { p.style.display = 'none'; p.setAttribute('aria-hidden', 'true'); return; }
   // Load saved settings
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
   let savedWa = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
@@ -2445,6 +2424,7 @@ function toggleWaPanel(forceClose) {
   document.getElementById('wa-key-input').value    = savedWa.key;
   updateWaStatus();
   p.style.display = 'block';
+  p.setAttribute('aria-hidden', 'false');
 }
 
 // ── NOTIFICATION SYSTEM ──────────────────────────────────────────────────────
@@ -2645,6 +2625,9 @@ function testBrowserNotif() {
 let adminImportData = null;
 
 function openBackupModal() {
+  if (!window.AV_USER || !['admin', 'super_admin'].includes(window.AV_USER.role)) {
+    avToast('Backup and restore is available to administrators only.', 'warn'); return;
+  }
   const m = document.getElementById('backup-modal');
   m.style.display = 'flex';
   document.getElementById('admin-export-status').textContent = '';
@@ -3118,7 +3101,7 @@ function afxInit(){
   </div>
 </div>
 
-<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:210;backdrop-filter:blur(2px)"></div>
+<div id="sidebar-overlay" onclick="toggleSidebar(true)" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;backdrop-filter:blur(2px)"></div>
 
 <!-- ═══ AVESTA UI KIT — behaviour ═══════════════════════════════════════ -->
 <script id="av-ui-kit-js">
@@ -3613,7 +3596,7 @@ function afxInit(){
   // The page exists in the markup for everyone, but only an admin is shown the
   // way in and only an admin gets past the server check.
   var role = (window.AV_USER && window.AV_USER.role) || 'staff';
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'super_admin') {
     ['nav-accounts', 'nav-accounts-section', 'page-accounts'].forEach(function (id) {
       var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
     });
@@ -3659,7 +3642,7 @@ function afxInit(){
 
     var stats = $('acct-stats');
     stats.textContent = '';
-    [['Borrowers', c.borrower || 0], ['Staff', c.staff || 0], ['Admins', c.admin || 0],
+    [['Borrowers', c.borrower || 0], ['Staff', c.staff || 0], ['Admins', c.admin || 0], ['Super Admins', c.super_admin || 0],
      ['Never signed in', c.never_signed_in || 0], ['Switched off', c.inactive || 0]
     ].forEach(function (p) {
       var box = el('div', 'acct-stat');
@@ -3729,7 +3712,9 @@ function afxInit(){
       tr.appendChild(st);
 
       var act = el('td');
-      if (u.id !== (window.AV_USER && window.AV_USER.id)) {
+      var canManage = u.id !== (window.AV_USER && window.AV_USER.id) &&
+        (u.role !== 'super_admin' || role === 'super_admin');
+      if (canManage) {
         var r = el('button', 'btn btn-ghost btn-sm', 'Reset password');
         r.type = 'button';
         r.addEventListener('click', function () { reset(u); });
@@ -3741,7 +3726,7 @@ function afxInit(){
         t.addEventListener('click', function () { toggle(u); });
         act.appendChild(t);
       } else {
-        act.appendChild(el('span', 'when', 'This is you'));
+        act.appendChild(el('span', 'when', u.id === (window.AV_USER && window.AV_USER.id) ? 'This is you' : 'Super Admin only'));
       }
       tr.appendChild(act);
       tb.appendChild(tr);

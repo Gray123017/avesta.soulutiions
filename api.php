@@ -62,11 +62,24 @@ function requireRole(array $roles) {
         jsonOut(['ok' => false, 'error' => 'Please set your own password first.',
                  'auth' => 'change_password'], 403);
     }
-    if ($roles && !in_array($u['role'], $roles, true)) {
+    if ($roles && $u['role'] !== 'super_admin' && !in_array($u['role'], $roles, true)) {
         av_audit('api.forbidden', $_GET['action'] ?? '', ['role' => $u['role']]);
         jsonOut(['ok' => false, 'error' => 'Your account cannot do that', 'auth' => 'forbidden'], 403);
     }
     return $u;
+}
+
+function av_require_manage_target(array $me, string $targetId): array {
+    $target = null;
+    foreach (av_load_users() as $row) {
+        if (($row['id'] ?? '') === $targetId) { $target = $row; break; }
+    }
+    if ($target === null) jsonOut(['ok' => false, 'error' => 'User not found'], 404);
+    if (($target['role'] ?? '') === 'super_admin' && ($me['role'] ?? '') !== 'super_admin') {
+        av_audit('api.forbidden_privileged_account', $target['username'] ?? $targetId);
+        jsonOut(['ok' => false, 'error' => 'Only a Super Admin can manage a Super Admin account.'], 403);
+    }
+    return $target;
 }
 
 // ── CORS HEADERS — same-origin only now that sessions are in use ────────────
@@ -936,11 +949,16 @@ if ($action === 'users') {
 }
 
 if ($action === 'createUser') {
-    requireRole(['admin']);
+    $me = requireRole(['admin']);
     if ($method !== 'POST') jsonOut(['ok' => false, 'error' => 'POST required'], 405);
     $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $requestedRole = (string) ($b['role'] ?? 'staff');
+    if ($requestedRole === 'super_admin' && ($me['role'] ?? '') !== 'super_admin') {
+        av_audit('api.forbidden_super_admin_create', (string) ($b['username'] ?? ''));
+        jsonOut(['ok' => false, 'error' => 'Only a Super Admin can create a Super Admin account.'], 403);
+    }
     $r = av_create_user((string) ($b['username'] ?? ''), (string) ($b['password'] ?? ''),
-                        (string) ($b['name'] ?? ''), (string) ($b['role'] ?? 'staff'), (string) ($b['email'] ?? ''));
+                        (string) ($b['name'] ?? ''), $requestedRole, (string) ($b['email'] ?? ''));
     if ($r['ok']) av_audit('user.created', $r['user']['username'], ['role' => $r['user']['role']]);
     jsonOut($r, $r['ok'] ? 200 : 400);
 }
@@ -951,6 +969,8 @@ if ($action === 'setUserActive') {
     $b  = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
     $id = (string) ($b['id'] ?? '');
     $on = !empty($b['active']);
+
+    av_require_manage_target($me, $id);
 
     if ($id === $me['id'] && !$on) {
         jsonOut(['ok' => false, 'error' => 'You cannot disable your own account.'], 400);
@@ -967,7 +987,7 @@ if ($action === 'setUserActive') {
     // Never leave the system with no way in
     $liveAdmins = 0;
     foreach ($users as $u) {
-        if (($u['role'] ?? '') === 'admin' && !empty($u['active'])) $liveAdmins++;
+        if (in_array(($u['role'] ?? ''), ['admin', 'super_admin'], true) && !empty($u['active'])) $liveAdmins++;
     }
     if ($liveAdmins === 0) {
         jsonOut(['ok' => false, 'error' => 'That would leave no active administrator.'], 400);
@@ -984,7 +1004,7 @@ if ($action === 'changePassword') {
     $b  = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
 
     $target = (string) ($b['id'] ?? $me['id']);
-    if ($target !== $me['id'] && $me['role'] !== 'admin') {
+    if ($target !== $me['id'] && !in_array($me['role'], ['admin', 'super_admin'], true)) {
         jsonOut(['ok' => false, 'error' => 'You can only change your own password.'], 403);
     }
 
@@ -1592,6 +1612,7 @@ if ($action === 'resetPassword') {
     if ($id === $me['id']) {
         jsonOut(['ok' => false, 'error' => 'Use Change password for your own account.'], 400);
     }
+    av_require_manage_target($me, $id);
     $r = av_admin_reset_password($id, $me['username']);
     jsonOut($r, $r['ok'] ? 200 : 400);
 }
@@ -1634,7 +1655,7 @@ if ($action === 'accounts') {
     }
     usort($out, fn($a, $b) => ($b['created_at'] ?? '') <=> ($a['created_at'] ?? ''));
 
-    $counts = ['admin' => 0, 'staff' => 0, 'borrower' => 0, 'inactive' => 0, 'never_signed_in' => 0];
+    $counts = ['super_admin' => 0, 'admin' => 0, 'staff' => 0, 'borrower' => 0, 'inactive' => 0, 'never_signed_in' => 0];
     foreach ($out as $u) {
         $counts[$u['role']] = ($counts[$u['role']] ?? 0) + 1;
         if (empty($u['active'])) $counts['inactive']++;
