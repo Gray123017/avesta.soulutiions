@@ -222,11 +222,21 @@ tr:last-child td{border-bottom:none}
 /* Keep the mobile header compact and notification settings within the viewport. */
 #wa-panel{max-height:calc(100dvh - 160px);overflow-y:auto!important}
 @media(max-width:768px){
-  .topbar{height:auto;min-height:60px;flex-wrap:wrap;gap:12px;padding:12px 16px}
-  .topbar-right{width:100%;flex-wrap:wrap;gap:10px}
-  .topbar-search{flex:1;min-width:0;width:auto}
-  .topbar-date{width:100%}
-  #wa-panel{top:100%!important;right:12px!important;width:min(340px,calc(100vw - 24px))!important}
+  .topbar{height:auto;min-height:60px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 12px}
+  .topbar>div:first-child{min-width:0}
+  .topbar-title{font-size:11pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-right{grid-column:1/-1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .topbar-search{width:100%;min-width:0;min-height:42px;font-size:16px}
+  #wa-btn{min-width:44px;min-height:42px}
+  .topbar-date{grid-column:1/-1;width:100%;font-size:7.5pt}
+  .content{padding:16px 12px}
+  #wa-panel{position:fixed!important;top:12px!important;right:12px!important;left:12px!important;width:auto!important;max-height:calc(100dvh - 24px);z-index:1100!important;border-radius:14px!important}
+}
+@media(max-width:520px){
+  .stats-row,.detail-grid{grid-template-columns:1fr}
+  .card-header{align-items:flex-start}
+  .card-actions{width:100%}
+  .card-actions .btn{flex:1 1 140px}
 }
 
 /* ── ADMIN FINE POLISH ─────────────────────────────────────────────────────── */
@@ -2445,7 +2455,7 @@ document.addEventListener('click', e => {
 function toggleWaPanel(forceClose) {
   const p = document.getElementById('wa-panel');
   if (!p) return;
-  if (forceClose || p.style.display !== 'none') { p.style.display = 'none'; return; }
+  if (forceClose || p.style.display !== 'none') { p.style.display = 'none'; p.setAttribute('aria-hidden', 'true'); return; }
   // Load saved settings
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
   let savedWa = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
@@ -2455,6 +2465,7 @@ function toggleWaPanel(forceClose) {
   document.getElementById('wa-key-input').value    = savedWa.key;
   updateWaStatus();
   p.style.display = 'block';
+  p.setAttribute('aria-hidden', 'false');
 }
 
 // ── NOTIFICATION SYSTEM ──────────────────────────────────────────────────────
