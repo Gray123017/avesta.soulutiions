@@ -1,0 +1,21 @@
+name: Package Hostinger Build
+
+on:
+  push:
+    branches:
+      - ops/hostinger-package-20261004
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Hostinger ZIP
+        run: |
+          rm -rf .git
+          zip -r avesta-github-main-hostinger.zip . -x "avesta-github-main-hostinger.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avesta-github-main-hostinger
+          path: avesta-github-main-hostinger.zip
+          if-no-files-found: error
