@@ -80,3 +80,30 @@ body.software-hub-page{margin:0;background:var(--hub-bg);color:var(--hub-ink);fo
 @media(max-width:900px){.hub-hero{grid-template-columns:1fr}.hub-products{grid-template-columns:1fr 1fr}.hub-nav a:not(.hub-home){display:none}.hub-main{padding-top:36px}.hub-hero-copy{padding-top:20px}.hub-hero h1{font-size:clamp(40px,10vw,64px)}}
 @media(max-width:640px){.hub-topbar-inner{padding:0 16px;min-height:68px}.hub-main{padding:28px 16px 48px}.hub-brand small{display:none}.hub-products{grid-template-columns:1fr}.hub-section-head{align-items:flex-start;flex-direction:column;gap:8px}.hub-status-grid{grid-template-columns:1fr 1fr}.hub-support{grid-template-columns:1fr}.hub-support .hub-button{width:100%}.hub-product{min-height:0}.hub-hero p{font-size:16px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.hub-button,.hub-product{transition:none}.hub-product:hover,.hub-button:hover{transform:none}}
+
+
+/* Compact, reusable product tab system */
+.hub-catalogue{scroll-margin-top:92px}
+.hub-product-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:9px;border:1px solid var(--hub-line);border-radius:18px;background:rgba(255,255,255,.48);box-shadow:0 8px 28px rgba(24,53,44,.04)}
+.hub-product-tab{border:1px solid transparent;background:transparent;color:var(--hub-muted);border-radius:14px;min-height:72px;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease}
+.hub-product-tab:hover,.hub-product-tab:focus-visible{background:rgba(255,255,255,.76);color:var(--hub-green);outline:none}
+.hub-product-tab.active{background:var(--hub-green);color:white;border-color:var(--hub-green);box-shadow:0 10px 22px rgba(35,79,63,.14)}
+.hub-tab-icon{width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;background:#edf0e7;color:var(--hub-green);font:800 14px/1 "Manrope",sans-serif}
+.hub-product-tab.active .hub-tab-icon{background:rgba(198,166,76,.18);color:#f0d878}
+.hub-tab-copy{min-width:0;display:grid;gap:3px}
+.hub-tab-copy strong{font:800 14px/1.2 "Manrope",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hub-tab-copy small{font:600 10px/1.2 "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em;opacity:.76}
+.hub-product-panels{margin-top:14px}
+.hub-product-panel{border:1px solid var(--hub-line);background:rgba(252,250,245,.9);border-radius:var(--hub-radius);padding:24px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:30px;box-shadow:0 10px 30px rgba(24,53,44,.05)}
+.hub-product-panel[hidden]{display:none}
+.hub-product-panel.featured{background:linear-gradient(150deg,#204c3c,#17382f);color:white;border-color:#315f4e}
+.hub-product-panel.featured .hub-product-desc,.hub-product-panel.featured .hub-meta,.hub-product-panel.featured .hub-feature-list{color:#dbe6df}
+.hub-product-panel.featured .hub-chip{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.14);color:#f2e8c9}
+.hub-product-panel.featured .hub-product-icon{background:rgba(198,166,76,.16);border-color:rgba(198,166,76,.28);color:#ead482}
+.hub-product-panel.featured .hub-button.primary{background:var(--hub-gold);color:#17382f;box-shadow:none}
+.hub-product-panel.featured .hub-button.secondary{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.15);color:white}
+.hub-product-panel h3{font:800 30px/1.1 "Manrope",sans-serif;margin:18px 0 10px;letter-spacing:-.03em}
+.hub-product-panel-side{display:flex;flex-direction:column;justify-content:center;border-left:1px solid var(--hub-line);padding-left:30px}
+.hub-product-panel.featured .hub-product-panel-side{border-left-color:rgba(255,255,255,.14)}
+.hub-product-panel .hub-product-actions{margin-top:14px}
+@media(max-width:760px){.hub-product-tabs{display:flex;overflow-x:auto;scrollbar-width:none;padding:7px}.hub-product-tabs::-webkit-scrollbar{display:none}.hub-product-tab{min-width:160px;min-height:64px}.hub-product-panel{grid-template-columns:1fr;gap:18px;padding:20px}.hub-product-panel-side{border-left:0;border-top:1px solid var(--hub-line);padding:18px 0 0}.hub-product-panel.featured .hub-product-panel-side{border-top-color:rgba(255,255,255,.14)}}
