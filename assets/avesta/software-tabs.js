@@ -39,5 +39,5 @@
   }
 
   addEventListener('hashchange', fromHash);
-  if (!fromHash()) select(tabs[0]);
+  fromHash();
 })();
