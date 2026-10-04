@@ -5,7 +5,7 @@
  * web server to hide it. Fetching it directly still hits the login.
  */
 require_once __DIR__ . '/../auth.php';
-$me = av_require_login(['admin', 'staff'], '../login.php');
+$me = av_require_login(['super_admin', 'admin', 'staff'], '../login.php');
 echo '<script>window.AV_USER=' . json_encode([
     'id' => $me['id'], 'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES) . ';</script>';
@@ -211,8 +211,8 @@ tr:last-child td{border-bottom:none}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
+  .sidebar{transform:translateX(-100%);z-index:1002;visibility:hidden;pointer-events:none;box-shadow:10px 0 32px rgba(0,0,0,.28)}
+  .sidebar.open{transform:translateX(0);visibility:visible;pointer-events:auto}
   .main{margin-left:0}
   .stats-row{grid-template-columns:1fr 1fr}
   .detail-grid{grid-template-columns:1fr 1fr}
@@ -1430,7 +1430,7 @@ function stopIdleWatch() {
 }
 
 function doLogin() {
-  if (!window.AV_USER || !['admin', 'staff'].includes(window.AV_USER.role)) {
+  if (!window.AV_USER || !['super_admin', 'admin', 'staff'].includes(window.AV_USER.role)) {
     window.location.href = '../login.php';
     return;
   }
@@ -1451,12 +1451,14 @@ function toggleSidebar(force_close) {
     sb.classList.remove('open');
     if (btn) btn.setAttribute('aria-expanded', 'false');
     ov.style.display = 'none';
+    ov.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
   } else {
     toggleWaPanel(true);
     sb.classList.add('open');
     if (btn) btn.setAttribute('aria-expanded', 'true');
     ov.style.display = 'block';
+    ov.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
   }
 }
@@ -1781,6 +1783,7 @@ function showPage(id) {
   if (id === 'settings') { showPage_settings_init(); }
   if (id === 'dashboard') renderDashboard();
   if (id === 'fx') afxInit();
+  if (window.innerWidth <= 768) toggleSidebar(true);
 }
 
 function updateNavBadge() {
@@ -3119,7 +3122,7 @@ function afxInit(){
   </div>
 </div>
 
-<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:210;backdrop-filter:blur(2px)"></div>
+<div id="sidebar-overlay" onclick="toggleSidebar(true)" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;backdrop-filter:blur(2px)"></div>
 
 <!-- ═══ AVESTA UI KIT — behaviour ═══════════════════════════════════════ -->
 <script id="av-ui-kit-js">
