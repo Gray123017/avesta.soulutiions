@@ -42,7 +42,7 @@ try {
    await page.getByRole('button',{name:'Open sidebar menu'}).click();
    await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().left>=-1);
    assert.equal(await page.locator('#sidebar-toggle').getAttribute('aria-expanded'),'true');
-   assert(await page.evaluate(()=>document.elementFromPoint(100,25)?.closest('.sidebar')!==null),'sidebar above header');
+   assert(await page.evaluate(()=>Boolean(document.elementFromPoint(100,25)?.closest('.sidebar'))),'sidebar above header');
    await page.screenshot({path:'qa-screenshots/menu-'+width+'x'+height+'.png'});
    await page.getByRole('link',{name:'All Applications'}).click();
    assert.equal(await page.locator('#sidebar-toggle').getAttribute('aria-expanded'),'false');
@@ -51,7 +51,7 @@ try {
    await page.getByRole('button',{name:'Open sidebar menu'}).click();
    await page.getByRole('link',{name:'Dashboard',exact:false}).click();
    assert(await page.locator('#page-dashboard').isVisible());
-   await page.getByRole('button',{name:'WhatsApp Notifications'}).click();
+   await page.locator('#wa-btn').click();
    const panel=await page.locator('#wa-panel').boundingBox();
    assert(panel.x>=0 && panel.x+panel.width<=width,'settings fits screen horizontally');
    assert(panel.y>=0 && panel.y+panel.height<=height,'settings fits screen vertically');
