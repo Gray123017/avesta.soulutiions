@@ -14,6 +14,14 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm test
+      - name: Protect software download artifacts
+        run: |
+          test -f downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip || { echo "::error::Asset Tracker package is missing from the deployment source"; exit 1; }
+          test -s downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip || { echo "::error::Asset Tracker package is empty"; exit 1; }
+          grep -Fq "/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip" downloads.php || { echo "::error::Asset Tracker download link is missing from downloads.php"; exit 1; }
+          test -f downloads/g-it/G-IT-Setup-x64.exe || { echo "::error::Device Health installer is missing from the deployment source"; exit 1; }
+          test -s downloads/g-it/G-IT-Setup-x64.exe || { echo "::error::Device Health installer is empty"; exit 1; }
+          grep -Fq "/downloads/g-it/G-IT-Setup-x64.exe" downloads.php || { echo "::error::Device Health installer link is missing from downloads.php"; exit 1; }
       - name: Check PHP syntax
         run: find . -path ./node_modules -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Check public PHP routes and account gate
