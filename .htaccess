@@ -1,5 +1,4 @@
 # Data files must never be served over the web.
-# Data files must never be served over the web.
 #
 # Named individually rather than blocking *.json: manifest.json has to be
 # readable or the app cannot be installed on a phone, and a blanket rule

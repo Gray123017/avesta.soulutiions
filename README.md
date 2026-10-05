@@ -30,3 +30,8 @@ The public homepage now serves the adapted Avesta design. Use `index.php?page=le
 G.I.T provides local saved guidance with official source links. It does not submit chat messages or access customer records. Live AI/web search is not enabled. Currency conversion reads the existing `api.php?action=rates` response and labels stale data; manual conversion remains available if the feed fails.
 
 Deploy the repository root through the existing Hostinger `main` → `public_html` connection. Node is used only for checks: `npm ci`, `npm run build`, `npm test`. PHP syntax and anonymous route checks run in GitHub Actions. Do not deploy the separate Cloudflare review source as a PHP replacement. Existing production data files and uploads are excluded from Git and must be preserved. The Sites monitoring job does not monitor this Hostinger deployment.
+
+
+## Deployment persistence guard
+
+Software download binaries and product routes used by `downloads.php` must be present in the deployed tree before promotion. Current required routes include Asset Tracker, Sentinel and Device Health. A successful Git/Hostinger deployment is not acceptance by itself: verify each product tab on desktop/mobile and verify every download/open action after deployment. Do not delete server-created account/application data or secrets during deployment.
