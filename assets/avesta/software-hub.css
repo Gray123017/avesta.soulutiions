@@ -84,7 +84,7 @@ body.software-hub-page{margin:0;background:var(--hub-bg);color:var(--hub-ink);fo
 
 /* Compact, reusable product tab system */
 .hub-catalogue{scroll-margin-top:92px}
-.hub-product-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:9px;border:1px solid var(--hub-line);border-radius:18px;background:rgba(255,255,255,.48);box-shadow:0 8px 28px rgba(24,53,44,.04)}
+.hub-product-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:9px;border:1px solid var(--hub-line);border-radius:18px;background:rgba(255,255,255,.48);box-shadow:0 8px 28px rgba(24,53,44,.04)}
 .hub-product-tab{border:1px solid transparent;background:transparent;color:var(--hub-muted);border-radius:14px;min-height:72px;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease}
 .hub-product-tab:hover,.hub-product-tab:focus-visible{background:rgba(255,255,255,.76);color:var(--hub-green);outline:none}
 .hub-product-tab.active{background:var(--hub-green);color:white;border-color:var(--hub-green);box-shadow:0 10px 22px rgba(35,79,63,.14)}
@@ -107,3 +107,7 @@ body.software-hub-page{margin:0;background:var(--hub-bg);color:var(--hub-ink);fo
 .hub-product-panel.featured .hub-product-panel-side{border-left-color:rgba(255,255,255,.14)}
 .hub-product-panel .hub-product-actions{margin-top:14px}
 @media(max-width:760px){.hub-product-tabs{display:flex;overflow-x:auto;scrollbar-width:none;padding:7px}.hub-product-tabs::-webkit-scrollbar{display:none}.hub-product-tab{min-width:160px;min-height:64px}.hub-product-panel{grid-template-columns:1fr;gap:18px;padding:20px}.hub-product-panel-side{border-left:0;border-top:1px solid var(--hub-line);padding:18px 0 0}.hub-product-panel.featured .hub-product-panel-side{border-top-color:rgba(255,255,255,.14)}}
+
+@media(max-width:1000px){.hub-product-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.hub-product-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.hub-product-tab{min-width:0;width:100%;min-height:60px}.hub-tab-copy strong{white-space:normal}}
+@media(max-width:420px){.hub-product-tabs{grid-template-columns:1fr}.hub-status-grid{grid-template-columns:1fr}}
