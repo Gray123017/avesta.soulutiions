@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     av_audit('user.password_changed', $me['id'], ['by' => 'self']);
                     av_clear_must_change($me['id']);
+                    $_SESSION['account_notice'] = 'Password updated successfully. Use your new password the next time you sign in.';
                     header('Location: index.php');
                     exit;
                 }
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 av_audit('user.self_registered', $r['user']['username']);
                 $li = av_login((string) $_POST['username'], $p1);
                 if ($li['ok']) { header('Location: ' . (trim((string) ($_POST['email'] ?? '')) !== '' ? 'recovery.php?setup=1' : 'index.php')); exit; }
-                $notice = 'Account created. Please sign in.';
+                $notice = 'Account created successfully. You can now sign in with your new password.';
                 $mode = 'in';
             }
         }
@@ -138,7 +139,7 @@ body{
   background:var(--paper);border-radius:16px;padding:26px 24px 22px;
   box-shadow:0 18px 44px rgba(0,0,0,.3);border-top:3px solid var(--gold);
 }
-h2{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:3px}
+h2{font-size:clamp(28px,8vw,42px);line-height:1.05;letter-spacing:-.04em;font-weight:800;color:var(--ink);margin:4px 0 12px}.account-kicker{font-size:10px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:14px}
 .sub{font-size:12.5px;color:var(--muted);margin-bottom:20px}
 label{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;
   text-transform:uppercase;color:var(--muted);margin-bottom:6px}
@@ -200,7 +201,7 @@ button.go:hover{background:var(--navy-2)}
     <?php if ($notice): ?><div class="msg good"><?= htmlspecialchars($notice) ?></div><?php endif; ?>
 
     <?php if ($mode === 'up'): ?>
-      <h2>Create an account</h2>
+      <p class="account-kicker">Account</p><h2>Create account</h2>
       <p class="sub">You&rsquo;ll use this to apply and to follow your application.</p>
       <form method="post" autocomplete="on">
         <input type="hidden" name="do" value="up">
@@ -225,7 +226,7 @@ button.go:hover{background:var(--navy-2)}
       <div class="alt">Already have one? <a href="login.php">Sign in</a></div>
 
     <?php elseif ($mode === 'forgot'): ?>
-      <h2>Forgotten password</h2>
+      <p class="account-kicker">Account</p><h2>Forgot password</h2>
       <p class="sub">Use a verified recovery email, or ask the office for help.</p>
       <p class="msg info"><a href="recovery.php">Reset with an email code</a><br>For accounts with a verified email address.</p>
       <h2>Ask an administrator for help</h2>
@@ -245,7 +246,7 @@ button.go:hover{background:var(--navy-2)}
       <div class="alt"><a href="login.php">Back to sign in</a></div>
 
     <?php elseif ($mode === 'chpw'): ?>
-      <h2>Choose a new password</h2>
+      <p class="account-kicker">Account</p><h2>Create new password</h2>
       <p class="sub">
         <?= !empty($_SESSION['must_change'])
             ? 'You signed in with a temporary password. Please set your own now.'
@@ -269,7 +270,7 @@ button.go:hover{background:var(--navy-2)}
       <?php endif; ?>
 
     <?php else: ?>
-      <h2>Sign in</h2>
+      <p class="account-kicker">Account</p><h2>Sign in</h2>
       <p class="sub">This site is private. Please sign in to continue.</p>
       <form method="post" autocomplete="on">
         <input type="hidden" name="do" value="in">
