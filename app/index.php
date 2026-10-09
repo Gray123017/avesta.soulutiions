@@ -5880,8 +5880,8 @@ async function submitToSheet() {
       <div style="background:linear-gradient(135deg,#0F2E24 0%,#1A5040 100%);padding:32px 28px;text-align:center">
         <!-- Animated checkmark -->
         <div style="width:68px;height:68px;background:#D98E3B;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30pt;box-shadow:0 6px 24px rgba(217,142,59,.4)">✓</div>
-        <h2 style="color:white;font-family:Georgia,serif;font-size:18pt;margin-bottom:6px">Application Received!</h2>
-        <p style="color:rgba(255,255,255,.7);font-size:10pt;margin-bottom:0">Thank you, <strong style="color:#D98E3B">${applicantName}</strong>. Your loan application has been successfully submitted to Avesta Enterprises.</p>
+        <h2 style="color:white;font-family:Georgia,serif;font-size:18pt;margin-bottom:6px">Application received</h2>
+        <p style="color:rgba(255,255,255,.7);font-size:10pt;margin-bottom:0">Thank you, <strong style="color:#D98E3B">${applicantName}</strong>. Your application has been received by Avesta Enterprises and is now ready for review.</p>
       </div>
       <!-- Info cards -->
       <div style="background:#F7F3EC;padding:22px 28px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;border-bottom:1px solid #e8e0d0">
@@ -5909,21 +5909,21 @@ async function submitToSheet() {
             <div style="background:#0F2E24;color:#D98E3B;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10pt;flex-shrink:0;margin-top:1px">1</div>
             <div>
               <div style="font-weight:700;color:#0F2E24;font-size:9.5pt;margin-bottom:2px">Application Review</div>
-              <div style="color:#666;font-size:9pt;line-height:1.6">Our team will carefully review your application and the documents you submitted. This typically takes a few hours to one business day.</div>
+              <div style="color:#666;font-size:9pt;line-height:1.6">Our team will carefully review your application and the documents you submitted. We will review the information and documents you submitted. We will contact you if anything else is required.</div>
             </div>
           </div>
           <div style="display:flex;align-items:flex-start;gap:14px">
             <div style="background:#0F2E24;color:#D98E3B;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10pt;flex-shrink:0;margin-top:1px">2</div>
             <div>
               <div style="font-weight:700;color:#0F2E24;font-size:9.5pt;margin-bottom:2px">Approval Decision</div>
-              <div style="color:#666;font-size:9pt;line-height:1.6">Once your application is approved, you will be contacted directly via phone or email to confirm the loan terms and disbursement details.</div>
+              <div style="color:#666;font-size:9pt;line-height:1.6">We will contact you with the outcome and, if approved, confirm the final loan terms and disbursement details before funds are released.</div>
             </div>
           </div>
           <div style="display:flex;align-items:flex-start;gap:14px">
             <div style="background:#D98E3B;color:#0F2E24;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10pt;flex-shrink:0;margin-top:1px">3</div>
             <div>
               <div style="font-weight:700;color:#D98E3B;font-size:9.5pt;margin-bottom:2px">💰 Funds Disbursed</div>
-              <div style="color:#555;font-size:9pt;line-height:1.6"><strong>Your approved loan amount will be sent to you promptly once approval is confirmed</strong> — via your chosen method (cash, Airtel Money, MTN MoMo, or bank transfer). Same-day disbursement on approved applications.</div>
+              <div style="color:#555;font-size:9pt;line-height:1.6"><strong>Your approved loan amount will be sent to you promptly once approval is confirmed</strong> — via your chosen method (cash, Airtel Money, MTN MoMo, or bank transfer). Funds are released after approval, completion of the agreement and confirmation of the disbursement method.</div>
             </div>
           </div>
         </div>
