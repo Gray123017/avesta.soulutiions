@@ -6,7 +6,7 @@ import {Window} from 'happy-dom';
 
 test('Software details stay closed until selected; tabs support switching, keyboard and direct links', async () => {
   const downloadsHtml = execFileSync('php', ['downloads.php'], {encoding: 'utf8'});
-  for (const hash of ['', '#asset-tracker', '#sentinel', '#device-health']) {
+  for (const hash of ['', '#asset-tracker', '#sentinel', '#device-health', '#moneytrack']) {
     const w = new Window({url: 'https://avesta.test/downloads.php' + hash, settings: {enableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
     w.document.write(downloadsHtml);
     w.eval(readFileSync('assets/avesta/software-tabs.js','utf8'));

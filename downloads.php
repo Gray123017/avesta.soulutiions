@@ -56,7 +56,26 @@ $products = [
     'primary_download' => true,
     'secondary_label' => 'Read setup notes',
     'secondary_href' => '/downloads/g-it/README.txt',
+  ],  [
+    'id' => 'moneytrack',
+    'name' => 'Avesta MoneyTrack',
+    'short' => 'MoneyTrack',
+    'icon' => 'MT',
+    'badge' => 'v1.2.0',
+    'description' => 'Desktop money tracking for clearer day-to-day income, expense and financial record management.',
+    'meta' => ['WINDOWS X64', 'FINANCE', 'TRACKING'],
+    'features' => [
+      'Simple income and expense tracking',
+      'Local desktop workflow for everyday records',
+      'Avesta-supported Windows installer',
+    ],
+    'primary_label' => 'Download installer',
+    'primary_href' => '/downloads/moneytrack/Avesta-MoneyTrack-1.2.0-Windows-x64-Setup.exe',
+    'primary_download' => true,
+    'secondary_label' => 'Setup support',
+    'secondary_href' => 'mailto:info@avesta.solutions?subject=Avesta%20MoneyTrack%201.2.0',
   ],
+
 ];
 ?>
 <!doctype html>
@@ -65,11 +84,11 @@ $products = [
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Avesta Software · Applications & Downloads</title>
-<meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker and G.I.T Device Health Monitoring, with Windows downloads and setup support.">
+<meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker, G.I.T Device Health and Avesta MoneyTrack, with Windows downloads and setup support.">
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261004d">
-<script src="/assets/avesta/software-tabs.js?v=20261004d" defer></script>
+<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261008a">
+<script src="/assets/avesta/software-tabs.js?v=20261008a" defer></script>
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">
@@ -93,7 +112,7 @@ $products = [
     <div class="hub-hero-copy">
       <span class="hub-kicker">Avesta software ecosystem</span>
       <h1 id="software-title">Tools that keep your <span>operations visible.</span></h1>
-      <p>One Avesta software hub for inventory operations, IT asset tracking and device-health monitoring. Select a product tab to view only the information you need.</p>
+      <p>One Avesta software hub for inventory operations, IT asset tracking, device-health monitoring and money tracking. Select a product tab to view only the information you need.</p>
       <div class="hub-hero-actions">
         <a class="hub-button primary" href="#products">Explore software</a>
         <a class="hub-button secondary" href="mailto:info@avesta.solutions?subject=Avesta%20Software%20consultation">Request setup support</a>

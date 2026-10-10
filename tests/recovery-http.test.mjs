@@ -49,10 +49,10 @@ test('Recovery pages and administrator fallback work through real HTTP forms',
   html=await body(await request('/recovery.php',null,anonymous));
   html=await body(await request('/recovery.php',{action:'request',csrf:csrf(html),identifier:'borrower@example.test'},anonymous));
   code=JSON.parse(readFileSync(join(dir,'outbox.json'),'utf8')).code;
-  assert.match(html,/If this account has a verified email/);
+  assert.match(html,/If an account exists for that email or username and has a verified recovery email/);
   assert.ok(!html.includes(code));
   html=await body(await request('/recovery.php',{action:'complete',csrf:csrf(html),code,password:'Changed-secure-phrase-28',password2:'Changed-secure-phrase-28'},anonymous));
-  assert.match(html,/Password changed/);
+  assert.match(html,/Password reset complete/);
   assert.equal((await request('/portal.php')).status,302); // previous borrower session was revoked
   res=await request('/login.php',{do:'in',username:'borrowertest',password:'Changed-secure-phrase-28'},anonymous);
   assert.equal(res.status,302);

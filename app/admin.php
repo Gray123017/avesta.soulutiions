@@ -1375,12 +1375,12 @@ function resetIdleTimer() {
   }
   idleWarnTimer = setTimeout(() => {
     idleToastShown = true;
-    showToast('⏱ Locking in 1 minute due to inactivity…', 'gold');
+    showToast('Session will lock in 1 minute due to inactivity.', 'gold');
   }, IDLE_WARNING_MS);
   idleTimer = setTimeout(() => {
     idleToastShown = false;
     doLogout();
-    showToast('🔒 Session locked after 5 min of inactivity.', 'red');
+    showToast('Session locked after 5 minutes of inactivity.', 'red');
   }, IDLE_TIMEOUT_MS);
 }
 
@@ -1694,7 +1694,7 @@ function init() {
           if (r._notify_pending) { r._notify_pending = false; saveRecord(r); }
         });
         liveRefresh('🔔 New application just submitted!');
-        showToast('🔔 New application received! Check dashboard.', 'green');
+        showToast('New application received. Review it from the dashboard.', 'green');
       } else {
         liveRefresh(null);
       }
@@ -2000,7 +2000,7 @@ function updateStatus(key, newStatus) {
   renderDashboard();
   applyFilters();
   renderTable();
-  showToast('Status updated → ' + newStatus, 'gold');
+  showToast('Application status updated: ' + newStatus, 'gold');
   // Notify borrower on key status changes
   if (newStatus !== prevStatus) notifyBorrower(r, newStatus);
 }
@@ -2272,12 +2272,12 @@ function notifyBorrowerFromModal() {
   if (!r) return;
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
   if (!saved.key) {
-    showToast('⚠️ Set up WhatsApp (TextMeBot) in Notifications first', 'gold');
+    showToast('WhatsApp notifications are not configured. Open Notification Settings to continue.', 'gold');
     return;
   }
   const borrowerPhone = (r.phone || r.b_phone || '').replace(/[^0-9]/g,'');
   if (!borrowerPhone) {
-    showToast('⚠️ No phone number found for this borrower', 'gold');
+    showToast('No phone number is available for this borrower.', 'gold');
     return;
   }
   // Temporarily enable and notify regardless of toggle (manual override)
@@ -2366,7 +2366,7 @@ function saveScriptUrl() {
   }
   localStorage.setItem('avesta_script_url', val);
   if (st) { st.style.color='#198754'; st.textContent='✅ Saved! Syncing now…'; }
-  showToast('✅ API endpoint saved. Syncing records…', 'green');
+  showToast('API endpoint saved. Syncing records…', 'green');
   fetchRemoteRecords(false);
 }
 
@@ -2466,7 +2466,7 @@ function saveWaSettings() {
   }
   localStorage.setItem('avesta_wa_settings', JSON.stringify({number, key}));
   updateWaStatus();
-  showToast('✅ WhatsApp notifications saved!', 'green');
+  showToast('WhatsApp notification settings saved.', 'green');
   toggleWaPanel(true);
 }
 
@@ -2522,7 +2522,7 @@ function testWa() {
   // Open URL in new tab so admin can see any error response
   const tab = window.open(url, '_blank');
   if (tab) setTimeout(() => { try { tab.close(); } catch(e){} }, 5000);
-  showToast('📱 Test sent — check WhatsApp in ~30 seconds', 'green');
+  showToast('Test message sent. Check WhatsApp shortly.', 'green');
 }
 
 // ── EMAIL FALLBACK ──────────────────────────────────────────────────────────
@@ -2534,7 +2534,7 @@ function saveEmailSettings() {
   }
   localStorage.setItem('avesta_notify_email', JSON.stringify({email}));
   document.getElementById('email-notify-status').textContent = '✅ Email saved: ' + email;
-  showToast('✅ Email notification saved!', 'green');
+  showToast('Email notification settings saved.', 'green');
 }
 
 function sendEmailAlert(r) {
@@ -2589,10 +2589,10 @@ function enableBrowserNotif() {
     updateBrowserNotifStatus();
     if (perm === 'granted') {
       localStorage.setItem('avesta_browser_notif', 'true');
-      showToast('✅ Browser notifications enabled!', 'green');
+      showToast('Browser notifications enabled.', 'green');
       testBrowserNotif();
     } else {
-      showToast('❌ Notification permission denied', 'red');
+      showToast('Browser notification permission was not granted.', 'red');
     }
   });
 }
@@ -2618,7 +2618,7 @@ function testBrowserNotif() {
     body: 'Browser notifications are working! You will be alerted when applications arrive.',
     tag: 'avesta-test'
   });
-  showToast('🔔 Test notification sent!', 'green');
+  showToast('Test notification sent.', 'green');
 }
 
 // ─── BACKUP / RESTORE MODAL ──────────────────────────────────────────────────
