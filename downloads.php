@@ -61,19 +61,19 @@ $products = [
     'name' => 'Avesta MoneyTrack',
     'short' => 'MoneyTrack',
     'icon' => 'MT',
-    'badge' => 'v1.1.0',
+    'badge' => 'v1.2.0',
     'description' => 'Desktop money tracking for clearer day-to-day income, expense and financial record management.',
-    'meta' => ['WINDOWS', 'FINANCE', 'TRACKING'],
+    'meta' => ['WINDOWS X64', 'FINANCE', 'TRACKING'],
     'features' => [
       'Simple income and expense tracking',
       'Local desktop workflow for everyday records',
       'Avesta-supported Windows installer',
     ],
     'primary_label' => 'Download installer',
-    'primary_href' => '/downloads/moneytrack/Avesta-MoneyTrack-1.1.0-Setup.exe',
+    'primary_href' => '/downloads/moneytrack/Avesta-MoneyTrack-1.2.0-Windows-x64-Setup.exe',
     'primary_download' => true,
     'secondary_label' => 'Setup support',
-    'secondary_href' => 'mailto:info@avesta.solutions?subject=Avesta%20MoneyTrack%201.1.0',
+    'secondary_href' => 'mailto:info@avesta.solutions?subject=Avesta%20MoneyTrack%201.2.0',
   ],
 
 ];
