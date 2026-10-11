@@ -42,3 +42,6 @@ for (const forbidden of ['app.js', 'services.json', 'help.json', 'assistant-api.
 for (const path of ['assets/avesta/optional-depth.css', 'assets/avesta/optional-depth.js']) {
   assert(existsSync(path), `Optional depth asset missing: ${path}`);
 }
+
+assert(existsSync('assets/avesta/enterprise-executive.css'), 'Executive stylesheet missing');
+assert(readFileSync('index.php','utf8').includes('/assets/avesta/enterprise-executive.css'), 'Executive stylesheet reference missing');
