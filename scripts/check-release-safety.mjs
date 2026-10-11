@@ -31,3 +31,14 @@ for (const link of [
   assert(downloads.includes(link), `Software catalogue link missing: ${link}`);
 }
 console.log('Avesta static release guard passed. Hostinger binaries require separate live verification.');
+
+const preview = readFileSync('preview/depth.html', 'utf8');
+for (const ref of ['optional-depth.css', 'optional-depth.js', 'data-avesta-depth="enabled"']) {
+  assert(preview.includes(ref), `Standalone preview reference missing: ${ref}`);
+}
+for (const forbidden of ['app.js', 'services.json', 'help.json', 'assistant-api.php']) {
+  assert(!preview.includes('src="../assets/avesta/' + forbidden + '"'), `Preview should not initialize production: ${forbidden}`);
+}
+for (const path of ['assets/avesta/optional-depth.css', 'assets/avesta/optional-depth.js']) {
+  assert(existsSync(path), `Optional depth asset missing: ${path}`);
+}
