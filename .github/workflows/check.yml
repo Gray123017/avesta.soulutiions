@@ -14,6 +14,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm test
+      - name: Guard critical frontend assets and software catalogue
+        run: node scripts/check-release-safety.mjs
       - name: Protect software download catalogue
         run: |
           # Installers are retained on Hostinger and are intentionally not committed to Git.
