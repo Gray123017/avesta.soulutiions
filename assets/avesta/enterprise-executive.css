@@ -1,0 +1,20 @@
+/* AVESTA Enterprise Executive UI — staging review only.
+   Additive styling; preserves app.js, backend, downloads, and runtime data. */
+:root{--executive-green:#163e33;--executive-deep:#205444;--executive-gold:#d98e3b;--executive-cream:#faf7f1;--executive-white:#fff}
+body{font-family:Inter,"Segoe UI",Arial,sans-serif}
+.header{box-shadow:0 3px 24px #163e3312}
+.header .brand{letter-spacing:.015em}
+.header-actions .button,.hero .button,.section .button{min-height:44px}
+.hero{background:linear-gradient(125deg,#163e33 0%,#205444 100%);color:#fff;overflow:hidden}
+.hero .hero-grid{align-items:center;gap:clamp(24px,4vw,64px)}
+.hero .hero-copy h1{letter-spacing:-.038em;line-height:1.11;text-wrap:balance}
+.hero .hero-copy p{max-width:57ch}
+.hero .hero-copy .eyebrow{color:#f0bd81;letter-spacing:.14em}
+.hero .choice-card{border-radius:20px;box-shadow:0 22px 58px #07181024;transition:box-shadow .18s ease,translate .18s ease}
+.hero .choice-card:focus-visible{outline:3px solid #d98e3b;outline-offset:4px}
+.section .wrap>h2,.section h2{letter-spacing:-.024em}
+.footer{background:#163e33}
+a:focus-visible,button:focus-visible{outline:3px solid #d98e3b;outline-offset:3px}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){.hero .choice-card:hover{translate:0 -3px;box-shadow:0 26px 64px #07181032}}
+@media(max-width:620px){.hero .hero-grid{gap:22px}.hero .hero-copy h1{font-size:clamp(2rem,9vw,3.3rem)}.hero .choice-card{border-radius:16px}.hero .actions{flex-wrap:wrap}.hero .actions a{max-width:100%}}
+@media(prefers-reduced-motion:reduce){.hero .choice-card{transition:none!important;translate:none!important}}
