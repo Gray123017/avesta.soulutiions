@@ -12,7 +12,7 @@ SetCompressor zlib
 SetCompressionLevel 7
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "${PROJECT_DIR}/LICENSE"
+!insertmacro MUI_PAGE_LICENSE "${LICENSE_FILE}"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -31,7 +31,7 @@ FunctionEnd
 
 Section "Subscription Desk" SecMain
   SetOutPath "$INSTDIR"
-  File /r /x ".*" "${PROJECT_DIR}/dist/win-unpacked/*.*"
+  File /r /x ".*" "${PACKAGED_FILES}"
   WriteUninstaller "$INSTDIR\Uninstall Subscription Desk.exe"
   CreateDirectory "$SMPROGRAMS\Subscription Desk"
   CreateShortCut "$SMPROGRAMS\Subscription Desk\Subscription Desk.lnk" "$INSTDIR\Subscription Desk.exe"
@@ -53,7 +53,7 @@ Section "Uninstall"
   Delete "$DESKTOP\Subscription Desk.lnk"
   Delete "$SMPROGRAMS\Subscription Desk\Subscription Desk.lnk"
   RMDir "$SMPROGRAMS\Subscription Desk"
-  !include "${BUILD_RESOURCES_DIR}/uninstall-files.nsh"
+  !include "${UNINSTALL_FILE_LIST}"
   DeleteRegKey HKCU "Software\SubscriptionDesk"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SubscriptionDesk"
 SectionEnd
