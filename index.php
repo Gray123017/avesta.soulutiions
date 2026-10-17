@@ -28,6 +28,7 @@ header('Referrer-Policy: same-origin');
 <script type="module" src="/assets/avesta/assistant.js?v=20261003-chat-minimize"></script>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
+<link rel="stylesheet" href="/assets/avesta/enterprise-executive.css?v=20261011-staging">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
