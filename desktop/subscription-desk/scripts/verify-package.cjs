@@ -7,7 +7,8 @@ module.exports=function verifyPackage(appDirectory){
   if(JSON.parse(asar.extractFile(archive,'package.json')).version!==expected)throw new Error('Stale application bundle: rebuild in a fresh output directory.');
   let checked=0;
   function walk(directory){for(const entry of fs.readdirSync(path.join(root,directory),{withFileTypes:true})){
-    const relative=path.posix.join(directory,entry.name);
+    // asar resolves entries with path.sep, so Windows needs native separators.
+    const relative=path.join(directory,entry.name);
     if(entry.isDirectory())walk(relative);
     else {if(!asar.extractFile(archive,relative).equals(fs.readFileSync(path.join(root,relative))))throw new Error('Packaged source differs: '+relative);checked++;}
   }}
