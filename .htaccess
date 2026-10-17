@@ -30,6 +30,19 @@
   </IfModule>
 </FilesMatch>
 
+# Internal documentation is deployed with the repo root but must not be public.
+# All Markdown files are blocked (the site serves none). Text files are named
+# individually because robots.txt has to stay readable.
+<FilesMatch "\.md$|^DEPLOY_TO_HOSTINGER\.txt$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
 # Compression. Pages are ~373 KB of text and compress to ~92 KB — the single
 # biggest thing you can do for someone on a mobile bundle.
 <IfModule mod_deflate.c>
