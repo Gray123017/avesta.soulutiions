@@ -1,0 +1,54 @@
+name: Subscription Desk desktop packages
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'desktop/subscription-desk/**'
+      - '.github/workflows/subscription-desk.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/subscription-desk/**'
+      - '.github/workflows/subscription-desk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            script: dist:linux
+            artifact: linux-amd64
+          - os: windows-2025
+            script: dist:windows
+            artifact: windows-x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop/subscription-desk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/subscription-desk/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run ${{ matrix.script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: subscription-desk-${{ matrix.artifact }}
+          path: |
+            desktop/subscription-desk/dist/linux-package/*.deb
+            desktop/subscription-desk/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
