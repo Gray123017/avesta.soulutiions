@@ -1,0 +1,92 @@
+{
+  "name": "subscription-desk",
+  "version": "1.0.1",
+  "description": "A private desktop subscription inbox and renewal planner",
+  "homepage": "https://example.invalid/subscription-desk",
+  "productName": "Subscription Desk",
+  "author": "Subscription Desk",
+  "license": "MIT",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "test:ui": "node scripts/smoke.cjs",
+    "dist:linux": "node scripts/build-linux.cjs",
+    "dist:windows": "node scripts/build-windows.cjs",
+    "dist": "npm run dist:linux && npm run dist:windows"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
+  },
+  "devDependencies": {
+    "electron": "44.8.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "app.subscriptiondesk.desktop",
+    "asar": true,
+    "afterPack": "scripts/after-pack.cjs",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icon.png",
+      "assets/icon.ico",
+      "package.json",
+      "README.md",
+      "LICENSE"
+    ],
+    "artifactName": "Subscription-Desk-${version}-${os}-${arch}.${ext}",
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "category": "Office",
+      "icon": "assets/icon.png",
+      "maintainer": "Subscription Desk <support@example.invalid>",
+      "synopsis": "Track subscriptions from Gmail and plan renewals",
+      "desktop": {
+        "entry": {
+          "Name": "Subscription Desk",
+          "StartupWMClass": "subscription-desk"
+        }
+      }
+    },
+    "deb": {
+      "compression": "gz",
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libasound2 | libasound2t64",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libgbm1",
+        "libsecret-1-0"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "script": "assets/installer.nsi",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": false
+    },
+    "publish": null
+  }
+}

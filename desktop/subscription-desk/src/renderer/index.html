@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Subscription Desk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-sidebar="auto">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">S<span>·</span></div><div>subscription<span>desk</span></div></div>
+    <div class="workspace-label">YOUR WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <button data-view="overview" class="nav active" aria-label="Overview" title="Overview"><span class="nav-icon" data-icon="grid"></span><span class="nav-label">Overview</span></button>
+      <button data-view="subscriptions" class="nav" aria-label="Subscriptions" title="Subscriptions"><span class="nav-icon" data-icon="layers"></span><span class="nav-label">Subscriptions</span><span id="nav-count" class="nav-count">0</span></button>
+      <button data-view="upcoming" class="nav" aria-label="Deadlines" title="Deadlines"><span class="nav-icon" data-icon="calendar"></span><span class="nav-label">Deadlines</span></button>
+      <button data-view="activity" class="nav" aria-label="Activity" title="Activity"><span class="nav-icon" data-icon="clock"></span><span class="nav-label">Activity</span></button>
+    </nav>
+    <div class="sidebar-note"><span class="small-orbit" data-icon="spark"></span><h3>A little less forgotten.</h3><p>Keep what you use.<br>Review what you don’t.</p></div>
+    <div class="sidebar-bottom"><button data-view="settings" class="nav" aria-label="Settings & connection" title="Settings & connection"><span class="nav-icon" data-icon="settings"></span><span class="nav-label">Settings & connection</span></button><div class="profile"><div class="avatar" id="avatar">SD</div><div class="profile-copy"><strong id="profile-name">Local workspace</strong><span id="profile-sub">Gmail not connected</span></div><span class="connection-dot" id="connection-dot"></span></div></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div class="topbar-left"><button class="icon-button sidebar-toggle" data-action="toggle-sidebar" aria-label="Collapse navigation" aria-expanded="true" title="Collapse navigation"><span data-icon="sidebar"></span></button><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div></div><div class="topbar-right"><span class="local-chip"><span data-icon="shield"></span> On this device</span><button class="btn export-button" data-action="export-menu" title="Export your records"><span data-icon="download"></span> Export records</button></div></header>
+    <main id="main" tabindex="-1"></main>
+  </div>
+  <dialog id="detail-panel" class="detail-panel" aria-labelledby="panel-title"></dialog>
+  <div id="toast" class="toast hidden" popover="manual" role="status" aria-live="polite"></div>
+  <dialog id="export-dialog" class="export-dialog" aria-labelledby="export-title"><div class="dialog-heading"><div><p class="eyebrow">EXPORT WORKSPACE</p><h2 id="export-title">Take your records with you</h2></div><button class="icon-button" data-action="close-export" aria-label="Close export"><span data-icon="close"></span></button></div><p>Choose a format. Exports include private account details and email references.</p><div class="export-options"><button data-export="xlsx"><span class="export-icon" data-icon="table"></span><span><strong>Excel tracker</strong><small>Formatted workbook with email evidence</small></span><span data-icon="arrow"></span></button><button data-export="pdf"><span class="export-icon" data-icon="file"></span><span><strong>PDF report</strong><small>A readable snapshot for your review</small></span><span data-icon="arrow"></span></button><button data-export="json"><span class="export-icon" data-icon="layers"></span><span><strong>Backup / JSON</strong><small>Move records to another installation</small></span><span data-icon="arrow"></span></button><button data-export="ics"><span class="export-icon" data-icon="calendar"></span><span><strong>Calendar / .ics</strong><small>Reviewed, confirmed future dates only</small></span><span data-icon="arrow"></span></button></div></dialog>
+  <script src="app.js"></script>
+</body>
+</html>

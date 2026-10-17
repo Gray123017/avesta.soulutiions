@@ -1,0 +1,8 @@
+node_modules/
+dist/
+test-output/
+*.log
+oauth-client.json
+client_secret*.json
+.env
+private-data/
