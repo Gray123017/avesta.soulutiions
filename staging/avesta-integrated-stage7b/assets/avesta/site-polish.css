@@ -1,0 +1,2 @@
+/* Stage 7B shared presentation correction: non-actionable contact labels need lines too. */
+.footer .footer-details>span{display:block;margin:7px 0;font-size:.87rem;line-height:1.6;color:var(--brand-muted,#c7d9cf)}

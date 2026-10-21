@@ -1,0 +1,5 @@
+<?php
+declare(strict_types=1);
+// Source-control template only. The disposable staging account hashes are intentionally omitted.
+// Provision synthetic users privately for the isolated Stage 7B acceptance lab.
+return [];
