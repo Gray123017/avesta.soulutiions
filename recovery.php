@@ -69,7 +69,8 @@ main{width:100%;max-width:440px}header{color:#fff;text-align:center;margin-botto
 input{font:inherit;width:100%;padding:12px;border:1.5px solid #E3DED4;border-radius:9px;margin-bottom:16px}input:focus{outline:3px solid #D98E3B55;border-color:#D98E3B}
 button{font:inherit;font-weight:700;background:#163E33;color:#E9B06A;padding:12px;border:0;border-radius:9px;width:100%;cursor:pointer}a{color:#B26F26}small{display:block;color:#66766F;margin-bottom:16px}
 .msg{padding:16px;border-radius:12px;background:#E8F4EE;margin-bottom:20px;line-height:1.65}.msg strong{display:block;color:#163E33;margin-bottom:3px}.error{background:#FBEAE8;color:#9d2a20}.help{border-top:1px solid #E3DED4;margin-top:22px;padding-top:16px;font-size:13px}
-</style><link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003"></head><body><main><header><h1>Avesta Enterprises</h1><a href="/">Back to the website</a></header><section class="card">
+</style><link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003"><link rel="stylesheet" href="/assets/avesta/sitewide-motion.css?v=20261021">
+</head><body><main><header><h1>Avesta Enterprises</h1><a href="/">Back to the website</a></header><section class="card">
 <p class="eyebrow">Account</p><h2><?= $setup ? 'Set up recovery email' : ($done ? 'Password reset' : 'Forgot password') ?></h2>
 <?php if ($notice): ?><div class="msg" role="status" aria-live="polite"><strong><?= $done ? 'Success' : 'Check your email' ?></strong><?= $esc($notice) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="msg error" role="alert"><?= $esc($error) ?></div><?php endif; ?>
