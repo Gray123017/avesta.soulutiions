@@ -1,0 +1,19 @@
+/* Avesta sitewide optional motion. CSS-only, no business-logic dependency. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  body.software-hub-page :is(.hub-product-card,.hub-stat,.hub-feature,.hub-panel,.software-tab),
+  body:not(.software-hub-page) :is(.card,.service-card,.feature-card,.dashboard-card,.stat-card,.panel) {
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+  body.software-hub-page :is(.hub-product-card,.hub-stat,.hub-feature,.hub-panel):hover,
+  body:not(.software-hub-page) :is(.card,.service-card,.feature-card,.dashboard-card,.stat-card,.panel):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(13,50,40,.12);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.software-hub-page :is(.hub-product-card,.hub-stat,.hub-feature,.hub-panel,.software-tab),
+  body:not(.software-hub-page) :is(.card,.service-card,.feature-card,.dashboard-card,.stat-card,.panel) {
+    transition: none !important;
+    transform: none !important;
+  }
+}

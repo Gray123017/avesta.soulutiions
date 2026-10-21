@@ -89,6 +89,7 @@ $products = [
 <link rel="icon" href="/icons/icon-192.png">
 <link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261008a">
 <script src="/assets/avesta/software-tabs.js?v=20261008a" defer></script>
+<link rel="stylesheet" href="/assets/avesta/sitewide-motion.css?v=20261021">
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">
