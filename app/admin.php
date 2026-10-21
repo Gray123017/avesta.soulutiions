@@ -808,6 +808,7 @@ window.avFetchJson = async function (url, opts, ms) {
 </style>
 <link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
 <script src="/assets/avesta/device-layout.js?v=20261003" defer></script>
+<link rel="stylesheet" href="/assets/avesta/sitewide-motion.css?v=20261021">
 </head>
 <body>
 
