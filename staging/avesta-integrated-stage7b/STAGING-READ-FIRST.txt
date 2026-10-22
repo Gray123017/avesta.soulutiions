@@ -1,0 +1,89 @@
+AVESTA STAGE 7B — AUTHENTICATED PORTAL INTEGRATION
+18 October 2026 | Build 20261018-stage7b-r1 | Protected staging only
+
+WHAT THIS IS
+A new combined staging website: Stage 6 public design/form/catalogue/guide demonstrations
+plus a real server-authenticated, read-only portal using SIX disposable identities and
+FIVE fictional records. It does not connect any production account or customer data.
+This is NOT a production release, database migration, payment system or enabled submission.
+Stage 6 and Stage 7A remain separately unchanged. Their current hosted acceptance is not
+inferred from permission to keep developing.
+
+INSTALL THE NEW SIBLING ONLY
+1. Preserve your current hosting backup and existing parent .htaccess/.htpasswd and CDN bypass.
+2. Requires PHP 8.1+. Do not change production-wide PHP settings just for this candidate.
+3. Open Hostinger File Manager > public_html/staging/.
+4. Upload ONLY Avesta-Stage-7B-Authenticated-Portals-Staging-2026-10-18.zip and extract once.
+5. STOP if avesta-integrated-stage7b already exists; do not overwrite an unknown installation.
+6. Confirm public_html/staging/avesta-integrated-stage7b/signin.php exists.
+7. In a fresh unauthenticated browser session verify Hostinger password protection of:
+   https://staging.avesta.solutions/avesta-integrated-stage7b/signin.php
+   https://staging.avesta.solutions/avesta-integrated-stage7b/assets/avesta/auth-portal.css
+   Never enter the lab password in the Hostinger prompt; the gates use different credentials.
+8. Authentication initially returns a deliberate HTTP 503 because it is disabled. Public
+   demonstration pages in this candidate remain usable, but no protected records are returned.
+9. Edit ONLY public_html/staging/avesta-integrated-stage7b/config.php and change
+       'enabled' => false,
+   to  'enabled' => true,
+   AFTER checking the inherited password protection. Leave every other value unchanged.
+10. Reload signin.php, allowing the host's normal PHP cache revalidation interval.
+11. Remove the uploaded ZIP from hosting after extraction; keep the local copy.
+
+PRIVATE STATE / IMPORTANT HOSTING REQUIREMENTS
+The first enabled authentication request attempts to create this new directory:
+  <domain directory>/avesta-stage7b-private-b72b038b5177/
+It is a sibling of public_html, NOT a child of it. The PHP worker must be able to create
+it with mode 0700 and private files with mode 0600. The lab verifies its documented folder
+layout and a server-supplied HTTPS flag. It does not implicitly trust forwarded headers.
+If private storage or HTTPS verification fails, STOP. Do not use 0777, disable guards,
+move runtime files into public_html, copy a production store or enable local_test.
+Ask the hosting administrator to check private writable storage and verified HTTPS handling.
+The documented layout has only been tested in a local replica, not on your Hostinger account.
+
+TEST CREDENTIALS — NEW STAGE 7B SHEET
+Use Avesta-Stage-7B-Disposable-Test-Accounts-2026-10-18.txt on your computer only.
+Stage 7A passwords are intentionally not reused. Do not upload this sheet or add it to GitHub.
+No production password, NRC, payslip, signature or real customer details belong in this site.
+The new credentials have no access to production or earlier stages.
+
+FIRST ACCEPTANCE
+Open https://staging.avesta.solutions/avesta-integrated-stage7b/signin.php
+- demo.borrower.a: 3 permitted fixtures (2 applications + 1 support request).
+- Sign out, then demo.borrower.b: 2 different fixtures (1 application + 1 support request).
+- Staff A and B: 2 fixtures each, assigned-only. This is the LAB policy, not a change to live policy.
+- Admin/Super Admin: all 5 fixtures, read-only. Only Super Admin may use Privileged identity boundary.
+- Identity changes require Sign out and signing in again. There is no role picker.
+- Search/status filters affect only the current authorized HTML. Follow Read permitted record.
+- Test Light/Dark/Use device setting, refresh, mobile Menu and a fresh protected request after logout.
+- Opening another page is NOT logout. Use Sign out when finished. Every protected HTTP request
+  validates the current session. Already-displayed information is not remotely erased from a screen.
+- Re-test Home, Lending, the simulated application, IT enquiries, Software previews and G.I.T Guide.
+  These demonstrations DO NOT create records in the authenticated portal.
+- No real assignment, approval, repayment, password reset, notification or document operation exists.
+
+WHY THE PORTAL IS DIFFERENT FROM THE OLD DEMO
+PHP chooses the Customer/Staff/Administrator/Super Administrator experience from the current
+account, validates immutable identity/active/role/version/expiry, and authorizes records before
+rendering. No complete unfiltered record set is embedded in portal JavaScript. Real user
+accounts and production policy have not been imported. The browser role-selector demonstration
+remains in the earlier Stage 6 site only; it is not a login and is not shipped as the active portal.
+The original Stage 7A records contain no balances, dates or payment ledger, so none are invented.
+
+PAUSE / RETURN
+Sign out where possible. Setting enabled=false pauses authentication only; public demos still run.
+Alternatively, the separate Stage 7B Pause ZIP contains only avesta-integrated-stage7b/PAUSED.flag.
+Extracting that ZIP into public_html/staging/ pauses all Stage 7B PHP entry points. It leaves
+static assets protected by the parent Hostinger rules. Do not install pause and update together.
+Neither mechanism deletes private data nor irrevocably revokes existing session files; resuming
+before expiry may restore a still-valid session. For definitive retirement, keep paused and ask
+hosting staff to clean up only this exact instance's private session/state directory after
+preserving required test evidence. Do not delete shared or production files.
+The lab lifetime is 7 days from provisioning, with 15-minute idle / 2-hour session limits.
+Earlier Stage 6 and Stage 7A can be reopened at their original addresses; neither is overwritten.
+This pause switch is NOT a full filesystem/database backup or rollback.
+
+SOURCE BACKUP
+The source-and-tests ZIP is for local development and reviewed source control, not Hostinger.
+It omits instance keys, seed-user password hashes and plaintext credentials; its local fixture
+provisioner creates a new independent instance for tests. Do not publish installation config
+or any private credential sheet. No GitHub branch, push, merge or production deployment occurred.

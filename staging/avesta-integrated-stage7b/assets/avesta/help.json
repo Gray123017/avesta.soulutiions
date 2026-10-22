@@ -1,0 +1,293 @@
+[
+  {
+    "id": "printer",
+    "title": "Printer not printing or shows offline",
+    "weight": [
+      "printer",
+      "print",
+      "offline",
+      "spooler",
+      "toner",
+      "cartridge",
+      "paper jam"
+    ],
+    "hint": [
+      "prints blank",
+      "wont print",
+      "won’t print"
+    ],
+    "answer": "An offline printer may have a connection, queue or device problem.",
+    "steps": [
+      "Check power, paper and any displayed error code.",
+      "Check USB or network connections. For Wi-Fi, confirm the printer and computer are on the same network.",
+      "Open Windows Settings, then Bluetooth & devices, then Printers & scanners. Select the printer and check its queue.",
+      "Restart the printer and run the Windows printer troubleshooter. Ask the administrator before changing a shared printer."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error.",
+    "sources": [
+      {
+        "title": "Microsoft: printer troubleshooting",
+        "url": "https://support.microsoft.com/en-us/windows/hardware/printer/troubleshooting-offline-printer-problems-in-windows"
+      }
+    ]
+  },
+  {
+    "id": "wifi",
+    "title": "Wi-Fi keeps dropping",
+    "weight": [
+      "wifi",
+      "wi-fi",
+      "wireless",
+      "drops",
+      "dropping",
+      "disconnect",
+      "keeps cutting",
+      "signal"
+    ],
+    "answer": "Dropped connections can come from coverage, interference, the device or the internet service.",
+    "steps": [
+      "Compare another device in the same room.",
+      "Move closer to the access point and compare the connection.",
+      "Check that Wi-Fi is enabled and airplane mode is off.",
+      "Restart the affected computer. Ask the network administrator before restarting shared network equipment or changing its settings."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error.",
+    "sources": [
+      {
+        "title": "Microsoft: Wi-Fi connection help",
+        "url": "https://support.microsoft.com/en-us/windows/experience/connectivity-networking/fix-wi-fi-connection-issues-in-windows"
+      }
+    ]
+  },
+  {
+    "id": "nointernet",
+    "title": "No internet at all",
+    "weight": [
+      "no internet",
+      "internet down",
+      "no connection",
+      "cannot browse",
+      "offline completely",
+      "data not working"
+    ],
+    "answer": "Check whether the fault affects one device or the whole network.",
+    "steps": [
+      "Try another device and another website.",
+      "Check Wi-Fi and network cables.",
+      "Note the router lights and compare them with its manual.",
+      "For a home connection, restart the router if you can safely interrupt service. For a workplace, contact the administrator first.",
+      "Contact the provider if multiple devices remain offline."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error.",
+    "sources": [
+      {
+        "title": "Microsoft: Wi-Fi connection help",
+        "url": "https://support.microsoft.com/en-us/windows/experience/connectivity-networking/fix-wi-fi-connection-issues-in-windows"
+      }
+    ]
+  },
+  {
+    "id": "slow",
+    "title": "Computer very slow",
+    "weight": [
+      "slow",
+      "sluggish",
+      "lagging",
+      "freezing",
+      "takes long",
+      "hanging"
+    ],
+    "answer": "Slow performance can have several causes; resource use helps narrow them down.",
+    "steps": [
+      "Save your work and restart the computer.",
+      "Check Task Manager for high CPU, memory or disk use. High use alone does not prove a hardware fault.",
+      "Check available storage without deleting unfamiliar files.",
+      "Review startup apps with your administrator before disabling business software."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "wontstart",
+    "title": "Computer will not turn on",
+    "weight": [
+      "wont turn on",
+      "won’t turn on",
+      "not starting",
+      "no power",
+      "dead",
+      "black screen",
+      "not booting"
+    ],
+    "answer": "Check for signs of power without opening the equipment.",
+    "steps": [
+      "Check the power cable and a known working socket.",
+      "Note any lights, fan sound or screen message.",
+      "Use only the correct manufacturer-approved charger.",
+      "If there is heat, swelling, smoke, liquid damage or a burning smell, stop using it and contact a technician."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "virus",
+    "title": "Pop-ups, virus or ransomware",
+    "weight": [
+      "virus",
+      "malware",
+      "popup",
+      "pop-up",
+      "ransomware",
+      "encrypted",
+      "hacked",
+      "trojan",
+      "infected"
+    ],
+    "answer": "If ransomware or compromise is suspected, limit spread and contact your IT team.",
+    "steps": [
+      "Disconnect the affected device from Wi-Fi and wired networks.",
+      "Do not enter passwords or payment details into suspicious prompts.",
+      "Preserve the error message or ransom note for the response team.",
+      "Ask IT before deleting files, reinstalling software or restoring backups."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error.",
+    "sources": [
+      {
+        "title": "CISA: ransomware incident guidance",
+        "url": "https://www.cisa.gov/stopransomware/ransomware-guide"
+      }
+    ]
+  },
+  {
+    "id": "files",
+    "title": "Deleted files or need data recovered",
+    "weight": [
+      "deleted",
+      "lost files",
+      "recover",
+      "recovery",
+      "recycle bin",
+      "gone",
+      "formatted",
+      "missing files"
+    ],
+    "answer": "Recovery depends on storage type, backups and subsequent writes.",
+    "steps": [
+      "Check the Recycle Bin and available backup or version history.",
+      "Stop saving new data to the affected drive.",
+      "Do not install recovery software onto that drive.",
+      "For important data, contact a recovery specialist before further attempts."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "cctv",
+    "title": "CCTV not recording or cannot view remotely",
+    "weight": [
+      "cctv",
+      "camera",
+      "dvr",
+      "nvr",
+      "recording",
+      "footage",
+      "surveillance",
+      "not viewing"
+    ],
+    "answer": "Live viewing, recording and remote access need separate checks.",
+    "steps": [
+      "Check whether live images appear on the recorder monitor. This does not verify recording.",
+      "Review recording status and storage health without formatting or initializing a drive.",
+      "Check the recorded date/time and try playback.",
+      "For remote viewing, check internet access and the official app. Ask your installer before changing firewall or port settings."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "email",
+    "title": "Email not sending or receiving",
+    "weight": [
+      "email",
+      "outlook",
+      "mail",
+      "not sending",
+      "not receiving",
+      "smtp",
+      "imap",
+      "mailbox full"
+    ],
+    "answer": "Email faults may involve service availability, storage, account access or the mail app.",
+    "steps": [
+      "Note the exact error without sharing credentials.",
+      "Check whether webmail works in a browser.",
+      "Check mailbox storage and connection status.",
+      "Contact your mail administrator before removing accounts or changing server settings."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "password",
+    "title": "Locked out of Windows",
+    "weight": [
+      "password",
+      "locked out",
+      "forgot password",
+      "cannot log in",
+      "login",
+      "signed out"
+    ],
+    "answer": "Use the official recovery process for your account type.",
+    "steps": [
+      "Check Caps Lock and keyboard layout.",
+      "For a personal Microsoft account, use Microsoft’s official account recovery page.",
+      "For a work account, contact your administrator.",
+      "Do not repeatedly guess passwords or use untrusted password-bypass software."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "overheat",
+    "title": "Laptop hot, loud fan, or switching itself off",
+    "weight": [
+      "hot",
+      "overheat",
+      "fan",
+      "noisy",
+      "loud",
+      "shutting down",
+      "switches off",
+      "burning"
+    ],
+    "answer": "Heat and fan noise can have several causes and need model-specific checks.",
+    "steps": [
+      "Place the computer on a hard surface with clear vents.",
+      "Save your work and stop using equipment that is unusually hot or shuts down repeatedly.",
+      "If there is smoke, swelling or a burning smell, disconnect power if safe and seek professional help.",
+      "Do not open the power supply or attempt internal repairs without appropriate training."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error."
+  },
+  {
+    "id": "backup",
+    "title": "Backups and protecting data",
+    "weight": [
+      "backup",
+      "back up",
+      "protect",
+      "safe",
+      "copy",
+      "restore",
+      "disaster"
+    ],
+    "answer": "Protect backups from the same failures that could affect your working data.",
+    "steps": [
+      "Keep separate backup copies, including an offline or appropriately isolated copy.",
+      "Test a restore to a separate location and verify the restored files.",
+      "Review backup failures and access permissions with your administrator."
+    ],
+    "call": "If the problem continues, contact Avesta on 0769 974 200 with the device model and exact error.",
+    "sources": [
+      {
+        "title": "CISA: ransomware prevention and recovery",
+        "url": "https://www.cisa.gov/stopransomware/ransomware-guide"
+      }
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+if (!defined('AV7_BOOTSTRAP')) { http_response_code(404); exit; }
+// Source-control template only. Create config.php on the protected staging host.
+// Never commit the live instance key, production credentials, or private paths.
+return [
+    'enabled' => false,
+    'local_test' => false,
+    'staff_scope' => 'assigned_only',
+    'instance' => 'REPLACE_WITH_PRIVATE_INSTANCE_ID',
+    'key' => 'REPLACE_WITH_PRIVATE_RANDOM_KEY',
+    'dummy_hash' => 'REPLACE_WITH_PRIVATE_DUMMY_BCRYPT_HASH',
+    'private_dir' => '/ABSOLUTE/PRIVATE/PATH/OUTSIDE/public_html',
+    'public_roots' => ['/ABSOLUTE/PUBLIC/WEB/ROOT'],
+];

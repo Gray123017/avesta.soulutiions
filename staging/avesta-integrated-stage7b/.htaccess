@@ -1,0 +1,5 @@
+Options -Indexes
+<FilesMatch "^(config|pause)\.php$">
+    Require all denied
+</FilesMatch>
+# Do not add Require all granted here: keep inherited parent Basic Authentication.

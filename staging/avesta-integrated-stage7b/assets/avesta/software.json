@@ -1,0 +1,122 @@
+[
+  {
+    "id": "asset-tracker",
+    "name": "GIT Asset Tracker",
+    "short": "Asset Tracker",
+    "icon": "AT",
+    "badge": "v1.5.1",
+    "description": "Track computers, printers, networking equipment and other IT assets with searchable records, reporting and backup tools.",
+    "meta": [
+      "WINDOWS",
+      "INVENTORY",
+      "REPORTING"
+    ],
+    "features": [
+      "Inventory categories and change history",
+      "Excel import/export and PDF reports",
+      "JSON backup and recovery"
+    ],
+    "actions": [
+      {
+        "label": "Download ZIP",
+        "kind": "download",
+        "destination": "/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip"
+      },
+      {
+        "label": "Setup support",
+        "kind": "support",
+        "destination": "mailto:info@avesta.solutions?subject=GIT%20Asset%20Tracker%201.5.1"
+      }
+    ]
+  },
+  {
+    "id": "sentinel",
+    "name": "Avanto Sentinel",
+    "short": "Sentinel",
+    "icon": "AS",
+    "badge": "Featured",
+    "description": "Inventory operations for teams that need stock, purchasing, orders, requests and reporting in one shared local-network workflow.",
+    "meta": [
+      "WINDOWS X64",
+      "LOCAL NETWORK",
+      "OPERATIONS"
+    ],
+    "features": [
+      "Dedicated Sentinel product interface",
+      "Stock, purchasing, orders and team requests",
+      "Windows x64 deployment package"
+    ],
+    "actions": [
+      {
+        "label": "Open Sentinel",
+        "kind": "product",
+        "destination": "/sentinel/"
+      },
+      {
+        "label": "Download package",
+        "kind": "download",
+        "destination": "/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar"
+      }
+    ]
+  },
+  {
+    "id": "device-health",
+    "name": "G.I.T Device Health",
+    "short": "Device Health",
+    "icon": "GH",
+    "badge": "Test build",
+    "description": "Authorized device-health reporting for IT teams that need visibility into performance, disk status, network reachability and Defender health.",
+    "meta": [
+      "WINDOWS 10/11",
+      "X64",
+      "MONITORING"
+    ],
+    "features": [
+      "CPU, memory, disk and network health",
+      "Microsoft Defender status reporting",
+      "Visible scheduled health reports"
+    ],
+    "actions": [
+      {
+        "label": "Download installer",
+        "kind": "download",
+        "destination": "/downloads/g-it/G-IT-Setup-x64.exe"
+      },
+      {
+        "label": "Read setup notes",
+        "kind": "notes",
+        "destination": "/downloads/g-it/README.txt"
+      }
+    ]
+  },
+  {
+    "id": "moneytrack",
+    "name": "Avesta MoneyTrack",
+    "short": "MoneyTrack",
+    "icon": "MT",
+    "badge": "v1.2.0",
+    "description": "Desktop money tracking for clearer day-to-day income, expense and financial record management.",
+    "meta": [
+      "WINDOWS X64",
+      "FINANCE",
+      "TRACKING"
+    ],
+    "features": [
+      "Simple income and expense tracking",
+      "Local desktop workflow for everyday records",
+      "Avesta-supported Windows installer"
+    ],
+    "actions": [
+      {
+        "label": "Download installer",
+        "kind": "download",
+        "destination": "/downloads/moneytrack/Avesta-MoneyTrack-1.2.0-Windows-x64-Setup.exe"
+      },
+      {
+        "label": "Setup support",
+        "kind": "support",
+        "destination": "mailto:info@avesta.solutions?subject=Avesta%20MoneyTrack%201.2.0"
+      }
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "build": "20261018-stage7b-r1",
+  "scope": "isolated authenticated read-only synthetic portal with carried public demonstrations; not production",
+  "target_folder": "avesta-integrated-stage7b",
+  "entry": "signin.php",
+  "public_entry": "index.php",
+  "authentication_enabled_by_default": false,
+  "baselines": {
+    "Stage 6": "3d939ab4d960b79a55298d111d3a7fc19d59be39b6e88f9c4edd223e24ee42db",
+    "Stage 7A": "2cbb237c256064711103070ce04904074825d6e32e7e7bcb23ea5fa53bfbb9c1"
+  },
+  "identity_source": "server validated synthetic account; no browser role selector",
+  "record_source": "unchanged five Stage 7A read-only fixtures; server-side serialization allowlist",
+  "roles": [
+    "borrower",
+    "staff",
+    "admin",
+    "super_admin"
+  ],
+  "staff_policy": "assigned_only synthetic lab; production policy unchanged",
+  "disabled": [
+    "production data/accounts",
+    "record writes and approval",
+    "real document storage",
+    "password recovery/account edits",
+    "notification providers",
+    "AI calls",
+    "installer downloads",
+    "payments/subscription billing"
+  ],
+  "storage": "new private directory outside public_html; sessions/counters/security events may be written; only appearance preferences persist in browser",
+  "hosting_modified": false,
+  "github_modified": false,
+  "validation_scope": "see separate fresh verification report; hosted acceptance not established"
+}
