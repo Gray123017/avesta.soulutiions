@@ -8,7 +8,7 @@ $config = av_chat_config(__DIR__);
 $transport = function_exists('curl_init');
 $ready = $config['key'] !== '' && $transport;
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'status') {
-    av_chat_json(['configured'=>$ready, 'webAvailable'=>$ready, 'version'=>'20261003-site-scope', 'reason'=>$ready ? null : ($config['key']==='' ? 'missing_key' : 'missing_curl')]);
+    av_chat_json(['configured'=>$ready, 'webAvailable'=>$ready, 'version'=>'20261016-luna', 'reason'=>$ready ? null : ($config['key']==='' ? 'missing_key' : 'missing_curl')]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') av_chat_json(['error'=>'Use POST to ask a question.'],405);
 if (($_SERVER['HTTP_X_AVESTA_CHAT'] ?? '') !== '1' || !preg_match('~^application/json(?:;|$)~i', $_SERVER['CONTENT_TYPE'] ?? '')) av_chat_json(['error'=>'Invalid chat request.'],400);
@@ -20,9 +20,10 @@ if (!$message || strlen($message)>4000 || ($body['web'] ?? false)!==true) av_cha
 if (preg_match('~\b\d{6}/\d{2}/\d\b|sk-[A-Za-z0-9_-]{20,}~',$message)) av_chat_json(['error'=>'Remove NRC numbers and API keys before sending.'],400);
 if (!$ready) av_chat_json(['error'=>'AI setup is incomplete. Saved guidance is still available.'],503);
 if (!av_chat_reserve(__DIR__.'/assistant_rate.php',$_SERVER['REMOTE_ADDR'] ?? 'unknown',time())) av_chat_json(['error'=>'AI request limit reached or temporarily unavailable. Use saved guidance or contact Avesta.'],429);
-$payload=['model'=>$config['model'], 'store'=>false, 'max_output_tokens'=>800,
+// Preserve the non-reasoning latency/output budget; Luna otherwise defaults to medium.
+$payload=['model'=>$config['model'], 'reasoning'=>['effort'=>'none'], 'store'=>false, 'max_output_tokens'=>800,
  'instructions'=>av_chat_instructions(__DIR__, av_chat_scope($body)),
- 'input'=>$message, 'tools'=>[['type'=>'web_search','search_context_size'=>'low']], 'tool_choice'=>'auto', 'max_tool_calls'=>1];
+ 'input'=>$message, 'tools'=>[['type'=>'web_search','search_context_size'=>'low']], 'tool_choice'=>'required', 'max_tool_calls'=>1];
 $ch=curl_init('https://api.openai.com/v1/responses');
 curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>28,CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$config['key']],CURLOPT_POSTFIELDS=>json_encode($payload),CURLOPT_FOLLOWLOCATION=>false]);
 $raw=curl_exec($ch); $status=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
