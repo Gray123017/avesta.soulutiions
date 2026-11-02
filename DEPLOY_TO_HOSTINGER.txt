@@ -1,26 +1,73 @@
-AVESTA / HARVESTER — HOSTINGER DEPLOYMENT
+AVESTA — HOSTINGER DEPLOYMENT
 
-1. Back up the current public_html folder before replacing it.
-2. Upload the CONTENTS of this ZIP into public_html (not the outer ZIP folder itself).
-3. Keep .htaccess and .user.ini files when extracting.
-4. Visit the home page, loans page, IT services page and login page.
-5. Sign in as an administrator and verify users, applications and IT enquiries.
-6. Configure notification credentials after deployment. No WhatsApp API credential is intentionally shipped in this package.
-7. Confirm PHP upload limits in Hostinger after .user.ini has had time to apply.
-8. Do not expose data files or the documents directory directly.
+HOW DEPLOYMENT WORKS NOW
+
+The site deploys from Git. hPanel is connected to this repository through the
+Hostinger GitHub App (hPanel > Websites > avesta.solutions > Advanced > GIT),
+set to branch main, deploying into public_html. Auto-deployment is ON, so every
+push to main reaches the live site within a minute or so.
+
+There is no manual upload step any more. Do not upload a ZIP into public_html;
+it would be overwritten on the next push, and it bypasses every check below.
+
+WHAT A DEPLOY DOES AND DOES NOT TOUCH
+
+A deploy resets the files this repository tracks and pulls the current main.
+Files the repository does NOT track are left alone. That is what keeps live
+data safe:
+
+  left alone (gitignored)   users.php, records_data.php, audit_log.php,
+                            enquiries.php, password_resets.php, rate-limit
+                            files, documents/* (the uploaded NRC scans),
+                            avesta-secrets.php, downloads/* installers
+  reset on every deploy     everything else, including documents/.htaccess
+
+Never replace this with an FTP sync that deletes files missing from the source.
+It would erase the applicant records, the uploaded documents and the installers
+on its first run.
+
+NO CI GATE — READ THIS BEFORE PUSHING
+
+Hostinger's GitHub App integration does not expose a deployment webhook, so a
+deploy cannot be made to wait for "Check Hostinger site" to pass. Auto-deploy
+fires on the push itself. A commit that breaks the site WILL reach customers.
+
+So: open a pull request, let the checks finish, and merge only when they are
+green. Pushing straight to main skips the only protection there is.
+
+To deploy without pushing (for example to re-run a failed deploy), use the
+Redeploy button on the GIT page in hPanel.
+
+AFTER A DEPLOY, CHECK
+
+  https://avesta.solutions/                 loads (200)
+  https://avesta.solutions/loans.php        loads (200)
+  https://avesta.solutions/it.php           redirects to /index.php?page=it
+  https://avesta.solutions/documents/       MUST return 403 or 404
+
+The last one matters most. documents/.htaccess is the only thing standing
+between applicants' NRC scans and anyone who guesses the URL, and it is a
+tracked file, so a bad commit can remove it.
+
+Then sign in as an administrator and confirm users, applications and IT
+enquiries are still listed.
+
+OTHER SETUP
+
+Configure notification credentials on the server, not in the repository. No
+WhatsApp API credential is shipped in this repository. Confirm PHP upload
+limits in hPanel after .user.ini has had time to apply.
 
 Default company email: info@avesta.solutions
 Domain: https://www.avesta.solutions/
 
-FINAL CHECKS PERFORMED
-- Recursive PHP syntax validation: PASS
-- Home page HTTP check: PASS (200)
-- Loans page HTTP check: PASS (200)
-- IT page HTTP check: PASS (200)
-- Login page HTTP check: PASS (200)
-- API health check: PASS
-- State-changing application status/delete calls changed to POST
-- Hard-coded WhatsApp API credential removed from browser code
+STANDING CAVEAT
 
-IMPORTANT
-This is a production candidate, not a guarantee of production security. Before handling real borrower identity documents or financial data, run live-host testing for HTTPS, permissions, email/WhatsApp delivery, backups, upload limits, session behavior and recovery procedures.
+Passing the checks is not a guarantee of production security. Before handling
+real borrower identity documents or financial data, test on the live host for
+HTTPS, permissions, email and WhatsApp delivery, backups, upload limits,
+session behaviour and recovery procedures.
+
+Note also that the Data Protection Act, 2021 requires personal data to be
+stored on a server inside Zambia, and sensitive personal data always so.
+Hostinger has no Zambian data centre. This is unresolved.
