@@ -43,6 +43,25 @@
   </IfModule>
 </FilesMatch>
 
+# Repository and tooling files ship with the root but are not part of the site.
+# .gitignore is the one that matters: it names every data file on the server,
+# which is a map for anyone probing. manifest.json is matched later and must
+# stay readable, so package*.json is named exactly rather than by extension.
+<FilesMatch "^\.(gitignore|gitattributes|editorconfig|prettierrc|prettierignore|user\.ini)$|^package(-lock)?\.json$|^(bun\.lock|composer\.(json|lock)|tsconfig\.json|eslint\.config\.(js|mjs|cjs)|vite\.config\.(js|ts)|vitest\.config\.(js|ts))$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Build and CI directories. These deploy because the repo root is the document
+# root; nothing in them is ever requested by a page. 404 rather than 403 so the
+# response does not confirm the path exists.
+RedirectMatch 404 ^/(scripts|\.github|tests)(/|$)
+
 # Compression. Pages are ~373 KB of text and compress to ~92 KB — the single
 # biggest thing you can do for someone on a mobile bundle.
 <IfModule mod_deflate.c>
