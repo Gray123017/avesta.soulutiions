@@ -11,7 +11,7 @@ function av_chat_config($root) {
     }
     $key = trim((string)(getenv('OPENAI_API_KEY') ?: ($config['OPENAI_API_KEY'] ?? '')));
     if (!preg_match('/^sk-[A-Za-z0-9_-]{20,}$/', $key)) $key = '';
-    return ['key' => $key, 'model' => 'gpt-4.1-mini'];
+    return ['key' => $key, 'model' => 'gpt-6-luna'];
 }
 function av_chat_reserve($file, $ip, $now) {
     $f = @fopen($file, 'c+');
