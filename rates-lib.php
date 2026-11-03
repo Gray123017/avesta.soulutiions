@@ -175,7 +175,13 @@ function av_overdue_state(string $dueDate, string $asOf, ?array $cfg = null): ar
     }
 
     $every = (int) $o['stepEveryDays'];
-    $steps = intdiv($daysLate - 1, $every);          // 0 for the first period
+    // The band steps ON the boundary, not the day after it. A four-week loan
+    // that falls overdue carries 35% through day 27 and 40% from day 28 —
+    // which is week eight — then 45% from day 56, week twelve. That is the
+    // ladder as specified: "35% at week four, 40% at week eight, 45% at week
+    // twelve". Counting from $daysLate - 1 instead would push each band a day
+    // late and leave week eight still at 35%.
+    $steps = intdiv($daysLate, $every);
     $band  = (float) $o['startPercent'] + $steps * (float) $o['stepPercent'];
 
     $cap    = isset($o['capPercent']) ? (float) $o['capPercent'] : null;

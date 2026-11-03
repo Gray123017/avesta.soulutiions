@@ -22,11 +22,11 @@
     "capPercent": 100,
     "_capComment": "Accrued interest stops at the principal, so the most anyone can owe is twice what they borrowed. This mirrors the in duplum rule applied across the region and keeps a forgotten loan from growing without limit. Confirm against whatever cap the Bank of Zambia sets under the Banking and Financial Services Act No. 9 of 2026 before relying on it.",
 
-    "_knownGap": "A 4-week loan settled at week eight is still in the first band at 35% — K5,400 on K4,000 — against K5,800 for the 45% two-month product, so defaulting is K400 cheaper in that window, narrowing to K200 the next day when the band steps to 40% and reaching parity at day 57. Raising startPercent to 40 closes most of it. Left as specified; asserted in tests/rates.test.mjs.",
+    "_knownGap": "A 4-week loan settled at week eight carries the 40% band — K5,600 on K4,000 — against K5,800 for the 45% two-month product, so defaulting is K200 cheaper in that window. Parity arrives at week twelve, when the band reaches 45%. Raising startPercent to 40 would close the rest. Left as specified; asserted in tests/rates.test.mjs.",
 
     "_floorComment": "The band never reduces what is owed. Because startPercent (35) is below the 8-week term rate (45), an 8-week loan would otherwise get K400 cheaper the day it went overdue. av_amount_owing() floors the applied rate at the term rate and reports heldAtTermRate when it does. An 8-week loan therefore carries no late charge until the band passes 45% at day 57 — if that is too lenient, the fix is a per-term start band, not removing the floor.",
 
-    "_stepTiming": "A band lasts stepEveryDays from the first day overdue: 35% covers days 1-28, 40% days 29-56. So week eight carries 35%, not 40%. If the intent is that 40% applies ON week eight, change av_overdue_state() to intdiv(daysLate, every) and update the tests."
+    "_stepTiming": "The band steps ON the boundary: 35% covers days 1-27, 40% starts on day 28 (week eight), 45% on day 56 (week twelve). This matches the ladder as specified — 35% at week four, 40% at week eight, 45% at week twelve."
   },
 
   "legacy": {

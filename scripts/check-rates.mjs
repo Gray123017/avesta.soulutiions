@@ -175,8 +175,8 @@ console.log('\n-- the overdue ladder is sane --');
     console.log(
       `  NOTE  the band starts at ${o.startPercent}%, below the ${longest}-week rate ` +
       `(${longestRate}%).\n        A ${longest}-week loan is therefore held at its term rate ` +
-      `until the band passes it\n        (day ${
-        Math.ceil((longestRate - o.startPercent) / o.stepPercent) * o.stepEveryDays + 1
+      `until the band reaches it\n        (day ${
+        Math.ceil((longestRate - o.startPercent) / o.stepPercent) * o.stepEveryDays
       }), so it carries no late charge before then. Recorded in\n        rates.json under ` +
       `overdue._floorComment; the floor itself is checked above.`
     );
