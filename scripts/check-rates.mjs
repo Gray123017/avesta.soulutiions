@@ -171,14 +171,23 @@ console.log('\n-- the overdue ladder is sane --');
   if (o.capPercent !== undefined && o.capPercent < o.startPercent) {
     fail('the cap is above the starting band', `cap ${o.capPercent}% < start ${o.startPercent}%`);
   }
-  if (o.startPercent < longestRate) {
+  const flat = Number(o.stepPercent) === 0;
+  if (flat) {
     console.log(
-      `  NOTE  the band starts at ${o.startPercent}%, below the ${longest}-week rate ` +
-      `(${longestRate}%).\n        A ${longest}-week loan is therefore held at its term rate ` +
-      `until the band reaches it\n        (day ${
-        Math.ceil((longestRate - o.startPercent) / o.stepPercent) * o.stepEveryDays
-      }), so it carries no late charge before then. Recorded in\n        rates.json under ` +
-      `overdue._floorComment; the floor itself is checked above.`
+      `  NOTE  the penalty is flat at ${o.startPercent}% — stepPercent is 0, so it never ` +
+      `climbs.\n        Someone two days late and someone two years late owe the same.`
+    );
+  }
+  if (o.startPercent < longestRate) {
+    const day = flat
+      ? null
+      : Math.ceil((longestRate - o.startPercent) / o.stepPercent) * o.stepEveryDays;
+    console.log(
+      `  NOTE  the penalty (${o.startPercent}%) is below the ${longest}-week rate ` +
+      `(${longestRate}%), so a\n        ${longest}-week loan is held at its term rate by the ` +
+      `floor and carries no late\n        charge ` +
+      (flat ? 'at all, however long it runs.' : `before day ${day}.`) +
+      ` Recorded in rates.json under\n        overdue._eightWeekGap; the floor itself is checked above.`
     );
   }
   if (!failures) pass('the ladder is internally consistent');

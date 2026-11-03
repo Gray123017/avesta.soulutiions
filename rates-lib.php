@@ -188,8 +188,13 @@ function av_overdue_state(string $dueDate, string $asOf, ?array $cfg = null): ar
     $capped = $cap !== null && $band >= $cap;
     if ($capped) $band = $cap;
 
+    // A flat penalty (stepPercent 0) has no next step. Reporting one would put
+    // "next: 35% on 26 December" in front of a borrower when nothing changes
+    // on that date.
+    $flat = (float) $o['stepPercent'] == 0.0;
+
     $nextBandRaw = (float) $o['startPercent'] + ($steps + 1) * (float) $o['stepPercent'];
-    $atCeiling   = $cap !== null && $band >= $cap;
+    $atCeiling   = $flat || ($cap !== null && $band >= $cap);
 
     return [
         'overdue'     => true,

@@ -62,20 +62,22 @@ test('a loan is not overdue on its due date, and is the next day', () => {
   assert.equal(late.bandPercent, cfg.overdue.startPercent);
 });
 
-test('the band steps once a month, and says when it steps again', () => {
-  // The band steps ON the boundary, so the ladder reads as specified:
-  // 35% at week four, 40% at week eight, 45% at week twelve.
-  //
-  // Day 1 to day 27 is the first band.
-  assert.equal(php('av_overdue_state("2026-11-28","2026-12-25")').bandPercent, 35);
-  // Day 28 — week eight — begins the second.
-  const second = php('av_overdue_state("2026-11-28","2026-12-26")');
-  assert.equal(second.daysOverdue, 28);
-  assert.equal(second.bandPercent, 40);
-  assert.equal(second.nextStepOn, '2027-01-23');
-  assert.equal(second.nextBand, 45);
-  // Day 56 — week twelve — the third.
-  assert.equal(php('av_overdue_state("2026-11-28","2027-01-23")').bandPercent, 45);
+test('the penalty is flat: it never climbs, however long the delay', () => {
+  // Decided 3 November 2026. stepPercent is 0, so going overdue sets 35% and
+  // it stays there. Someone a day late and someone ten years late owe the
+  // same, which is the whole point of the decision.
+  for (const asOf of ['2026-11-29', '2026-12-26', '2027-01-23', '2027-05-28', '2036-11-28']) {
+    const state = php(`av_overdue_state("2026-11-28","${asOf}")`);
+    assert.equal(state.overdue, true, asOf);
+    assert.equal(state.bandPercent, 35, `${asOf}: the penalty should not move`);
+    assert.equal(state.nextStepOn, null, `${asOf}: a flat penalty has no next step`);
+    assert.equal(state.nextBand, null, `${asOf}: nor a next band`);
+  }
+
+  // The ladder machinery is still there, dormant. Turning stepPercent back up
+  // is a config change, not a code change.
+  assert.equal(cfg.overdue.stepPercent, 0, 'flat by configuration');
+  assert.equal(cfg.overdue.startPercent, 35);
 });
 
 test('the band replaces the term rate instead of adding to it', () => {
@@ -88,37 +90,33 @@ test('the band replaces the term rate instead of adding to it', () => {
   assert.notEqual(K(owing.totalDue), 5200 * 1.35);
 });
 
-test('interest stops at the principal, so a debt cannot run away', () => {
-  // Ten years late. Without the cap the band would be far past 100%.
+test('the in duplum cap is in place, dormant while the penalty is flat', () => {
+  // A flat 35% never approaches the cap, so a ten-year-old debt is still
+  // 35% and not capped. The cap stays configured so the protection is
+  // already there if the ladder is ever switched back on.
   const ancient = php('av_overdue_state("2016-11-28","2026-11-28")');
-  assert.equal(ancient.capped, true);
-  assert.equal(ancient.bandPercent, cfg.overdue.capPercent);
-  assert.equal(ancient.nextStepOn, null, 'a capped loan has no next step');
+  assert.equal(ancient.bandPercent, 35);
+  assert.equal(ancient.capped, false, 'a flat penalty never reaches the cap');
+  assert.equal(K(php('av_amount_owing(400000, 4, "2016-11-28", "2026-11-28")').totalDue), 5400);
 
-  const owing = php('av_amount_owing(400000, 4, "2016-11-28", "2026-11-28")');
-  assert.equal(K(owing.totalDue), 8000, 'never more than twice the principal');
+  assert.equal(cfg.overdue.capPercent, 100, 'the cap is still configured');
 });
 
 test('KNOWN GAP: defaulting on four weeks undercuts the two-month product', () => {
   // Documented rather than hidden. A borrower wanting eight weeks of money
-  // pays less by taking the four-week loan and not paying.
-  //
-  //   four weeks, settled at week 8 (day 28, where the band steps to 40%)
-  const defaulted = php('av_amount_owing(400000, 4, "2026-11-28", "2026-12-26")');
-  //   the honest two-month product
+  // pays less by taking the four-week loan and not paying — and with a flat
+  // penalty that stays true however long they leave it.
   const honest = php('av_quote(400000, 8)');
-
-  assert.equal(K(defaulted.totalDue), 5600);
   assert.equal(K(honest.total), 5800);
-  assert.ok(
-    defaulted.totalDue < honest.total,
-    'if this ever fails the gap has been closed — update this test and rates.json'
-  );
 
-  // K200 at week eight, where it used to be K400, and parity arrives at
-  // week twelve when the band reaches the two-month rate.
-  assert.equal(K(php('av_amount_owing(400000, 4, "2026-11-28", "2026-12-25")').totalDue), 5400); // day 27
-  assert.equal(K(php('av_amount_owing(400000, 4, "2026-11-28", "2027-01-23")').totalDue), 5800); // day 56
+  for (const asOf of ['2026-12-26', '2027-01-23', '2027-05-28']) {
+    const defaulted = php(`av_amount_owing(400000, 4, "2026-11-28", "${asOf}")`);
+    assert.equal(K(defaulted.totalDue), 5400, asOf);
+    assert.ok(
+      defaulted.totalDue < honest.total,
+      'if this ever fails the gap has been closed — update this test and rates.json'
+    );
+  }
 });
 
 test('loans signed under the old rules keep them', () => {
@@ -146,9 +144,9 @@ test('going overdue never costs a borrower less than paying on time', () => {
   const onTime = php('av_quote(400000, 8)');
   assert.equal(K(onTime.total), 5800);
 
-  // Day 1 and day 27 sit in the 35% band; day 28 steps to 40%. Both are
-  // below the 45% term rate, so both are floored.
-  for (const [asOf, rawBand] of [['2026-12-27', 35], ['2027-01-21', 35], ['2027-01-23', 40]]) {
+  // The penalty is a flat 35%, below the 45% term rate, so an overdue
+  // eight-week loan is floored at its term rate for as long as it runs.
+  for (const [asOf, rawBand] of [['2026-12-27', 35], ['2027-01-23', 35], ['2027-06-01', 35]]) {
     const late = php(`av_amount_owing(400000, 8, "2026-12-26", "${asOf}")`);
     assert.ok(
       late.totalDue >= onTime.total,
@@ -159,26 +157,22 @@ test('going overdue never costs a borrower less than paying on time', () => {
     assert.equal(late.bandPercent, rawBand, 'the raw band is still reported for the audit trail');
   }
 
-  // At day 56 the ladder reaches the term rate and the floor stops biting.
-  const past = php('av_amount_owing(400000, 8, "2026-12-26", "2027-02-20")');
+  // The floor never stops biting here: the penalty never reaches 45%, so an
+  // eight-week loan carries no late charge at all. Accepted on 3 November;
+  // recorded in rates.json under overdue._eightWeekGap.
+  const past = php('av_amount_owing(400000, 8, "2026-12-26", "2036-12-26")');
   assert.equal(past.rateApplied, 45);
-  assert.equal(past.bandPercent, 45);
-  assert.equal(past.heldAtTermRate, false);
+  assert.equal(past.bandPercent, 35);
+  assert.equal(past.heldAtTermRate, true);
 });
 
-test('the floor does not disturb the four-week ladder', () => {
+test('the floor does not disturb the four-week penalty', () => {
   // 35% is above the four-week rate of 30%, so nothing is floored here and
-  // the bands apply exactly as configured.
-  const cases = [
-    ['2026-11-29', 35, 5400],   // day 1 — first band
-    ['2026-12-25', 35, 5400],   // day 27 — last day of the first band
-    ['2026-12-26', 40, 5600],   // day 28 — week eight, steps to 40%
-    ['2027-01-23', 45, 5800],   // day 56 — week twelve, steps to 45%
-  ];
-  for (const [asOf, rate, total] of cases) {
+  // the penalty applies exactly as configured, at every age.
+  for (const asOf of ['2026-11-29', '2026-12-25', '2026-12-26', '2027-01-23']) {
     const r = php(`av_amount_owing(400000, 4, "2026-11-28", "${asOf}")`);
-    assert.equal(r.rateApplied, rate, `${asOf} rate`);
-    assert.equal(K(r.totalDue), total, `${asOf} total`);
+    assert.equal(r.rateApplied, 35, `${asOf} rate`);
+    assert.equal(K(r.totalDue), 5400, `${asOf} total`);
     assert.equal(r.heldAtTermRate, false, `${asOf} should not be floored`);
   }
 });
