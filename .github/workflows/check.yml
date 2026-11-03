@@ -16,6 +16,12 @@ jobs:
       - run: npm test
       - name: Guard critical frontend assets and software catalogue
         run: node scripts/check-release-safety.mjs
+      - name: The published rates agree everywhere they appear
+        # The price of credit is quoted in five places: rates.json, the
+        # calculator table, the application dropdown, prose on the site, and
+        # api.php, which is what actually binds a borrower. This fails the
+        # build if any of them drifts.
+        run: node scripts/check-rates.mjs
       - name: Protect software download catalogue
         run: |
           # Installers are retained on Hostinger and are intentionally not committed to Git.

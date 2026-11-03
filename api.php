@@ -44,6 +44,7 @@ if (!defined('AVESTA_LIB') && !file_exists($userIniPath)) {
 }
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/rates-lib.php';
 
 /**
  * Endpoint guard. Replaces the old wide-open CORS policy: the browser now
@@ -602,9 +603,26 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
     if ($weeks < 1) {
         jsonOut(['ok' => false, 'error' => 'Loan duration is outside the supported range.'], 422);
     }
-    $canonicalRate = $weeks <= 4 ? [1 => 15, 2 => 20, 3 => 25, 4 => 30][$weeks] : 30 + (($weeks - 4) * 5);
-    $canonicalInterest = round($loanAmount * $canonicalRate / 100, 2);
-    $canonicalTotal = round($loanAmount + $canonicalInterest, 2);
+    // Priced from assets/avesta/rates.json via rates-lib.php, which is the one
+    // published table. This block used to carry a hard-coded table of its own,
+    // with a linear extrapolation past four weeks that priced the eight-week
+    // term five points above what the published table charges for it.
+    // scripts/check-rates.mjs and tests/rates.test.mjs now both fail if any
+    // such copy reappears here.
+    try {
+        $quote = av_quote((int) round($loanAmount * 100), $weeks);
+    } catch (InvalidArgumentException $e) {
+        jsonOut(['ok' => false, 'error' => 'That loan term is not offered. Choose a published term.'], 422);
+    } catch (RuntimeException $e) {
+        // A missing or malformed table must stop the application, not price it
+        // at zero and save a binding record.
+        error_log('Avesta rate table unusable: ' . $e->getMessage());
+        jsonOut(['ok' => false, 'error' => 'Pricing is unavailable right now. Please try again shortly.'], 503);
+    }
+    $canonicalRate     = $quote['rate'];
+    $canonicalInterest = round($quote['interest'] / 100, 2);
+    $canonicalTotal    = round($quote['total'] / 100, 2);
+    $payload['terms_version'] = $quote['version'];
     $payload['loan_amt'] = round($loanAmount, 2);
     $payload['loan_amount'] = round($loanAmount, 2);
     $payload['int_rate'] = $canonicalRate;
