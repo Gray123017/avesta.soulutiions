@@ -38,8 +38,8 @@ test('published terms price as the site says they do', () => {
 
   // The two-month product.
   const eight = php('av_quote(400000, 8)');
-  assert.equal(eight.rate, 45);
-  assert.equal(K(eight.total), 5800);
+  assert.equal(eight.rate, 55);
+  assert.equal(K(eight.total), 6200);
 });
 
 test('a term that is not published is refused rather than guessed', () => {
@@ -107,7 +107,7 @@ test('KNOWN GAP: defaulting on four weeks undercuts the two-month product', () =
   // pays less by taking the four-week loan and not paying — and with a flat
   // penalty that stays true however long they leave it.
   const honest = php('av_quote(400000, 8)');
-  assert.equal(K(honest.total), 5800);
+  assert.equal(K(honest.total), 6200);
 
   for (const asOf of ['2026-12-26', '2027-01-23', '2027-05-28']) {
     const defaulted = php(`av_amount_owing(400000, 4, "2026-11-28", "${asOf}")`);
@@ -142,7 +142,7 @@ test('going overdue never costs a borrower less than paying on time', () => {
   // charged for eight weeks. Without a floor, an eight-week loan got K400
   // cheaper the day it fell overdue — the borrower was paid to default.
   const onTime = php('av_quote(400000, 8)');
-  assert.equal(K(onTime.total), 5800);
+  assert.equal(K(onTime.total), 6200);
 
   // The penalty is a flat 35%, below the 45% term rate, so an overdue
   // eight-week loan is floored at its term rate for as long as it runs.
@@ -152,7 +152,7 @@ test('going overdue never costs a borrower less than paying on time', () => {
       late.totalDue >= onTime.total,
       `${asOf}: overdue total ${K(late.totalDue)} is below the on-time total ${K(onTime.total)}`
     );
-    assert.equal(late.rateApplied, 45, `${asOf}: should be held at the term rate`);
+    assert.equal(late.rateApplied, 55, `${asOf}: should be held at the term rate`);
     assert.equal(late.heldAtTermRate, true);
     assert.equal(late.bandPercent, rawBand, 'the raw band is still reported for the audit trail');
   }
@@ -161,7 +161,7 @@ test('going overdue never costs a borrower less than paying on time', () => {
   // eight-week loan carries no late charge at all. Accepted on 3 November;
   // recorded in rates.json under overdue._eightWeekGap.
   const past = php('av_amount_owing(400000, 8, "2026-12-26", "2036-12-26")');
-  assert.equal(past.rateApplied, 45);
+  assert.equal(past.rateApplied, 55);
   assert.equal(past.bandPercent, 35);
   assert.equal(past.heldAtTermRate, true);
 });
@@ -185,5 +185,5 @@ test('the server prices an application from the published table', () => {
   assert.match(src, /av_quote\(/);
   assert.doesNotMatch(src, /\[\s*1\s*=>\s*15\s*,\s*2\s*=>\s*20/, 'inline rate table is back');
   assert.doesNotMatch(src, /30\s*\+\s*\(\(\$weeks - 4\) \* 5\)/, 'inline extrapolation is back');
-  assert.equal(cfg.terms['8'], 45, 'the published eight-week rate');
+  assert.equal(cfg.terms['8'], 55, 'the published eight-week rate');
 });

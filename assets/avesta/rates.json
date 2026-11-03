@@ -9,7 +9,7 @@
     "2": 20,
     "3": 25,
     "4": 30,
-    "8": 45
+    "8": 55
   },
 
   "overdue": {
@@ -24,9 +24,9 @@
     "capPercent": 100,
     "_capComment": "Interest would stop at the principal, so the most anyone could owe is twice what they borrowed — the in duplum rule applied across the region. Dormant while stepPercent is 0, since a flat 35% never approaches it. Kept so the protection is already in place if the ladder is ever switched back on. Confirm against whatever cap the Bank of Zambia sets under the Banking and Financial Services Act No. 9 of 2026 before relying on it.",
 
-    "_eightWeekGap": "A flat 35% penalty sits below the 45% charged for the 8-week term, so an overdue 8-week loan is held at its term rate by the floor in av_amount_owing() and carries NO late charge at all, however long it runs. Raised with the owner on 3 November and accepted. The fix, if it is ever wanted, is a per-term penalty rather than one flat figure — never removing the floor, which is what stops an overdue loan costing less than an on-time one.",
+    "_eightWeekGap": "A flat 35% penalty sits well below the 55% charged for the 8-week term, so an overdue 8-week loan is held at its term rate by the floor in av_amount_owing() and carries NO late charge at all, however long it runs. The gap widened when the 8-week rate went from 45% to 55% on 3 November. Raised with the owner and accepted. The fix, if it is ever wanted, is a per-term penalty rather than one flat figure — never removing the floor, which is what stops an overdue loan costing less than an on-time one.",
 
-    "_fourWeekGap": "A 4-week loan that defaults costs K5,400, against K5,800 for borrowing 8 weeks honestly, so defaulting is K400 cheaper at any point past week four. Raising startPercent to 46 or above would close it. Left as specified; asserted in tests/rates.test.mjs."
+    "_fourWeekGap": "A 4-week loan that defaults costs K5,400, against K6,200 for borrowing 8 weeks honestly at 55%, so defaulting is K800 cheaper at any point past week four. The gap doubled when the 8-week rate went from 45% to 55% on 3 November. Raising startPercent to 56 or above would close it. Left as specified; asserted in tests/rates.test.mjs."
   },
 
   "legacy": {
