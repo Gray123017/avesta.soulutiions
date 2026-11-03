@@ -479,8 +479,8 @@ function loanSummary(array $r): array {
         $paid += $toNgwee($p['amount'] ?? 0);
     }
 
-    $balance = $total - $paid;
-    if ($balance < 0) $balance = 0;          // overpayment is not a negative debt
+    // The balance is worked out after the delay penalty below, because past
+    // the due date the total is no longer the figure written at signing.
 
     // Due date: disbursement plus the agreed number of weeks
     $weeks = (int) preg_replace('/[^0-9]/', '', (string) ($r['sel_dur'] ?? 0));
@@ -496,6 +496,56 @@ function loanSummary(array $r): array {
         $daysLeft = (int) floor((strtotime($due) - strtotime(date('Y-m-d'))) / 86400);
     }
 
+    // ── The delay penalty ────────────────────────────────────────────────
+    //
+    // Past the due date the published penalty replaces the term rate, so what
+    // is owed is no longer the figure written at signing. Without this a loan
+    // three months overdue showed staff the same balance it showed on day one.
+    //
+    // Two things decide whether it applies:
+    //
+    //  1. The record must have been signed under this engine. Anything with no
+    //     terms_version was signed under the old additive rule (7.5% a week,
+    //     in the record's own late_payment_rate) and that agreement binds as
+    //     signed. Charging it today's penalty would be charging terms nobody
+    //     agreed to, so those are flagged for a human instead.
+    //  2. There must be a due date at all. No disbursement date, no ageing.
+    //
+    // Settled loans are left alone: a debt already paid cannot go overdue.
+    $terms          = av_rates_terms_for_record($r);
+    $penaltyApplied = false;
+    $penaltyRate    = null;
+    $signedTotal    = $total;
+    $legacyOverdue  = false;
+
+    $isOverdue = $due !== null && $daysLeft !== null && $daysLeft < 0;
+    $settledAtSignedTerms = $total > 0 && $paid >= $total;
+
+    if ($isOverdue && !$settledAtSignedTerms && $principal > 0 && $weeks > 0) {
+        if ($terms['engine'] === 'ladder') {
+            try {
+                $owing = av_amount_owing(
+                    $principal, $weeks, $due, date('Y-m-d'), $paid
+                );
+                if ($owing['totalDue'] > $total) {
+                    $total          = $owing['totalDue'];
+                    $penaltyApplied = true;
+                    $penaltyRate    = $owing['rateApplied'];
+                }
+            } catch (Throwable $e) {
+                // An unpriceable record must not break the whole list. It
+                // keeps its signed figures and is reported as such.
+                error_log('loanSummary penalty skipped for '
+                    . ($r['_key'] ?? 'unknown') . ': ' . $e->getMessage());
+            }
+        } else {
+            $legacyOverdue = true;
+        }
+    }
+
+    $balance = $total - $paid;
+    if ($balance < 0) $balance = 0;
+
     $settled = $total > 0 && $balance === 0;
     $state = 'pending';
     if ($settled)                                   $state = 'settled';
@@ -509,7 +559,7 @@ function loanSummary(array $r): array {
         'total_due'    => round($total / 100, 2),
         'paid'         => round($paid / 100, 2),
         'balance'      => round($balance / 100, 2),
-        'rate'         => $rate,
+        'rate'         => $penaltyApplied ? $penaltyRate : $rate,
         'weeks'        => $weeks,
         'due_date'     => $due,
         'days_left'    => $daysLeft,
@@ -518,6 +568,16 @@ function loanSummary(array $r): array {
         'settled'      => $settled,
         'state'        => $state,
         'percent_paid' => $total > 0 ? (int) round($paid * 100 / $total) : 0,
+
+        // What the penalty did, so staff and the borrower see the same working
+        // and nobody has to guess why a balance moved.
+        'penalty_applied'  => $penaltyApplied,
+        'penalty_rate'     => $penaltyRate,
+        'signed_rate'      => $rate,
+        'signed_total'     => round($signedTotal / 100, 2),
+        'penalty_amount'   => $penaltyApplied ? round(($total - $signedTotal) / 100, 2) : 0,
+        'terms_engine'     => $terms['engine'],
+        'legacy_overdue'   => $legacyOverdue,
     ];
 }
 
