@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,copyFileSync,cpSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,copyFileSync,cpSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
@@ -11,8 +11,11 @@ test('Recovery pages and administrator fallback work through real HTTP forms',
  {skip:spawnSync(php,['-v']).status!==0,timeout:30000},async()=>{
  const dir=mkdtempSync(join(tmpdir(),'avesta-recovery-http-'));let server;
  try{
-  for(const file of ['auth.php','api.php','login.php','recovery.php','recovery-lib.php','portal.php','apply.php'])copyFileSync(file,join(dir,file));
+  for(const file of ['auth.php','api.php','login.php','recovery.php','recovery-lib.php','portal.php','apply.php','rates-lib.php'])copyFileSync(file,join(dir,file));
   cpSync('app',join(dir,'app'),{recursive:true});
+  // api.php requires rates-lib.php, which reads the published rate table.
+  mkdirSync(join(dir,'assets','avesta'),{recursive:true});
+  copyFileSync('assets/avesta/rates.json',join(dir,'assets','avesta','rates.json'));
   writeFileSync(join(dir,'fixture.php'),`<?php require __DIR__.'/auth.php'; av_create_user('admintest','Original-phrase-57','Test Admin','admin');`);
   writeFileSync(join(dir,'mail.php'),`<?php function av_recovery_send(string $email,string $code,string $purpose):bool {
     file_put_contents(__DIR__.'/outbox.json',json_encode(['email'=>$email,'code'=>$code,'purpose'=>$purpose])); return true;
