@@ -13,20 +13,20 @@
   },
 
   "overdue": {
-    "_comment": "Applies when a loan passes its final due date. The band REPLACES the term rate rather than adding to it: a 4-week loan at 30% becomes 35% in total, not 65%.",
+    "_comment": "Applies when a loan passes its final due date. The penalty REPLACES the term rate rather than adding to it: a 4-week loan at 30% becomes 35% in total, not 65%. It is a single flat rate, not a ladder — stepPercent 0 holds it at startPercent however long the loan runs.",
     "startPercent": 35,
-    "stepPercent": 5,
+    "stepPercent": 0,
     "stepEveryDays": 28,
     "gracePeriodDays": 0,
 
+    "_flatComment": "Decided 3 November 2026: the delay penalty is a flat 35%, whatever the length of the delay. Someone two days late and someone six months late owe the same — K5,400 on K4,000 borrowed for four weeks. The engine still supports a ladder; setting stepPercent above 0 turns it back on and every band, cap and next-step date below starts working again, with no code change.",
+
     "capPercent": 100,
-    "_capComment": "Accrued interest stops at the principal, so the most anyone can owe is twice what they borrowed. This mirrors the in duplum rule applied across the region and keeps a forgotten loan from growing without limit. Confirm against whatever cap the Bank of Zambia sets under the Banking and Financial Services Act No. 9 of 2026 before relying on it.",
+    "_capComment": "Interest would stop at the principal, so the most anyone could owe is twice what they borrowed — the in duplum rule applied across the region. Dormant while stepPercent is 0, since a flat 35% never approaches it. Kept so the protection is already in place if the ladder is ever switched back on. Confirm against whatever cap the Bank of Zambia sets under the Banking and Financial Services Act No. 9 of 2026 before relying on it.",
 
-    "_knownGap": "A 4-week loan settled at week eight carries the 40% band — K5,600 on K4,000 — against K5,800 for the 45% two-month product, so defaulting is K200 cheaper in that window. Parity arrives at week twelve, when the band reaches 45%. Raising startPercent to 40 would close the rest. Left as specified; asserted in tests/rates.test.mjs.",
+    "_eightWeekGap": "A flat 35% penalty sits below the 45% charged for the 8-week term, so an overdue 8-week loan is held at its term rate by the floor in av_amount_owing() and carries NO late charge at all, however long it runs. Raised with the owner on 3 November and accepted. The fix, if it is ever wanted, is a per-term penalty rather than one flat figure — never removing the floor, which is what stops an overdue loan costing less than an on-time one.",
 
-    "_floorComment": "The band never reduces what is owed. Because startPercent (35) is below the 8-week term rate (45), an 8-week loan would otherwise get K400 cheaper the day it went overdue. av_amount_owing() floors the applied rate at the term rate and reports heldAtTermRate when it does. An 8-week loan therefore carries no late charge until the band passes 45% at day 57 — if that is too lenient, the fix is a per-term start band, not removing the floor.",
-
-    "_stepTiming": "The band steps ON the boundary: 35% covers days 1-27, 40% starts on day 28 (week eight), 45% on day 56 (week twelve). This matches the ladder as specified — 35% at week four, 40% at week eight, 45% at week twelve."
+    "_fourWeekGap": "A 4-week loan that defaults costs K5,400, against K5,800 for borrowing 8 weeks honestly, so defaulting is K400 cheaper at any point past week four. Raising startPercent to 46 or above would close it. Left as specified; asserted in tests/rates.test.mjs."
   },
 
   "legacy": {
