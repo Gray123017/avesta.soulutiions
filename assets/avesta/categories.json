@@ -1,0 +1,48 @@
+{
+  "_comment": "The three ways someone can apply, and what each must provide. Published on purpose: an applicant should be able to see their own list before they start, not discover it halfway through. categories-lib.php enforces this server side; the form uses the same file so the two cannot drift.",
+  "version": "2026-11-03",
+
+  "categories": {
+    "company_employee": {
+      "label": "My employer is signed up with Avesta",
+      "short": "Through my employer",
+      "summary": "Your repayments come off your salary before you are paid. Nothing to remember, nothing to transfer.",
+      "documents": ["doc_nrc_front", "doc_nrc_back", "doc_payslip"],
+      "collateralRequired": false,
+      "suggestedSecurityType": "checkoff",
+      "_why": "The employer confirms employment and deducts at payroll, so no bank statement is needed to evidence income and no security is taken."
+    },
+
+    "employed": {
+      "label": "I am formally employed",
+      "short": "On my own",
+      "summary": "You have a job and can show it, but your employer is not signed up with us. You repay us directly.",
+      "documents": ["doc_nrc_front", "doc_nrc_back", "doc_payslip", "doc_bank_statement"],
+      "collateralRequired": false,
+      "suggestedSecurityType": null,
+      "_why": "Nobody is vouching for the salary, so the bank statement is what evidences it. Security is not taken against a salary we can see."
+    },
+
+    "self_employed": {
+      "label": "I work for myself",
+      "short": "Secured",
+      "summary": "No payslip to show. You qualify on what you can put up as security instead of on a salary.",
+      "documents": ["doc_nrc_front", "doc_nrc_back", "doc_bank_statement"],
+      "collateralRequired": true,
+      "suggestedSecurityType": "collateral",
+      "_why": "There is no payslip to ask for. The bank statement shows money moving; the security is what the loan actually rests on."
+    }
+  },
+
+  "documentLabels": {
+    "doc_nrc_front": "NRC, front",
+    "doc_nrc_back": "NRC, back",
+    "doc_payslip": "Your latest payslip",
+    "doc_bank_statement": "Bank statement, 3 months",
+    "doc_employer_letter": "Employer confirmation letter",
+    "doc_collateral1": "Security item: photo and proof of ownership"
+  },
+
+  "_enforcement": "A submission that names a category must carry that category's documents, and at least one collateral item where collateralRequired is true. A submission with NO category is left alone: the form did not always ask, and refusing those would reject every application made before the chooser shipped. Once the chooser is live for everyone, set requireCategory to true and an application without one stops being accepted.",
+  "requireCategory": false
+}
