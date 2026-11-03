@@ -45,6 +45,7 @@ if (!defined('AVESTA_LIB') && !file_exists($userIniPath)) {
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/rates-lib.php';
+require_once __DIR__ . '/categories-lib.php';
 
 /**
  * Endpoint guard. Replaces the old wide-open CORS policy: the browser now
@@ -683,6 +684,34 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
     $canonicalInterest = round($quote['interest'] / 100, 2);
     $canonicalTotal    = round($quote['total'] / 100, 2);
     $payload['terms_version'] = $quote['version'];
+
+    // Which of the three ways in this is, and whether it carries what that
+    // way asks for. The form shows the applicant their own list; this is the
+    // check that actually holds, because a browser field can be edited.
+    //
+    // An application with no category is accepted as before — the form did
+    // not always ask, and refusing those would reject anything started before
+    // the chooser shipped. categories.json closes that with requireCategory.
+    try {
+        $missing = av_category_missing($payload);
+        if ($missing !== []) {
+            jsonOut([
+                'ok'      => false,
+                'error'   => 'Some things are still needed: ' . implode('; ', $missing) . '.',
+                'missing' => $missing,
+            ], 422);
+        }
+        $catKey = trim((string) ($payload['applicant_category'] ?? ''));
+        if ($catKey !== '') {
+            $payload['applicant_category']  = $catKey;
+            $payload['categories_version']  = av_categories_load()['version'] ?? null;
+        }
+    } catch (RuntimeException $e) {
+        // A missing or malformed category table must not quietly accept an
+        // application with no documents at all.
+        error_log('Avesta category table unusable: ' . $e->getMessage());
+        jsonOut(['ok' => false, 'error' => 'Applications are unavailable right now. Please try again shortly.'], 503);
+    }
     $payload['loan_amt'] = round($loanAmount, 2);
     $payload['loan_amount'] = round($loanAmount, 2);
     $payload['int_rate'] = $canonicalRate;
