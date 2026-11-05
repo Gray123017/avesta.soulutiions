@@ -47,6 +47,8 @@ function av_backup_allowlist(): array {
         'records_data.php'  => 'Every loan application ever submitted.',
         'users.php'         => 'Accounts, roles and password hashes.',
         'enquiries.php'     => 'Enquiries sent through the website.',
+        'employers.php'     => 'The employer register: who is signed up, their branches, '
+                             . 'and which member of staff is on which payroll number.',
         'it_questions.php'  => 'Questions put to the IT help desk.',
         'password_resets.php' => 'Password resets still in flight.',
         'email_recovery.php'  => 'Recovery-email checks still in flight.',

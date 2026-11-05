@@ -1774,6 +1774,106 @@ if ($action === 'accounts') {
              'recovery_events' => array_slice($recoveryEvents, 0, 100)]);
 }
 
+// ── THE EMPLOYER REGISTER ────────────────────────────────────────────────────
+// Who is signed up for salary check-off, their branches, and which member of
+// staff sits on which payroll number. employers-lib.php holds the rules that
+// matter — one payroll number per person, one active enrolment per person —
+// because both of those, broken, take money off the wrong salary.
+//
+// The split of who may do what:
+//   admin     registers an employer, suspends one, edits its branches
+//   staff     enrols people and marks leavers, which is the daily work
+//   anyone    the picker: active employers and their branches, nothing else
+//   yourself  your own enrolment, so the application form fills itself in
+if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
+    require_once __DIR__ . '/employers-lib.php';
+
+    // The list an applicant picks from. No staff, no payroll numbers, no
+    // contacts — av_employers_choosable() is what decides that, and a test
+    // reads this response back to confirm none of it leaks.
+    if ($action === 'employersChoosable') {
+        requireRole([]);
+        jsonOut(['ok' => true, 'employers' => av_employers_choosable()]);
+    }
+
+    // Your own enrolment. Nobody else's: the id comes from the session.
+    if ($action === 'myEmployer') {
+        $me = requireRole([]);
+        $mine = av_employer_for_user($me['id']);
+        jsonOut(['ok' => true,
+                 'employer'  => $mine['employer']  ?? null,
+                 'branch'    => $mine['branch']    ?? null,
+                 'enrolment' => $mine['enrolment'] ?? null]);
+    }
+
+    if ($action === 'employers') {
+        requireRole(['admin', 'staff']);
+        av_audit('employers.list');
+        jsonOut(['ok' => true, 'employers' => av_employers_all()]);
+    }
+
+    $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $employerId = trim((string) ($b['employer_id'] ?? ''));
+
+    // A refusal from the library is the applicant-facing sentence; 409 rather
+    // than 422 because these are clashes with something already recorded, not
+    // malformed input, and the difference matters to whoever is reading logs.
+    $send = function (array $r, string $event = '', string $target = '', array $detail = []) {
+        if (!$r['ok']) jsonOut(['ok' => false, 'error' => $r['error'] ?? 'That did not work.'], 409);
+        if ($event !== '') av_audit($event, $target, $detail);
+        jsonOut(['ok' => true] + $r);
+    };
+
+    if ($action === 'employerCreate') {
+        requireRole(['admin']);
+        $r = av_employer_create($b);
+        $send($r, 'employer.created', $r['employer']['name'] ?? '',
+              ['id' => $r['employer']['id'] ?? null]);
+    }
+
+    if ($action === 'employerUpdate') {
+        requireRole(['admin']);
+        $send(av_employer_update($employerId, $b), 'employer.updated', $employerId);
+    }
+
+    if ($action === 'employerStatus') {
+        requireRole(['admin']);
+        $status = (string) ($b['status'] ?? '');
+        $send(av_employer_set_status($employerId, $status),
+              'employer.status_changed', $employerId, ['to' => $status]);
+    }
+
+    if ($action === 'employerBranchAdd') {
+        requireRole(['admin']);
+        $r = av_employer_add_branch($employerId, (string) ($b['name'] ?? ''), (string) ($b['town'] ?? ''));
+        $send($r, 'employer.branch_added', $employerId, ['branch' => $b['name'] ?? '']);
+    }
+
+    if ($action === 'employerBranchRemove') {
+        requireRole(['admin']);
+        $send(av_employer_remove_branch($employerId, (string) ($b['branch_id'] ?? '')),
+              'employer.branch_removed', $employerId, ['branch_id' => $b['branch_id'] ?? '']);
+    }
+
+    if ($action === 'employerEnrol') {
+        requireRole(['admin', 'staff']);
+        $r = av_employer_enrol($employerId, $b);
+        // The payroll number is the thing a dispute turns on, so it is written
+        // down here as well as in the register itself.
+        $send($r, 'employer.enrolled', $employerId,
+              ['name' => $b['name'] ?? '', 'payroll_no' => $b['payroll_no'] ?? '']);
+    }
+
+    if ($action === 'employerLeft') {
+        requireRole(['admin', 'staff']);
+        $send(av_employer_mark_left($employerId, (string) ($b['enrolment_id'] ?? ''),
+                                    (string) ($b['left_at'] ?? '')),
+              'employer.left', $employerId, ['enrolment_id' => $b['enrolment_id'] ?? '']);
+    }
+
+    jsonOut(['ok' => false, 'error' => 'Unknown employer action'], 404);
+}
+
 // ── BACKUP ───────────────────────────────────────────────────────────────────
 // The most dangerous endpoint on this site. One request hands over every
 // application, every NRC scan, every bank statement and every password hash —
