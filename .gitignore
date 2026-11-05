@@ -11,6 +11,8 @@
 /audit_log.jsonl
 /employers.php
 /employers.json
+/remittances.php
+/remittances.json
 /login_attempts.json
 /login_attempts.php
 /enquiry_rate.json

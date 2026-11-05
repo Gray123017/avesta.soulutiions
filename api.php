@@ -1893,6 +1893,83 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
     jsonOut(['ok' => false, 'error' => 'Unknown employer action'], 404);
 }
 
+// ── PAYROLL DEDUCTION AND REMITTANCE ─────────────────────────────────────────
+// What an employer should deduct this month, what they actually sent, and who
+// is short. remittance-lib.php holds the arithmetic and the two refusals that
+// matter: a breakdown that does not add up is rejected, and a payment that
+// does not match what was asked for is not allocated by guesswork.
+if ($action === 'deductionSchedule' || $action === 'remittances'
+    || $action === 'remittanceRecord' || $action === 'remittanceReconcile') {
+    $me = requireRole(['admin', 'staff']);
+    require_once __DIR__ . '/remittance-lib.php';
+
+    $b          = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $employerId = trim((string) ($b['employer_id'] ?? $_GET['employer_id'] ?? ''));
+    $period     = trim((string) ($b['period'] ?? $_GET['period'] ?? date('Y-m')));
+
+    if ($employerId === '') jsonOut(['ok' => false, 'error' => 'Which employer?'], 422);
+    if (av_period_bounds($period) === null) {
+        jsonOut(['ok' => false, 'error' => 'A period looks like 2026-11.'], 422);
+    }
+
+    if ($action === 'deductionSchedule') {
+        av_audit('remittance.schedule_viewed', $employerId, ['period' => $period]);
+        jsonOut(['ok' => true, 'schedule' => av_deduction_schedule($employerId, $period, loadRecords())]);
+    }
+
+    if ($action === 'remittances') {
+        jsonOut(['ok' => true, 'remittances' => av_remittances_for($employerId, $period)]);
+    }
+
+    if ($action === 'remittanceReconcile') {
+        jsonOut(['ok' => true, 'reconciliation' =>
+            av_remittance_reconcile($employerId, $period, loadRecords())]);
+    }
+
+    // Recording one moves money in the loan book, so it is admin work.
+    requireRole(['admin']);
+
+    // Kwacha in, ngwee from here on. A remittance of "1800.005" is a typo, not
+    // an amount, and rounding it quietly is how a loan book drifts.
+    $received = (int) round(((float) ($b['received'] ?? 0)) * 100);
+    $lines = null;
+    if (isset($b['lines']) && is_array($b['lines']) && $b['lines'] !== []) {
+        $lines = [];
+        foreach ($b['lines'] as $l) {
+            $lines[] = ['loan_key' => (string) ($l['loan_key'] ?? ''),
+                        'ngwee' => (int) round(((float) ($l['amount'] ?? 0)) * 100)];
+        }
+    }
+
+    $records = loadRecords();
+    $result  = av_remittance_record($employerId, $period, $received, $lines, $records);
+    if (!$result['ok']) {
+        jsonOut(['ok' => false, 'error' => $result['error'],
+                 'difference_ngwee' => $result['difference_ngwee'] ?? null], 422);
+    }
+
+    // The loan book is saved only after the remittance is stored, and only if
+    // anything was actually posted — a remittance awaiting allocation must not
+    // rewrite the records for nothing.
+    if ($result['posted'] > 0 && !saveRecords($result['records'])) {
+        error_log('Avesta: remittance ' . $result['remittance']['id'] . ' saved but records did not');
+        jsonOut(['ok' => false,
+                 'error' => 'The remittance was recorded but the loan book could not be '
+                          . 'updated. Do not record it again — tell your administrator, '
+                          . 'quoting ' . $result['remittance']['id'] . '.'], 500);
+    }
+
+    av_audit('remittance.recorded', $employerId, [
+        'id'        => $result['remittance']['id'],
+        'period'    => $period,
+        'received'  => round($received / 100, 2),
+        'expected'  => round($result['remittance']['expected_ngwee'] / 100, 2),
+        'status'    => $result['remittance']['status'],
+        'posted'    => $result['posted'],
+    ]);
+    jsonOut(['ok' => true, 'remittance' => $result['remittance'], 'posted' => $result['posted']]);
+}
+
 // ── BACKUP ───────────────────────────────────────────────────────────────────
 // The most dangerous endpoint on this site. One request hands over every
 // application, every NRC scan, every bank statement and every password hash —
