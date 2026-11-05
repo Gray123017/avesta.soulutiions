@@ -51,6 +51,9 @@ function av_backup_allowlist(): array {
                              . 'and which member of staff is on which payroll number.',
         'remittances.php'   => 'What each employer has deducted at payroll and sent in, '
                              . 'and how each payment was split across their staff.',
+        'notify.php'        => 'Who gets told when a new application arrives. No API key is '
+                             . 'ever kept here — notify-lib.php reads that from the secrets '
+                             . 'file, which this archive deliberately leaves out.',
         'it_questions.php'  => 'Questions put to the IT help desk.',
         'password_resets.php' => 'Password resets still in flight.',
         'email_recovery.php'  => 'Recovery-email checks still in flight.',

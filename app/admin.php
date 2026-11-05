@@ -963,14 +963,25 @@ window.avFetchJson = async function (url, opts, ms) {
             <button onclick="testWa()" style="flex:1;background:#D98E3B;color:#163E33;border:none;padding:9px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">🧪 Test</button>
           </div>
         </div>
+        <!-- Sent by the server when the application is stored, so an
+             application arriving overnight reaches somebody. What was here
+             before opened a mailto: draft in this browser, which only worked
+             if an admin already had the portal open. -->
         <div id="ntab-content-email" style="display:none;padding:16px 18px">
           <div style="background:#e3f2fd;border-radius:7px;padding:10px 12px;margin-bottom:14px;font-size:8pt;color:#0d47a1;line-height:1.7">
-            <strong>Email alerts:</strong> When a new application arrives, a pre-filled email opens automatically — just click Send. No setup needed beyond saving your address.
+            <strong>Email alerts:</strong> Avesta sends these itself the moment an application
+            is saved — you do not have to be signed in, or have this page open. The message
+            carries the name, amount and reference and nothing else; everything about the
+            applicant stays behind a sign-in.
           </div>
-          <label style="font-size:7pt;color:#888;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase" for="notify-email-input">Your Email Address</label>
-          <input id="notify-email-input" type="email" placeholder="you@gmail.com" style="width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:6px;font-size:9pt;margin-bottom:12px;outline:none">
-          <button onclick="saveEmailSettings()" style="width:100%;background:#163E33;color:white;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Save Email</button>
-          <button onclick="testEmailNotify()" style="width:100%;background:#D98E3B;color:#163E33;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">🧪 Send Test Email</button>
+          <label style="font-size:7pt;color:#888;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase" for="notify-email-input">Send alerts to</label>
+          <input id="notify-email-input" type="text" placeholder="you@gmail.com, desk@avesta.solutions" style="width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:6px;font-size:9pt;margin-bottom:6px;outline:none">
+          <div style="font-size:7.5pt;color:#888;margin-bottom:10px">Separate several addresses with commas.</div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:8.5pt;margin-bottom:12px;cursor:pointer">
+            <input type="checkbox" id="notify-email-on"> <span>Email me when a new application arrives</span>
+          </label>
+          <button onclick="saveServerNotify()" style="width:100%;background:#163E33;color:white;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Save</button>
+          <button onclick="testServerNotify()" style="width:100%;background:#D98E3B;color:#163E33;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">🧪 Send a test now</button>
           <div id="email-notify-status" style="margin-top:10px;font-size:8pt;color:#888"></div>
         </div>
         <div id="ntab-content-browser" style="display:none;padding:16px 18px">
@@ -2631,11 +2642,10 @@ function showNotifyTab(tab) {
   });
   if (tab === 'browser') updateBrowserNotifStatus();
   if (tab === 'wa') updateWaStatus();
-  if (tab === 'email') {
-    const saved = JSON.parse(localStorage.getItem('avesta_notify_email')||'{}');
-    const el = document.getElementById('notify-email-input');
-    if (el && saved.email) el.value = saved.email;
-  }
+  // From the server, not from this browser's localStorage: the old settings
+  // only existed on whichever machine typed them, and did nothing when nobody
+  // was signed in.
+  if (tab === 'email') loadServerNotify();
 }
 
 // ── WHATSAPP (TextMeBot) ───────────────────────────────────────────────────
@@ -2714,41 +2724,82 @@ function testWa() {
   showToast('Test message sent. Check WhatsApp shortly.', 'green');
 }
 
-// ── EMAIL FALLBACK ──────────────────────────────────────────────────────────
-function saveEmailSettings() {
-  const email = (document.getElementById('notify-email-input').value||'').trim();
-  if (!email || !email.includes('@')) {
-    document.getElementById('email-notify-status').textContent = '⚠️ Enter a valid email address';
-    return;
-  }
-  localStorage.setItem('avesta_notify_email', JSON.stringify({email}));
-  document.getElementById('email-notify-status').textContent = '✅ Email saved: ' + email;
-  showToast('Email notification settings saved.', 'green');
+// ── EMAIL ALERTS ────────────────────────────────────────────────────────────
+// Sending moved to the server (notify-lib.php) so an application arriving
+// overnight reaches somebody. The three functions that used to live here —
+// saveEmailSettings, sendEmailAlert and testEmailNotify — opened a mailto:
+// draft in this browser and are gone. sendEmailAlert also put the applicant's
+// NRC number into the body, which is exactly what the new message leaves out.
+
+function serverNotifyStatus(text, bad) {
+  var el = document.getElementById('email-notify-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.style.color = bad ? '#b4232a' : '#176b4d';
 }
 
-function sendEmailAlert(r) {
-  const saved = JSON.parse(localStorage.getItem('avesta_notify_email')||'{}');
-  if (!saved.email) return;
-  const subject = encodeURIComponent('New Loan Application - ' + (r.full_name||'Unknown') + ' - Avesta Enterprises');
-  const nl = '%0A';
-  const body = encodeURIComponent('New loan application received.') + nl + nl +
-    encodeURIComponent('Applicant: ' + (r.full_name||'-')) + nl +
-    encodeURIComponent('NRC: '       + (r.national_id||'-')) + nl +
-    encodeURIComponent('Phone: '     + (r.phone||'-')) + nl +
-    encodeURIComponent('Amount: ZMW '+ parseFloat(r.loan_amount||0).toLocaleString()) + nl +
-    encodeURIComponent('Duration: '  + (r.loan_duration||'-')) + nl +
-    encodeURIComponent('Purpose: '   + (r.loan_purpose||'-')) + nl +
-    encodeURIComponent('Submitted: ' + (r.submitted_at||'-')) + nl + nl +
-    encodeURIComponent('Log in to admin.html to review this application.');
-  window.open('mailto:' + saved.email + '?subject=' + subject + '&body=' + body);
+function loadServerNotify() {
+  return fetch('/api.php?action=notifySettings', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || !d.ok) return;
+      var box = document.getElementById('notify-email-input');
+      var on  = document.getElementById('notify-email-on');
+      if (box) box.value = (d.settings.email.to || []).join(', ');
+      if (on)  on.checked = !!d.settings.email.on;
+
+      // Say plainly why WhatsApp is off, rather than letting somebody switch
+      // it on and wonder why nothing arrives.
+      if (!d.whatsapp_key_present) {
+        var wa = document.getElementById('ntab-content-wa');
+        if (wa && !document.getElementById('wa-key-note')) {
+          var note = document.createElement('div');
+          note.id = 'wa-key-note';
+          note.style.cssText = 'background:#fdf1f1;border-radius:7px;padding:10px 12px;'
+            + 'margin-top:10px;font-size:8pt;color:#b4232a;line-height:1.7';
+          note.textContent = 'Server-sent WhatsApp alerts are off: no API key is configured '
+            + 'on the server. Add textmebot_key to avesta-secrets.php. It is deliberately '
+            + 'kept out of the saved settings so it never ends up in a backup.';
+          wa.appendChild(note);
+        }
+      }
+    })
+    .catch(function () { /* the panel still works without it */ });
 }
 
-function testEmailNotify() {
-  const saved = JSON.parse(localStorage.getItem('avesta_notify_email')||'{}');
-  if (!saved.email) { alert('Please save your email address first.'); return; }
-  const sub  = encodeURIComponent('Test - Avesta Admin Email Notifications Working');
-  const body = encodeURIComponent('This is a test from your Avesta Enterprises Admin Portal. Email notifications are configured correctly.');
-  window.open('mailto:' + saved.email + '?subject=' + sub + '&body=' + body);
+function saveServerNotify() {
+  var box = document.getElementById('notify-email-input');
+  var on  = document.getElementById('notify-email-on');
+  var list = (box ? box.value : '').split(',').map(function (t) { return t.trim(); })
+    .filter(function (t) { return t !== ''; });
+
+  serverNotifyStatus('Saving…');
+  fetch('/api.php?action=notifySave', {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: { on: on ? on.checked : false, to: list } }),
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (!d || !d.ok) { serverNotifyStatus(d && d.error ? d.error : 'Could not save.', true); return; }
+    serverNotifyStatus('Saved. Alerts go out from the server, whether or not you are signed in.');
+  }).catch(function () { serverNotifyStatus('Could not reach the server.', true); });
+}
+
+function testServerNotify() {
+  serverNotifyStatus('Sending…');
+  fetch('/api.php?action=notifyTest', { method: 'POST', credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || !d.ok) { serverNotifyStatus('Could not send a test.', true); return; }
+      var sent = d.result.sent.length, failed = d.result.failed.length;
+      if (sent) {
+        serverNotifyStatus('Sent to ' + sent + ' recipient(s)'
+          + (failed ? ', ' + failed + ' failed.' : '. Check your inbox and spam folder.'));
+      } else {
+        var why = (d.result.skipped[0] && d.result.skipped[0].why) || 'nothing is switched on';
+        serverNotifyStatus('Nothing was sent — ' + why + '.', true);
+      }
+    })
+    .catch(function () { serverNotifyStatus('Could not reach the server.', true); });
 }
 
 // ── BROWSER PUSH NOTIFICATIONS ──────────────────────────────────────────────

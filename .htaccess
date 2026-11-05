@@ -5,7 +5,7 @@
 # silently returns 403 for it. Anything new that stores data goes on this list
 # AND in av_backup_allowlist(); tests/backup.test.mjs fails the build if a
 # store appears in one and not the other.
-<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets|email_recovery|employers|remittances|assistant_rate)\.(json|jsonl)$">
+<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets|email_recovery|employers|remittances|notify|assistant_rate)\.(json|jsonl)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

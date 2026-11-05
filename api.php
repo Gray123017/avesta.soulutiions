@@ -768,6 +768,18 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
 
     if (saveRecords($records)) {
         av_audit('application.submitted', $payload['_key']);
+
+        // Tell somebody, from here rather than from a browser tab that may not
+        // be open. It never throws and is never allowed to change the answer
+        // below: the application is already stored and accepted, and losing it
+        // because a mail server was down would be the worst trade here.
+        require_once __DIR__ . '/notify-lib.php';
+        $told = av_notify_new_application($payload);
+        if ($told['sent']) {
+            av_audit('application.notified', $payload['_key'],
+                     ['sent' => count($told['sent']), 'failed' => count($told['failed'])]);
+        }
+
         jsonOut(['ok' => true, 'message' => 'Saved', '_key' => $payload['_key']]);
     } else {
         jsonOut(['ok' => false, 'error' => 'Failed to write to disk — check folder permissions'], 500);
@@ -1950,6 +1962,51 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
 // is short. remittance-lib.php holds the arithmetic and the two refusals that
 // matter: a breakdown that does not add up is rejected, and a payment that
 // does not match what was asked for is not allocated by guesswork.
+// ── WHO GETS TOLD ────────────────────────────────────────────────────────────
+// Where new-application alerts go. Admin only: it decides who receives a
+// customer's name and loan amount, which is a decision about somebody else's
+// personal data rather than a preference.
+if ($action === 'notifySettings' || $action === 'notifySave' || $action === 'notifyTest') {
+    requireRole(['admin']);
+    require_once __DIR__ . '/notify-lib.php';
+
+    if ($action === 'notifySettings') {
+        jsonOut(['ok' => true, 'settings' => av_notify_load(),
+                 // So the page can say plainly why WhatsApp is off, rather
+                 // than letting somebody switch it on and wonder.
+                 'whatsapp_key_present' => av_notify_whatsapp_key() !== '']);
+    }
+
+    $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+
+    if ($action === 'notifyTest') {
+        $sample = ['_key' => 'TEST-0000', 'full_name' => 'Test Application',
+                   'loan_amt' => 1000.00, 'sel_dur' => '2 Weeks',
+                   'submitted_at' => date('Y-m-d H:i')];
+        $out = av_notify_new_application($sample);
+        av_audit('notify.tested', '', ['sent' => count($out['sent'])]);
+        jsonOut(['ok' => true, 'result' => $out]);
+    }
+
+    $clean = [];
+    foreach (['email', 'whatsapp'] as $channel) {
+        if (!isset($b[$channel])) continue;
+        $clean[$channel] = [
+            'on' => !empty($b[$channel]['on']),
+            'to' => array_values(array_filter(array_map('trim',
+                        (array) ($b[$channel]['to'] ?? [])), fn($v) => $v !== '')),
+        ];
+    }
+    if (!av_notify_save($clean)) {
+        jsonOut(['ok' => false, 'error' => 'Could not save the settings.'], 500);
+    }
+    av_audit('notify.settings_changed', '', [
+        'email'    => count($clean['email']['to'] ?? []),
+        'whatsapp' => count($clean['whatsapp']['to'] ?? []),
+    ]);
+    jsonOut(['ok' => true, 'settings' => av_notify_load()]);
+}
+
 // ── DISBURSEMENT ─────────────────────────────────────────────────────────────
 // Recording that money went out. Nothing here sends any: Avesta is not
 // licensed to lend, and a mobile-money integration behind an unlicensed lender

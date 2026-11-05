@@ -13,6 +13,8 @@
 /employers.json
 /remittances.php
 /remittances.json
+/notify.php
+/notify.json
 /login_attempts.json
 /login_attempts.php
 /enquiry_rate.json
