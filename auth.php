@@ -51,13 +51,21 @@ function avStorePath(string $legacyJsonPath): string {
     return preg_replace('/\.jsonl?$/', '', $legacyJsonPath) . '.php';
 }
 
+/**
+ * Decode a guarded store: the AV_GUARD prologue, then the JSON behind it.
+ * Also accepts a plain JSON file, so an unmigrated store still reads.
+ * One definition, because backup-lib.php reads these files too.
+ */
+function av_guarded_decode(string $raw) {
+    $cut = strpos($raw, '?>');
+    return json_decode($cut === false ? $raw : substr($raw, $cut + 2), true);
+}
+
 function avStoreRead(string $legacyJsonPath) {
     $guarded = avStorePath($legacyJsonPath);
 
     if (is_file($guarded)) {
-        $raw = (string) @file_get_contents($guarded);
-        $cut = strpos($raw, '?>');
-        return json_decode($cut === false ? $raw : substr($raw, $cut + 2), true);
+        return av_guarded_decode((string) @file_get_contents($guarded));
     }
 
     // Migrate an older unguarded file, once. The backup is written guarded

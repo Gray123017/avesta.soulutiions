@@ -1774,5 +1774,79 @@ if ($action === 'accounts') {
              'recovery_events' => array_slice($recoveryEvents, 0, 100)]);
 }
 
+// ── BACKUP ───────────────────────────────────────────────────────────────────
+// The most dangerous endpoint on this site. One request hands over every
+// application, every NRC scan, every bank statement and every password hash —
+// the whole business in a single file. So: super admin only, not admins;
+// written to the audit log before a byte leaves, because this is personal data
+// leaving the server and the Data Protection Act expects that accounted for;
+// and throttled, because rebuilding the archive reads every document on disk.
+//
+// backup-lib.php is required here rather than at the top of the file: it is
+// needed by one caller a week, and every application submitted would otherwise
+// pay to load it.
+if ($action === 'backup' || $action === 'backupStatus') {
+    requireRole(['super_admin']);
+    require_once __DIR__ . '/backup-lib.php';
+
+    $wait = av_backup_wait();
+
+    // Reporting is always allowed. The portal needs to be able to say how big
+    // the backup is and when it was last taken without taking another one.
+    if ($action === 'backupStatus') {
+        $manifest = av_backup_manifest();
+        $last = av_audit_read(1, '', 'backup.downloaded');
+        jsonOut(['ok' => true,
+                 'counts'      => $manifest['counts'],
+                 'size_bytes'  => av_backup_size($manifest),
+                 'filename'    => av_backup_name(),
+                 'last_taken'  => $last[0]['ts'] ?? null,
+                 'last_by'     => $last[0]['user'] ?? null,
+                 'retry_after' => $wait,
+                 'warnings'    => $manifest['warnings']]);
+    }
+
+    if ($wait > 0) {
+        header('Retry-After: ' . $wait);
+        jsonOut(['ok' => false, 'retry_after' => $wait,
+                 'error' => 'A backup was taken in the last '
+                          . ceil(AV_BACKUP_MIN_INTERVAL / 60) . ' minutes. '
+                          . 'Try again in ' . $wait . ' second(s).'], 429);
+    }
+
+    $now      = time();
+    $manifest = av_backup_manifest(null, $now);
+    $size     = av_backup_size($manifest);
+
+    // Logged BEFORE the first byte goes out. A download abandoned halfway still
+    // took a copy of whatever had already left, and logging first is also what
+    // stops the throttle being sidestepped by aborting the request.
+    av_audit('backup.downloaded', av_backup_name($now), [
+        'records'   => $manifest['counts']['records'],
+        'accounts'  => $manifest['counts']['accounts'],
+        'documents' => $manifest['counts']['documents'],
+        'bytes'     => $size,
+    ]);
+
+    // Buffering off for two reasons: a folder of scans must not be held in
+    // memory, and with the buffer gone PHP notices a disconnected browser on
+    // the next write and stops, instead of reading every document on the
+    // server to send it nowhere.
+    while (ob_get_level() > 0) ob_end_clean();
+    @set_time_limit(300);
+
+    header_remove('Content-Type');
+    header('Content-Type: application/x-tar');
+    header('Content-Length: ' . $size);          // exact, so a truncated download shows as one
+    header('Content-Disposition: attachment; filename="' . av_backup_name($now) . '"');
+    header('Cache-Control: private, no-store');
+    header('X-Content-Type-Options: nosniff');
+
+    $out = fopen('php://output', 'wb');
+    av_backup_stream(null, $out, $now, $manifest);
+    fclose($out);
+    exit;
+}
+
 // ── DEFAULT ───────────────────────────────────────────────────────────────────
 jsonOut(['ok' => true, 'message' => 'Avesta API ready. Use ?action=ping to test.']);
