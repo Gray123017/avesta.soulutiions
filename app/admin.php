@@ -783,6 +783,10 @@ window.avFetchJson = async function (url, opts, ms) {
    public site and mean nothing here, which left these rows unstyled. Same
    idiom as the currency converter's .afx-f above. */
 #page-employers .card{padding:18px 20px}
+#page-payroll .card{padding:18px 20px}
+#page-payroll h3{color:var(--navy);margin-bottom:4px}
+#page-payroll h4{margin:0 0 6px;font-size:8.5pt;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+#page-payroll ul{margin:6px 0 0;padding-left:20px;line-height:1.9;font-size:9.5pt}
 .emp-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin:12px 0}
 .emp-f label{display:block;font-size:7.5pt;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .emp-f input,.emp-f select{width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:9.5pt;color:var(--navy);background:#fff;outline:none;font-family:inherit}
@@ -890,6 +894,9 @@ window.avFetchJson = async function (url, opts, ms) {
       </a>
       <a class="nav-item" id="nav-employers" hidden onclick="showPage('employers')" href="javascript:void(0)">
         <span class="nav-icon">&#127970;</span> Employers
+      </a>
+      <a class="nav-item" id="nav-payroll" hidden onclick="showPage('payroll')" href="javascript:void(0)">
+        <span class="nav-icon">&#128181;</span> Payroll deductions
       </a>
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
@@ -1061,6 +1068,53 @@ window.avFetchJson = async function (url, opts, ms) {
         </div>
 
         <div id="emp-list"></div>
+      </div>
+
+      <!-- ═══ PAYROLL DEDUCTIONS ══════════════════════════════════════════ -->
+      <div class="page" id="page-payroll">
+        <div class="acct-head">
+          <div>
+            <h2 class="page-title">Payroll deductions</h2>
+            <p class="page-sub">What an employer should deduct this month, what they actually
+               sent, and who is short. A payment that does not match what was asked for is
+               never split by guesswork &mdash; it waits for you to say how.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="emp-row">
+            <div class="emp-f"><label for="pay-employer">Employer</label>
+              <select id="pay-employer"></select></div>
+            <div class="emp-f"><label for="pay-period">Month</label>
+              <input id="pay-period" type="month"></div>
+          </div>
+          <p>
+            <button type="button" class="btn btn-primary btn-sm" id="pay-load">Show the schedule</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="pay-copy" hidden>Copy for payroll</button>
+          </p>
+          <div id="pay-note" aria-live="polite"></div>
+        </div>
+
+        <div class="acct-stats" id="pay-stats"></div>
+        <div id="pay-attention"></div>
+        <div id="pay-table"></div>
+
+        <!-- Recording moves money in the loan book, so the script removes this
+             for anyone who is not an admin, and the server refuses them too. -->
+        <div class="card" id="pay-record-card" hidden style="margin-top:18px">
+          <h3>Record what arrived</h3>
+          <p class="page-sub">Enter the single payment the employer sent. If it is exactly the
+             amount asked for, it is split across their staff automatically. If it is not, it
+             is held until you say how to split it &mdash; crediting the wrong person's loan is
+             worse than waiting.</p>
+          <div class="emp-row">
+            <div class="emp-f"><label for="pay-received">Amount received (ZMW)</label>
+              <input id="pay-received" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          </div>
+          <p><button type="button" class="btn btn-primary" id="pay-record">Record remittance</button></p>
+        </div>
+
+        <div id="pay-history"></div>
       </div>
 
       <div class="page active" id="page-dashboard">
@@ -4153,6 +4207,221 @@ function afxInit(){
   window.showPage = function (p) {
     if (typeof orig === 'function') orig.apply(this, arguments);
     if (p === 'employers' && !loaded) { loaded = true; load(); }
+  };
+})();
+</script>
+
+<!-- ═══ PAYROLL DEDUCTIONS ═══════════════════════════════════════════════ -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('pay-load')) return;
+
+  var role = (window.AV_USER && window.AV_USER.role) || 'staff';
+  if (!['staff', 'admin', 'super_admin'].includes(role)) {
+    ['nav-payroll', 'page-payroll'].forEach(function (id) {
+      var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    return;
+  }
+  var isAdmin = role === 'admin' || role === 'super_admin';
+  $('nav-payroll').hidden = false;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;     // textContent: people's names
+    return e;
+  }
+  function say(text, bad) {
+    var n = $('pay-note');
+    n.textContent = text || '';
+    n.style.color = bad ? '#b4232a' : '#163e33';
+  }
+  /** Ngwee to kwacha, for reading. The arithmetic stays whole on the server. */
+  function kwacha(ngwee) {
+    return 'K' + (ngwee / 100).toLocaleString('en-ZM',
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function stat(value, label) {
+    var d = el('div', 'stat-card');
+    d.appendChild(el('div', 'sc-value', value));
+    d.appendChild(el('div', 'sc-label', label));
+    return d;
+  }
+  function get(action, extra) {
+    return fetch('/api.php?action=' + action + '&employer_id='
+        + encodeURIComponent($('pay-employer').value)
+        + '&period=' + encodeURIComponent(period()) + (extra || ''),
+      { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+  }
+  function period() {
+    return $('pay-period').value || new Date().toISOString().slice(0, 7);
+  }
+
+  var current = null;
+
+  function render(rec) {
+    current = rec;
+    var stats = $('pay-stats');
+    stats.textContent = '';
+    stats.appendChild(stat(kwacha(rec.expected_ngwee), 'Expected'));
+    stats.appendChild(stat(kwacha(rec.received_ngwee), 'Received'));
+    stats.appendChild(stat(kwacha(rec.shortfall_ngwee), 'Short'));
+    stats.appendChild(stat(String(rec.lines.length), 'Staff deducted for'));
+
+    var attention = $('pay-attention');
+    attention.textContent = '';
+    var flagged = rec.lines.filter(function (l) { return l.needs_attention; });
+    if (flagged.length) {
+      var box = el('div', 'card');
+      box.style.cssText = 'padding:14px 16px;margin-bottom:14px;border-left:4px solid #d98e3b';
+      box.appendChild(el('h4', null, 'Needs a look before you send this to payroll'));
+      var ul = el('ul');
+      flagged.forEach(function (l) {
+        ul.appendChild(el('li', null, (l.payroll_no || '—') + ' · ' + l.name + ' — ' + l.problem));
+      });
+      box.appendChild(ul);
+      attention.appendChild(box);
+    }
+
+    var table = el('table');
+    var head = el('thead'), hr = el('tr');
+    ['Payroll no.', 'Name', 'Loan', 'Expected', 'Received', 'Short'].forEach(function (h) {
+      hr.appendChild(el('th', null, h)); });
+    head.appendChild(hr); table.appendChild(head);
+
+    var body = el('tbody');
+    rec.lines.forEach(function (l) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, l.payroll_no || '—'));
+      tr.appendChild(el('td', null, l.name));
+      tr.appendChild(el('td', null, l.loan_key));
+      tr.appendChild(el('td', null, kwacha(l.expected_ngwee)));
+      tr.appendChild(el('td', null, kwacha(l.received_ngwee || 0)));
+      var short = el('td', null, kwacha(l.shortfall_ngwee || 0));
+      if (l.shortfall_ngwee > 0) short.style.cssText = 'color:#b4232a;font-weight:700';
+      tr.appendChild(short);
+      body.appendChild(tr);
+    });
+    table.appendChild(body);
+
+    var wrap = el('div', 'table-container');
+    wrap.appendChild(table);
+    $('pay-table').textContent = '';
+    if (!rec.lines.length) {
+      $('pay-table').appendChild(el('p', 'page-sub',
+        'Nobody at this employer has a loan being collected this month.'));
+    } else {
+      $('pay-table').appendChild(wrap);
+    }
+    $('pay-copy').hidden = !rec.lines.length;
+    if (isAdmin) $('pay-record-card').hidden = false;
+  }
+
+  function history() {
+    return get('remittances').then(function (d) {
+      var host = $('pay-history');
+      host.textContent = '';
+      if (!d || !d.ok || !d.remittances.length) return;
+
+      var card = el('div', 'card');
+      card.style.cssText = 'padding:18px 20px;margin-top:18px';
+      card.appendChild(el('h3', null, 'Payments recorded for this month'));
+      var ul = el('ul');
+      d.remittances.forEach(function (r) {
+        var line = kwacha(r.received_ngwee) + ' on ' + r.received_at.slice(0, 10)
+          + ' — ' + (r.status === 'allocated'
+            ? 'split across ' + r.lines.length + ' loan(s)'
+            : 'HELD: not split yet, because it is not the amount that was asked for')
+          + ' · recorded by ' + r.recorded_by;
+        var li = el('li', null, line);
+        if (r.status !== 'allocated') li.style.color = '#b4232a';
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      host.appendChild(card);
+    });
+  }
+
+  function load() {
+    if (!$('pay-employer').value) { say('Choose an employer first.', true); return; }
+    say('Working…');
+    return get('remittanceReconcile').then(function (d) {
+      if (!d || !d.ok) { say('Could not work out the schedule.', true); return; }
+      say('');
+      render(d.reconciliation);
+      return history();
+    }).catch(function () { say('Could not reach the server.', true); });
+  }
+
+  // A plain-text schedule to paste into an email to the payroll office. This
+  // is the thing that actually gets sent to a person every month.
+  $('pay-copy').addEventListener('click', function () {
+    if (!current) return;
+    var lines = ['Avesta Enterprises — payroll deduction schedule',
+                 current.employer + ' — ' + current.period, ''];
+    current.lines.forEach(function (l) {
+      lines.push([l.payroll_no || '—', l.name, kwacha(l.expected_ngwee)].join('\t'));
+    });
+    lines.push('', 'Total to deduct and remit: ' + kwacha(current.expected_ngwee));
+    var text = lines.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { say('Copied.'); },
+        function () { window.prompt('Copy this:', text); });
+    } else { window.prompt('Copy this:', text); }
+  });
+
+  if (isAdmin) {
+    $('pay-record').addEventListener('click', function () {
+      var amount = parseFloat($('pay-received').value);
+      if (!(amount > 0)) { say('Enter the amount the employer sent.', true); return; }
+      say('Recording…');
+      fetch('/api.php?action=remittanceRecord', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employer_id: $('pay-employer').value,
+                               period: period(), received: amount }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) { say(d && d.error ? d.error : 'That did not work.', true); return; }
+        say(d.remittance.status === 'allocated'
+          ? 'Recorded and split across ' + d.posted + ' loan(s).'
+          : 'Recorded, but NOT split: it is not the amount that was asked for. '
+            + 'Nothing has been credited to anyone yet.');
+        $('pay-received').value = '';
+        load();
+      }).catch(function () { say('Could not reach the server.', true); });
+    });
+  }
+
+  $('pay-load').addEventListener('click', load);
+
+  var loaded = false;
+  var orig = window.showPage;
+  window.showPage = function (p) {
+    if (typeof orig === 'function') orig.apply(this, arguments);
+    if (p !== 'payroll' || loaded) return;
+    loaded = true;
+    $('pay-period').value = new Date().toISOString().slice(0, 7);
+    fetch('/api.php?action=employers', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var sel = $('pay-employer');
+        sel.textContent = '';
+        var blank = document.createElement('option');
+        blank.value = ''; blank.textContent = 'Choose an employer…';
+        sel.appendChild(blank);
+        (d && d.ok ? d.employers : []).forEach(function (e) {
+          if (e.status !== 'active') return;
+          var o = document.createElement('option');
+          o.value = e.id; o.textContent = e.name;
+          sel.appendChild(o);
+        });
+        if (!sel.options.length || sel.options.length === 1) {
+          say('No active employers yet. Register one and activate it first.', true);
+        }
+      })
+      .catch(function () { say('Could not reach the server.', true); });
   };
 })();
 </script>
