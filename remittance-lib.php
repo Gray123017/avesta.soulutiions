@@ -202,6 +202,14 @@ function av_deduction_schedule(string $employerId, string $period, array $record
         if ($owner === '') continue;
         if (av_status_closed((string) ($r['status'] ?? ''))) continue;
         if (av_record_outstanding_ngwee($r) <= 0) continue;
+
+        // Nothing is collected on a loan that has not actually been paid out.
+        // Asking an employer to take money off somebody's salary for a loan
+        // that was approved but never sent is the worst thing this schedule
+        // can do, and an approved-and-unpaid loan is an ordinary state to be
+        // in for a day or two.
+        if (trim((string) ($r['disburse_date'] ?? '')) === '') continue;
+
         $byOwner[$owner][] = $r;
     }
 

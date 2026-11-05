@@ -784,6 +784,10 @@ window.avFetchJson = async function (url, opts, ms) {
    idiom as the currency converter's .afx-f above. */
 #page-employers .card{padding:18px 20px}
 #page-payroll .card{padding:18px 20px}
+#page-payouts .card{padding:18px 20px}
+#page-payouts h3{color:var(--navy);margin-bottom:4px}
+#page-payouts h4{margin:0 0 6px;font-size:8.5pt;color:#b4232a;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+#page-payouts ul{margin:8px 0 0;padding-left:20px;line-height:2.1;font-size:9.5pt}
 #page-payroll h3{color:var(--navy);margin-bottom:4px}
 #page-payroll h4{margin:0 0 6px;font-size:8.5pt;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
 #page-payroll ul{margin:6px 0 0;padding-left:20px;line-height:1.9;font-size:9.5pt}
@@ -897,6 +901,10 @@ window.avFetchJson = async function (url, opts, ms) {
       </a>
       <a class="nav-item" id="nav-payroll" hidden onclick="showPage('payroll')" href="javascript:void(0)">
         <span class="nav-icon">&#128181;</span> Payroll deductions
+      </a>
+      <a class="nav-item" id="nav-payouts" hidden onclick="showPage('payouts')" href="javascript:void(0)">
+        <span class="nav-icon">&#128184;</span> Payouts
+        <span id="nb-payouts" class="nav-badge" style="background:#d98e3b;display:none"></span>
       </a>
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
@@ -1068,6 +1076,30 @@ window.avFetchJson = async function (url, opts, ms) {
         </div>
 
         <div id="emp-list"></div>
+      </div>
+
+      <!-- ═══ PAYOUTS ═════════════════════════════════════════════════════ -->
+      <div class="page" id="page-payouts">
+        <div class="acct-head">
+          <div>
+            <h2 class="page-title">Payouts</h2>
+            <p class="page-sub">Approved loans waiting to go out, and a record of each one that
+               did. Avesta does not send the money from here &mdash; you send it the way you
+               always do, then record it, and the loan starts running from that date.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="payout-refresh">Refresh</button>
+        </div>
+
+        <div id="payout-note" aria-live="polite" style="margin-bottom:10px"></div>
+
+        <!-- Loans marked Disbursed from the status dropdown that never got a
+             date. Until one is set, the rate engine cannot work out when the
+             loan is due, so it never goes overdue and the penalty never
+             applies. These are real records, not a hypothetical. -->
+        <div id="payout-undated"></div>
+
+        <h3 style="margin-top:4px">Waiting to go out</h3>
+        <div id="payout-queue"></div>
       </div>
 
       <!-- ═══ PAYROLL DEDUCTIONS ══════════════════════════════════════════ -->
@@ -4211,6 +4243,206 @@ function afxInit(){
 })();
 </script>
 
+<!-- ═══ PAYOUTS ══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('payout-refresh')) return;
+
+  var role = (window.AV_USER && window.AV_USER.role) || 'staff';
+  if (!['staff', 'admin', 'super_admin'].includes(role)) {
+    ['nav-payouts', 'page-payouts'].forEach(function (id) {
+      var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    return;
+  }
+  var isAdmin = role === 'admin' || role === 'super_admin';
+  $('nav-payouts').hidden = false;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;     // textContent: people's names
+    return e;
+  }
+  function money(n) {
+    return 'K ' + Number(n || 0).toLocaleString('en-ZM',
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function say(text, bad) {
+    var n = $('payout-note');
+    n.textContent = text || '';
+    n.style.color = bad ? '#b4232a' : '#163e33';
+  }
+
+  // How the borrower asked to be paid, in the words the form used.
+  var METHODS = [
+    ['cash', 'Cash'], ['mobile_mtn', 'MTN MoMo'], ['mobile_airtel', 'Airtel Money'],
+    ['zamtel', 'Zamtel Kwacha'], ['bank_zanaco', 'ZANACO'], ['bank_fnb', 'FNB Zambia'],
+    ['bank_stanbic', 'Stanbic'], ['bank_other', 'Other bank'],
+  ];
+  function methodName(value) {
+    for (var i = 0; i < METHODS.length; i++) if (METHODS[i][0] === value) return METHODS[i][1];
+    return value || '—';
+  }
+
+  function payoutForm(rec) {
+    var card = el('div', 'card');
+    card.style.cssText = 'padding:18px 20px;margin-bottom:14px';
+
+    var head = el('div', 'acct-head');
+    var left = el('div');
+    left.appendChild(el('h3', null, rec.full_name || rec._key));
+    left.appendChild(el('p', 'page-sub',
+      'Approved for ' + money(rec.loan_amt) + ' · ' + (rec.sel_dur || '')
+      + ' · asked to be paid by ' + methodName(rec.disburse)));
+    head.appendChild(left);
+    card.appendChild(head);
+
+    if (!isAdmin) {
+      card.appendChild(el('p', 'page-sub',
+        'An administrator records the payout once the money has been sent.'));
+      return card;
+    }
+
+    var amount = document.createElement('input');
+    amount.type = 'number'; amount.step = '0.01'; amount.min = '0';
+    amount.value = Number(rec.loan_amt || 0).toFixed(2);
+
+    var method = document.createElement('select');
+    METHODS.forEach(function (m) {
+      var o = document.createElement('option');
+      o.value = m[0]; o.textContent = m[1];
+      if (m[0] === rec.disburse) o.selected = true;
+      method.appendChild(o);
+    });
+
+    var reference = document.createElement('input');
+    reference.placeholder = 'MoMo or bank transaction id';
+
+    var when = document.createElement('input');
+    when.type = 'date';
+    when.max = new Date().toISOString().slice(0, 10);
+    when.value = when.max;
+
+    var reason = document.createElement('input');
+    reason.placeholder = 'Only if the amount differs from the approved one';
+
+    var row = el('div', 'emp-row');
+    [['Amount sent (ZMW)', amount], ['How', method], ['Reference', reference],
+     ['Date sent', when]].forEach(function (pair) {
+      var g = el('div', 'emp-f');
+      g.appendChild(el('label', null, pair[0]));
+      g.appendChild(pair[1]);
+      row.appendChild(g);
+    });
+    card.appendChild(row);
+
+    var reasonRow = el('div', 'emp-row');
+    var rg = el('div', 'emp-f');
+    rg.appendChild(el('label', null, 'Reason for a different amount'));
+    rg.appendChild(reason);
+    reasonRow.appendChild(rg);
+    card.appendChild(reasonRow);
+
+    // Reference stops mattering for cash, because there is nothing to quote.
+    function syncReference() {
+      var cash = method.value === 'cash';
+      reference.disabled = cash;
+      reference.placeholder = cash ? 'Not needed for cash' : 'MoMo or bank transaction id';
+      if (cash) reference.value = '';
+    }
+    method.addEventListener('change', syncReference);
+    syncReference();
+
+    var go = el('button', 'btn btn-primary btn-sm', 'Record this payout');
+    go.type = 'button';
+    go.addEventListener('click', function () {
+      say('Recording…');
+      go.disabled = true;
+      fetch('/api.php?action=disburse', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _key: rec._key, amount: parseFloat(amount.value) || 0,
+          method: method.value, reference: reference.value.trim(),
+          date: when.value, override_reason: reason.value.trim() }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        go.disabled = false;
+        if (!d || !d.ok) { say(d && d.error ? d.error : 'That did not work.', true); return; }
+        say('Recorded. The loan is now running from ' + d.record.disburse_date + '.');
+        load();
+      }).catch(function () { go.disabled = false; say('Could not reach the server.', true); });
+    });
+    card.appendChild(go);
+    return card;
+  }
+
+  function undatedCard(list) {
+    var card = el('div', 'card');
+    card.style.cssText = 'padding:16px 18px;margin-bottom:18px;border-left:4px solid #b4232a';
+    card.appendChild(el('h4', null, 'Marked as paid out, but with no date'));
+    card.appendChild(el('p', 'page-sub',
+      'Until one of these has a date, the system cannot work out when the loan is due — so it '
+      + 'will never show as overdue and the late charge will never apply. Open each one and '
+      + 'set the date the money actually went out.'));
+    var ul = el('ul');
+    list.forEach(function (r) {
+      var li = el('li', null, (r.full_name || r._key) + ' · ' + money(r.loan_amt));
+      var open = el('button', 'btn btn-ghost btn-sm', 'Open');
+      open.type = 'button';
+      open.style.marginLeft = '8px';
+      open.onclick = function () {
+        if (typeof window.showPage === 'function') window.showPage('applications');
+        if (typeof window.openRecord === 'function') window.openRecord(r._key);
+      };
+      li.appendChild(open);
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    return card;
+  }
+
+  function load() {
+    return fetch('/api.php?action=disbursementQueue', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.ok) { say('Could not read the payout queue.', true); return; }
+
+        var undated = $('payout-undated');
+        undated.textContent = '';
+        if (d.undated.length) undated.appendChild(undatedCard(d.undated));
+
+        var queue = $('payout-queue');
+        queue.textContent = '';
+        if (!d.pending.length) {
+          queue.appendChild(el('p', 'page-sub', 'Nothing is waiting to go out.'));
+        } else {
+          d.pending.forEach(function (r) { queue.appendChild(payoutForm(r)); });
+        }
+
+        var badge = $('nb-payouts');
+        if (badge) {
+          badge.textContent = String(d.pending.length);
+          badge.style.display = d.pending.length ? '' : 'none';
+        }
+      })
+      .catch(function () { say('Could not reach the server.', true); });
+  }
+
+  $('payout-refresh').addEventListener('click', function () { say(''); load(); });
+
+  var loaded = false;
+  var orig = window.showPage;
+  window.showPage = function (p) {
+    if (typeof orig === 'function') orig.apply(this, arguments);
+    if (p === 'payouts' && !loaded) { loaded = true; load(); }
+  };
+  // The badge is the point of a queue, so it is filled in without waiting for
+  // somebody to open the page.
+  load();
+})();
+</script>
+
 <!-- ═══ PAYROLL DEDUCTIONS ═══════════════════════════════════════════════ -->
 <script>
 (function () {
@@ -4240,7 +4472,10 @@ function afxInit(){
   }
   /** Ngwee to kwacha, for reading. The arithmetic stays whole on the server. */
   function kwacha(ngwee) {
-    return 'K' + (ngwee / 100).toLocaleString('en-ZM',
+    // "K 1,200.00", spaced, to match av_money() in rates-lib.php. The refusal
+    // messages from the server land on this same screen, and one product
+    // should not write money two ways.
+    return 'K ' + (ngwee / 100).toLocaleString('en-ZM',
       { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function stat(value, label) {

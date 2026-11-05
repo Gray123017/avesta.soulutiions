@@ -1898,6 +1898,63 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
 // is short. remittance-lib.php holds the arithmetic and the two refusals that
 // matter: a breakdown that does not add up is rejected, and a payment that
 // does not match what was asked for is not allocated by guesswork.
+// ── DISBURSEMENT ─────────────────────────────────────────────────────────────
+// Recording that money went out. Nothing here sends any: Avesta is not
+// licensed to lend, and a mobile-money integration behind an unlicensed lender
+// is the one change in this codebase that could do real harm. A person pays
+// out by whatever means they use, and records it here. When there is a licence
+// and a provider account, that goes behind av_disbursement_record() with all
+// of its refusals still in front of it.
+if ($action === 'disbursementQueue' || $action === 'disburse') {
+    requireRole(['admin', 'staff']);
+    require_once __DIR__ . '/disbursement-lib.php';
+
+    if ($action === 'disbursementQueue') {
+        $records = loadRecords();
+        jsonOut(['ok' => true,
+                 'pending' => array_values(av_disbursement_pending($records)),
+                 // Loans marked Disbursed from the status dropdown that never
+                 // got a date. The rate engine cannot age these, so they never
+                 // go overdue and never attract the penalty.
+                 'undated' => array_values(av_disbursement_undated($records))]);
+    }
+
+    // Recording a payout asserts that money left the business, so it is admin.
+    requireRole(['admin']);
+
+    $b   = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $key = trim((string) ($b['_key'] ?? ''));
+
+    $records = loadRecords();
+    $found = null;
+    foreach ($records as $i => $r) {
+        if (($r['_key'] ?? '') === $key) { $found = $i; break; }
+    }
+    if ($found === null) jsonOut(['ok' => false, 'error' => 'That loan was not found.'], 404);
+
+    $result = av_disbursement_record($records[$found], $b);
+    if (!$result['ok']) {
+        jsonOut(['ok' => false, 'error' => $result['error'],
+                 'difference_ngwee' => $result['difference_ngwee'] ?? null], 422);
+    }
+
+    $records[$found] = $result['record'];
+    if (!saveRecords($records)) {
+        jsonOut(['ok' => false,
+                 'error' => 'The payout could not be saved. Check the loan before sending '
+                          . 'any money, and do not record it twice.'], 500);
+    }
+
+    av_audit('loan.disbursed', $key, [
+        'amount'    => $result['record']['disbursed_amount'],
+        'method'    => $result['record']['disburse_method'],
+        'reference' => $result['record']['disburse_reference'],
+        'date'      => $result['record']['disburse_date'],
+        'note'      => $result['record']['disburse_note'] ?? '',
+    ]);
+    jsonOut(['ok' => true, 'record' => $result['record']]);
+}
+
 // Splitting a payment that was held because it did not match. Its own branch
 // because it is keyed by the remittance, not by an employer and a period.
 if ($action === 'remittanceAllocate') {

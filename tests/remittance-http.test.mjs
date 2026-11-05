@@ -51,7 +51,7 @@ test('staff may read the schedule; only an admin may record what arrived',
                                'payroll_no'=>'AV-0012','branch_id'=>$bid]);
       // One live loan, K1,200 over two bi-weekly instalments in November.
       avStoreWrite(__DIR__.'/records_data.json', [[
-        '_key'=>'a1','_owner'=>'borrower','full_name'=>'Chanda Mulenga','status'=>'Active',
+        '_key'=>'a1','_owner'=>'borrower','full_name'=>'Chanda Mulenga','status'=>'Active','disburse_date'=>'2026-10-20',
         'total_repayment'=>'1200.00','installments'=>'2','first_payment'=>'2026-11-07',
         'repay_plan'=>'Bi-Weekly','_payments'=>[]]]);
       file_put_contents(__DIR__.'/eid.txt', $eid);
@@ -184,10 +184,10 @@ test('splitting a held payment is admin work, and must balance',
       av_employer_enrol($eid, ['user_id'=>'u1','name'=>'Chanda','payroll_no'=>'AV-0012','branch_id'=>$bid]);
       av_employer_enrol($eid, ['user_id'=>'u2','name'=>'Mwila','payroll_no'=>'AV-0031','branch_id'=>$bid]);
       avStoreWrite(__DIR__.'/records_data.json', [
-        ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda','status'=>'Active',
+        ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda','status'=>'Active','disburse_date'=>'2026-10-20',
          'total_repayment'=>'1200.00','installments'=>'1','first_payment'=>'2026-11-07',
          'repay_plan'=>'Lump Sum','_payments'=>[]],
-        ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila','status'=>'Active',
+        ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila','status'=>'Active','disburse_date'=>'2026-10-20',
          'total_repayment'=>'600.00','installments'=>'1','first_payment'=>'2026-11-25',
          'repay_plan'=>'Lump Sum','_payments'=>[]]]);
       file_put_contents(__DIR__.'/eid.txt', $eid);
