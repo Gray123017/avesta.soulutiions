@@ -778,6 +778,19 @@ window.avFetchJson = async function (url, opts, ms) {
 /* === ACCOUNTS ========================================================== */
 .acct-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
 .acct-stats{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin-bottom:18px}
+/* ── Employers (salary check-off register) ──────────────────────────────
+   The portal has its own stylesheet; .f-grid and .f-group belong to the
+   public site and mean nothing here, which left these rows unstyled. Same
+   idiom as the currency converter's .afx-f above. */
+#page-employers .card{padding:18px 20px}
+.emp-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin:12px 0}
+.emp-f label{display:block;font-size:7.5pt;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.emp-f input,.emp-f select{width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:9.5pt;color:var(--navy);background:#fff;outline:none;font-family:inherit}
+.emp-f input:focus,.emp-f select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,142,59,.12)}
+#page-employers h3{color:var(--navy);margin-bottom:4px}
+#page-employers h4{margin:18px 0 4px;font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+#page-employers ul{margin:6px 0 12px;padding-left:20px;line-height:1.9;font-size:9.5pt}
+#page-employers .table-container{margin-top:4px}
 @media(min-width:760px){.acct-stats{grid-template-columns:repeat(5,1fr)}}
 .acct-stat{background:var(--av-cream,#F7F3EC);border-radius:9px;padding:12px 14px;
   border-left:3px solid var(--av-navy,#163E33)}
@@ -874,6 +887,9 @@ window.avFetchJson = async function (url, opts, ms) {
       <div class="nav-section" id="nav-accounts-section" hidden>People</div>
       <a class="nav-item" id="nav-accounts" hidden onclick="showPage('accounts')" href="javascript:void(0)">
         <span class="nav-icon">&#128100;</span> Accounts
+      </a>
+      <a class="nav-item" id="nav-employers" hidden onclick="showPage('employers')" href="javascript:void(0)">
+        <span class="nav-icon">&#127970;</span> Employers
       </a>
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
@@ -1008,6 +1024,43 @@ window.avFetchJson = async function (url, opts, ms) {
              email it, and delete old copies. Under the Data Protection Act 2021 it must stay
              in Zambia &mdash; a cloud drive hosted abroad is not a safe place for it.</p>
         </div>
+      </div>
+
+      <!-- ═══ EMPLOYERS (salary check-off register) ═══════════════════════ -->
+      <div class="page" id="page-employers">
+        <div class="acct-head">
+          <div>
+            <h2 class="page-title">Employers</h2>
+            <p class="page-sub">Companies signed up for salary check-off, their branches, and
+               who is on which payroll number. A repayment is matched to a person by that
+               number, so it is the one field here that has to be right.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="emp-refresh">Refresh</button>
+        </div>
+
+        <div class="acct-stats" id="emp-stats"></div>
+        <div id="emp-note" aria-live="polite" style="margin:10px 0"></div>
+
+        <!-- Registering a company is admin work; the script removes this for staff. -->
+        <div class="card" id="emp-new-card" hidden style="margin-bottom:18px">
+          <h3>Register an employer</h3>
+          <p class="page-sub">It starts as <strong>pending</strong>. Nobody can take a check-off
+             loan against it until someone has confirmed the company actually agreed to deduct
+             and remit.</p>
+          <div class="emp-row">
+            <div class="emp-f"><label for="emp-name">Company name</label>
+              <input id="emp-name" placeholder="Full registered company name"></div>
+            <div class="emp-f"><label for="emp-reg">Registration number</label>
+              <input id="emp-reg" placeholder="PACRA number"></div>
+            <div class="emp-f"><label for="emp-contact">HR / payroll contact</label>
+              <input id="emp-contact" placeholder="Name of the person who runs payroll"></div>
+            <div class="emp-f"><label for="emp-phone">Contact phone</label>
+              <input id="emp-phone" type="tel" placeholder="0XXXXXXXXX"></div>
+          </div>
+          <p><button type="button" class="btn btn-primary" id="emp-create">Register employer</button></p>
+        </div>
+
+        <div id="emp-list"></div>
       </div>
 
       <div class="page active" id="page-dashboard">
@@ -3809,6 +3862,279 @@ function afxInit(){
   window.showPage = function (p) {
     if (typeof orig === 'function') orig.apply(this, arguments);
     if (p === 'accounts' && !loaded) { loaded = true; load(); }
+  };
+})();
+</script>
+
+<!-- ═══ EMPLOYERS ════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('emp-refresh')) return;
+
+  var role = (window.AV_USER && window.AV_USER.role) || 'staff';
+  if (!['staff', 'admin', 'super_admin'].includes(role)) {
+    ['nav-employers', 'page-employers'].forEach(function (id) {
+      var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    return;
+  }
+  var isAdmin = role === 'admin' || role === 'super_admin';
+  $('nav-employers').hidden = false;
+  // Registering and suspending a company is admin work; the server refuses
+  // staff either way, so this only keeps a button out of their way.
+  if (isAdmin) $('emp-new-card').hidden = false;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;   // textContent: these are people's names
+    return e;
+  }
+  function say(text, bad) {
+    var n = $('emp-note');
+    n.textContent = text || '';
+    n.style.color = bad ? '#b4232a' : '#163e33';
+  }
+  function post(action, body) {
+    return fetch('/api.php?action=' + action, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); });
+  }
+  /** Run a change, then reload. A refusal is shown as written, not reworded. */
+  function act(action, body, done) {
+    say('Working…');
+    post(action, body).then(function (r) {
+      if (!r.d || !r.d.ok) { say(r.d && r.d.error ? r.d.error : 'That did not work.', true); return; }
+      say(done || 'Done.');
+      load();
+    }).catch(function () { say('Could not reach the server.', true); });
+  }
+
+  function stat(value, label) {
+    var d = el('div', 'stat-card');
+    d.appendChild(el('div', 'sc-value', String(value)));
+    d.appendChild(el('div', 'sc-label', label));
+    return d;
+  }
+
+  function branchRow(emp, b) {
+    var li = el('li');
+    li.appendChild(el('strong', null, b.name));
+    if (b.town) li.appendChild(el('span', 'when', ' — ' + b.town));
+    var onIt = (emp.employees || []).filter(function (e) {
+      return e.branch_id === b.id && e.status === 'active'; }).length;
+    li.appendChild(el('span', 'when', '  ' + onIt + ' active'));
+    if (isAdmin && onIt === 0) {
+      // btn btn-ghost btn-sm, not the public site's .remove-row-btn: that class
+      // is not in this stylesheet and renders as a bare browser button.
+      var rm = el('button', 'btn btn-ghost btn-sm', 'Remove');
+      rm.type = 'button';
+      rm.onclick = function () {
+        act('employerBranchRemove', { employer_id: emp.id, branch_id: b.id }, 'Branch removed.');
+      };
+      li.appendChild(document.createTextNode(' '));
+      li.appendChild(rm);
+    }
+    return li;
+  }
+
+  function staffTable(emp) {
+    var table = el('table');
+    var head = el('thead');
+    var hr = el('tr');
+    ['Name', 'Payroll no.', 'Branch', 'Status', ''].forEach(function (h) {
+      hr.appendChild(el('th', null, h)); });
+    head.appendChild(hr);
+    table.appendChild(head);
+
+    var body = el('tbody');
+    (emp.employees || []).forEach(function (p) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, p.name));
+      tr.appendChild(el('td', null, p.payroll_no));
+      var branch = (emp.branches || []).filter(function (b) { return b.id === p.branch_id; })[0];
+      tr.appendChild(el('td', null, branch ? branch.name : '—'));
+      tr.appendChild(el('td', null, p.status === 'active' ? 'Active'
+        : ('Left' + (p.left_at ? ' ' + p.left_at : ''))));
+      var actions = el('td');
+      if (p.status === 'active') {
+        var left = el('button', 'btn btn-ghost btn-sm', 'Mark as left');
+        left.type = 'button';
+        left.onclick = function () {
+          var when = prompt('Last day of employment (YYYY-MM-DD). '
+            + 'Any balance is settled from the final pay.', new Date().toISOString().slice(0, 10));
+          if (when === null) return;
+          act('employerLeft', { employer_id: emp.id, enrolment_id: p.id, left_at: when.trim() },
+              'Marked as left. The record is kept so a balance can still be settled.');
+        };
+        actions.appendChild(left);
+      }
+      tr.appendChild(actions);
+      body.appendChild(tr);
+    });
+    table.appendChild(body);
+
+    var wrap = el('div', 'table-container');
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  function enrolForm(emp) {
+    var wrap = el('div');
+    wrap.style.marginTop = '10px';
+    if (!(emp.branches || []).length) {
+      wrap.appendChild(el('p', 'page-sub', 'Add a branch before enrolling anyone — '
+        + 'a deduction is collected at a branch.'));
+      return wrap;
+    }
+    var row = el('div', 'emp-row');
+
+    var name = el('input'); name.placeholder = 'Employee full name';
+    var payroll = el('input'); payroll.placeholder = 'Payroll / staff number';
+    var account = el('input'); account.placeholder = 'Avesta account id (optional)';
+    var branch = el('select');
+    (emp.branches || []).forEach(function (b) {
+      var o = el('option', null, b.name + (b.town ? ' (' + b.town + ')' : ''));
+      o.value = b.id;
+      branch.appendChild(o);
+    });
+
+    [['Name', name], ['Payroll number', payroll], ['Branch', branch],
+     ['Account id', account]].forEach(function (pair) {
+      var g = el('div', 'emp-f');
+      g.appendChild(el('label', null, pair[0]));
+      g.appendChild(pair[1]);
+      row.appendChild(g);
+    });
+    wrap.appendChild(row);
+
+    var add = el('button', 'btn btn-primary btn-sm', 'Enrol');
+    add.type = 'button';
+    add.onclick = function () {
+      act('employerEnrol', { employer_id: emp.id, branch_id: branch.value,
+        name: name.value.trim(), payroll_no: payroll.value.trim(),
+        user_id: account.value.trim() }, 'Enrolled.');
+    };
+    wrap.appendChild(add);
+    return wrap;
+  }
+
+  function card(emp) {
+    var c = el('div', 'card');
+    c.style.marginBottom = '16px';
+
+    var head = el('div', 'acct-head');
+    var left = el('div');
+    left.appendChild(el('h3', null, emp.name));
+    var sub = el('p', 'page-sub');
+    sub.textContent = [emp.registration_no, emp.contact_name, emp.contact_phone]
+      .filter(Boolean).join(' · ') || 'No contact details recorded.';
+    left.appendChild(sub);
+    head.appendChild(left);
+
+    var statusWrap = el('div');
+    var tag = el('span', 'when', emp.status.toUpperCase());
+    tag.style.cssText = 'font-weight:700;color:'
+      + (emp.status === 'active' ? '#176b4d' : emp.status === 'suspended' ? '#b4232a' : '#8a6d3b');
+    statusWrap.appendChild(tag);
+    if (isAdmin) {
+      ['pending', 'active', 'suspended'].forEach(function (s) {
+        if (s === emp.status) return;
+        var b = el('button', 'btn btn-ghost btn-sm', s === 'active' ? 'Activate'
+          : s === 'suspended' ? 'Suspend' : 'Back to pending');
+        b.type = 'button';
+        b.style.marginLeft = '6px';
+        b.onclick = function () {
+          act('employerStatus', { employer_id: emp.id, status: s },
+              s === 'active' ? 'Active. Staff here can now apply through check-off.'
+                             : 'Updated. No new check-off applications against this employer.');
+        };
+        statusWrap.appendChild(b);
+      });
+    }
+    head.appendChild(statusWrap);
+    c.appendChild(head);
+
+    c.appendChild(el('h4', null, 'Branches'));
+    var list = el('ul');
+    list.style.cssText = 'margin:6px 0 10px;padding-left:20px;line-height:1.9';
+    (emp.branches || []).forEach(function (b) { list.appendChild(branchRow(emp, b)); });
+    if (!(emp.branches || []).length) list.appendChild(el('li', 'page-sub', 'None yet.'));
+    c.appendChild(list);
+
+    if (isAdmin) {
+      var bname = el('input'); bname.placeholder = 'Branch name';
+      var btown = el('input'); btown.placeholder = 'Town';
+      var badd = el('button', 'btn btn-ghost btn-sm', 'Add branch');
+      badd.type = 'button';
+      badd.onclick = function () {
+        act('employerBranchAdd', { employer_id: emp.id, name: bname.value.trim(),
+          town: btown.value.trim() }, 'Branch added.');
+      };
+      var brow = el('div', 'emp-row');
+      [['Branch name', bname], ['Town', btown]].forEach(function (pair) {
+        var g = el('div', 'emp-f');
+        g.appendChild(el('label', null, pair[0]));
+        g.appendChild(pair[1]);
+        brow.appendChild(g);
+      });
+      c.appendChild(brow);
+      c.appendChild(badd);
+    }
+
+    c.appendChild(el('h4', null, 'Staff'));
+    c.appendChild(staffTable(emp));
+    c.appendChild(enrolForm(emp));
+    return c;
+  }
+
+  function load() {
+    return fetch('/api.php?action=employers', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.ok) { say('Could not read the employer register.', true); return; }
+        var list = $('emp-list');
+        list.textContent = '';
+        var active = 0, staff = 0, branches = 0;
+        d.employers.forEach(function (e) {
+          if (e.status === 'active') active++;
+          branches += (e.branches || []).length;
+          staff += (e.employees || []).filter(function (p) { return p.status === 'active'; }).length;
+          list.appendChild(card(e));
+        });
+        if (!d.employers.length) {
+          list.appendChild(el('p', 'page-sub',
+            'No employers registered yet. Register the first one above.'));
+        }
+        var stats = $('emp-stats');
+        stats.textContent = '';
+        stats.appendChild(stat(d.employers.length, 'Employers'));
+        stats.appendChild(stat(active, 'Active'));
+        stats.appendChild(stat(branches, 'Branches'));
+        stats.appendChild(stat(staff, 'Staff enrolled'));
+      })
+      .catch(function () { say('Could not reach the server.', true); });
+  }
+
+  if (isAdmin) {
+    $('emp-create').addEventListener('click', function () {
+      var name = $('emp-name').value.trim();
+      if (!name) { say('A company name is required.', true); return; }
+      act('employerCreate', { name: name, registration_no: $('emp-reg').value.trim(),
+        contact_name: $('emp-contact').value.trim(), contact_phone: $('emp-phone').value.trim() },
+        'Registered, as pending. Activate it once you have confirmed they agreed to deduct and remit.');
+      ['emp-name', 'emp-reg', 'emp-contact', 'emp-phone'].forEach(function (id) { $(id).value = ''; });
+    });
+  }
+  $('emp-refresh').addEventListener('click', function () { say(''); load(); });
+
+  var loaded = false;
+  var orig = window.showPage;
+  window.showPage = function (p) {
+    if (typeof orig === 'function') orig.apply(this, arguments);
+    if (p === 'employers' && !loaded) { loaded = true; load(); }
   };
 })();
 </script>

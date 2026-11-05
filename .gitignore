@@ -9,6 +9,8 @@
 /password_resets.json
 /audit_log.php
 /audit_log.jsonl
+/employers.php
+/employers.json
 /login_attempts.json
 /login_attempts.php
 /enquiry_rate.json
