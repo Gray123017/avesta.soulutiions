@@ -4319,6 +4319,96 @@ function afxInit(){
     if (isAdmin) $('pay-record-card').hidden = false;
   }
 
+  /**
+   * The split screen for a payment that was held.
+   *
+   * Pre-filled with what was asked for, which is almost never right — that is
+   * why it was held — so the clerk's job is to zero out whoever was not
+   * deducted until the running total matches what actually arrived. The Save
+   * button stays disabled until it does, because the server refuses anything
+   * else and finding that out after typing is worse than being shown.
+   */
+  function splitForm(rem) {
+    var wrap = el('div');
+    wrap.style.cssText = 'margin-top:12px;border-top:1px solid #eee;padding-top:12px';
+    wrap.appendChild(el('h4', null, 'Split this payment'));
+    wrap.appendChild(el('p', 'page-sub',
+      'Set each person to what was actually deducted from their salary. Somebody who was '
+      + 'not deducted at all goes to zero. The parts have to come to exactly '
+      + kwacha(rem.received_ngwee) + '.'));
+
+    var inputs = [];
+    var table = el('table');
+    var head = el('thead'), hr = el('tr');
+    ['Payroll no.', 'Name', 'Asked for', 'Deducted'].forEach(function (h) {
+      hr.appendChild(el('th', null, h)); });
+    head.appendChild(hr); table.appendChild(head);
+
+    var body = el('tbody');
+    (current ? current.lines : []).forEach(function (l) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, l.payroll_no || '—'));
+      tr.appendChild(el('td', null, l.name));
+      tr.appendChild(el('td', null, kwacha(l.expected_ngwee)));
+
+      var cell = el('td');
+      var box = document.createElement('input');
+      box.type = 'number'; box.step = '0.01'; box.min = '0';
+      box.value = (l.expected_ngwee / 100).toFixed(2);
+      box.style.cssText = 'width:120px;padding:6px 9px;border:1.5px solid #ddd;border-radius:6px';
+      box.addEventListener('input', recount);
+      cell.appendChild(box);
+      tr.appendChild(cell);
+      body.appendChild(tr);
+      inputs.push({ loan_key: l.loan_key, box: box });
+    });
+    table.appendChild(body);
+    var tableWrap = el('div', 'table-container');
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+
+    var running = el('p');
+    running.style.cssText = 'font-weight:700;margin:10px 0';
+    wrap.appendChild(running);
+
+    var save = el('button', 'btn btn-primary btn-sm', 'Save this split');
+    save.type = 'button';
+    wrap.appendChild(save);
+
+    function total() {
+      var n = 0;
+      inputs.forEach(function (i) { n += Math.round((parseFloat(i.box.value) || 0) * 100); });
+      return n;
+    }
+    function recount() {
+      var sum = total();
+      var diff = rem.received_ngwee - sum;
+      running.textContent = 'Split so far ' + kwacha(sum) + ' of ' + kwacha(rem.received_ngwee)
+        + (diff === 0 ? ' — that matches.'
+           : diff > 0 ? ' — ' + kwacha(diff) + ' still to account for.'
+                      : ' — ' + kwacha(-diff) + ' more than arrived.');
+      running.style.color = diff === 0 ? '#176b4d' : '#b4232a';
+      save.disabled = diff !== 0;
+    }
+    recount();
+
+    save.addEventListener('click', function () {
+      say('Saving the split…');
+      fetch('/api.php?action=remittanceAllocate', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remittance_id: rem.id, lines: inputs.map(function (i) {
+          return { loan_key: i.loan_key, amount: parseFloat(i.box.value) || 0 }; }) }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) { say(d && d.error ? d.error : 'That did not work.', true); return; }
+        say('Split and credited to ' + d.posted + ' loan(s).');
+        load();
+      }).catch(function () { say('Could not reach the server.', true); });
+    });
+
+    return wrap;
+  }
+
   function history() {
     return get('remittances').then(function (d) {
       var host = $('pay-history');
@@ -4333,13 +4423,20 @@ function afxInit(){
         var line = kwacha(r.received_ngwee) + ' on ' + r.received_at.slice(0, 10)
           + ' — ' + (r.status === 'allocated'
             ? 'split across ' + r.lines.length + ' loan(s)'
-            : 'HELD: not split yet, because it is not the amount that was asked for')
+            : 'HELD: not split yet, so nobody has been credited')
           + ' · recorded by ' + r.recorded_by;
         var li = el('li', null, line);
         if (r.status !== 'allocated') li.style.color = '#b4232a';
         ul.appendChild(li);
       });
       card.appendChild(ul);
+
+      // Splitting one credits loans, so it is admin work, same as recording.
+      if (isAdmin) {
+        d.remittances.forEach(function (r) {
+          if (r.status !== 'allocated') card.appendChild(splitForm(r));
+        });
+      }
       host.appendChild(card);
     });
   }

@@ -152,3 +152,112 @@ test('the payroll page is in the portal and its script compiles',
   // The schedule a clerk emails to payroll has to be copyable as plain text.
   assert.ok(admin.includes('payroll deduction schedule'));
 });
+
+test('splitting a held payment is admin work, and must balance',
+  { skip: !hasPhp, timeout: 30000 }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'avesta-split-http-'));
+  let server;
+  try {
+    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+                     'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
+                     'remittance-lib.php']) copyFileSync(f, join(dir, f));
+    mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });
+    for (const f of ['rates.json', 'categories.json']) {
+      copyFileSync(join('assets', 'avesta', f), join(dir, 'assets', 'avesta', f));
+    }
+    cpSync('app', join(dir, 'app'), { recursive: true });
+    mkdirSync(join(dir, 'sessions'));
+
+    writeFileSync(join(dir, 'fixture.php'), `<?php
+      require __DIR__.'/auth.php';
+      foreach (['admin'=>'admin','staff'=>'staff'] as $key => $role) {
+        session_id('test-'.$key); av_session_start();
+        $_SESSION = ['uid'=>$key,'username'=>$key,'name'=>'Test','role'=>$role,
+                     'seen'=>time(),'started'=>time()];
+        session_write_close();
+      }
+      require __DIR__.'/employers-lib.php';
+      $e = av_employer_create(['name' => 'Avanto Group Limited']);
+      $eid = $e['employer']['id'];
+      $bid = av_employer_add_branch($eid, 'Ndola', 'Ndola')['branch']['id'];
+      av_employer_set_status($eid, 'active');
+      av_employer_enrol($eid, ['user_id'=>'u1','name'=>'Chanda','payroll_no'=>'AV-0012','branch_id'=>$bid]);
+      av_employer_enrol($eid, ['user_id'=>'u2','name'=>'Mwila','payroll_no'=>'AV-0031','branch_id'=>$bid]);
+      avStoreWrite(__DIR__.'/records_data.json', [
+        ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda','status'=>'Active',
+         'total_repayment'=>'1200.00','installments'=>'1','first_payment'=>'2026-11-07',
+         'repay_plan'=>'Lump Sum','_payments'=>[]],
+        ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila','status'=>'Active',
+         'total_repayment'=>'600.00','installments'=>'1','first_payment'=>'2026-11-25',
+         'repay_plan'=>'Lump Sum','_payments'=>[]]]);
+      file_put_contents(__DIR__.'/eid.txt', $eid);
+    `);
+    const config = ['-d', 'session.save_path=' + join(dir, 'sessions')];
+    assert.equal(spawnSync(php, [...config, join(dir, 'fixture.php')], { encoding: 'utf8' }).status, 0);
+    const eid = readFileSync(join(dir, 'eid.txt'), 'utf8').trim();
+
+    const socket = createServer();
+    await new Promise(r => socket.listen(0, '127.0.0.1', r));
+    const port = socket.address().port;
+    await new Promise(r => socket.close(r));
+    server = spawn(php, [...config, '-S', '127.0.0.1:' + port, '-t', dir], { stdio: 'ignore' });
+
+    const call = async (action, role, body, query = '') => {
+      const res = await fetch(`http://127.0.0.1:${port}/api.php?action=${action}${query}`, {
+        headers: { Cookie: 'AVESTASESS=test-' + role,
+                   ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}),
+      });
+      const text = await res.text();
+      let json = null; try { json = JSON.parse(text); } catch {}
+      return { status: res.status, json, text };
+    };
+    for (let i = 0; i < 40; i++) {
+      try { await call('ping', 'admin'); break; } catch { await new Promise(r => setTimeout(r, 50)); }
+    }
+
+    // K1,500 against K1,800 asked for: held, nobody credited.
+    const held = await call('remittanceRecord', 'admin',
+      { employer_id: eid, period: '2026-11', received: 1500 });
+    assert.equal(held.json.remittance.status, 'needs_allocation');
+    assert.equal(held.json.posted, 0);
+    const rid = held.json.remittance.id;
+
+    const split = [{ loan_key: 'a1', amount: 1200 }, { loan_key: 'a2', amount: 300 }];
+
+    // Staff may see the shortfall but not decide who it belongs to.
+    assert.equal((await call('remittanceAllocate', 'staff',
+      { remittance_id: rid, lines: split })).status, 403);
+
+    // A split that does not balance is refused, with the difference named.
+    const off = await call('remittanceAllocate', 'admin',
+      { remittance_id: rid, lines: [{ loan_key: 'a1', amount: 1200 }] });
+    assert.equal(off.status, 422);
+    assert.equal(off.json.difference_ngwee, 30000);
+
+    const ok = await call('remittanceAllocate', 'admin', { remittance_id: rid, lines: split });
+    assert.equal(ok.status, 200, ok.text);
+    assert.equal(ok.json.posted, 2);
+
+    const book = await call('getRecords', 'admin');
+    assert.equal(book.json.records.find(r => r._key === 'a1')._payments[0].amount, 1200);
+    assert.equal(book.json.records.find(r => r._key === 'a2')._payments[0].amount, 300);
+
+    // Twice would credit money that never arrived.
+    assert.equal((await call('remittanceAllocate', 'admin',
+      { remittance_id: rid, lines: split })).status, 422);
+
+    const rec = await call('remittanceReconcile', 'staff', null,
+      `&employer_id=${eid}&period=2026-11`);
+    const mwila = rec.json.reconciliation.lines.find(l => l.payroll_no === 'AV-0031');
+    assert.equal(mwila.received_ngwee, 30000);
+    assert.equal(mwila.shortfall_ngwee, 30000);
+
+    const audit = readFileSync(join(dir, 'audit_log.jsonl'), 'utf8')
+      .trim().split('\n').map(JSON.parse);
+    assert.ok(audit.some(e => e.action === 'remittance.allocated'));
+  } finally {
+    if (server) { const closed = new Promise(r => server.once('exit', r)); server.kill(); await closed; }
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

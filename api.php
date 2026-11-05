@@ -1898,6 +1898,41 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
 // is short. remittance-lib.php holds the arithmetic and the two refusals that
 // matter: a breakdown that does not add up is rejected, and a payment that
 // does not match what was asked for is not allocated by guesswork.
+// Splitting a payment that was held because it did not match. Its own branch
+// because it is keyed by the remittance, not by an employer and a period.
+if ($action === 'remittanceAllocate') {
+    $me = requireRole(['admin']);
+    require_once __DIR__ . '/remittance-lib.php';
+
+    $b     = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
+    $id    = trim((string) ($b['remittance_id'] ?? ''));
+    $lines = [];
+    foreach ((array) ($b['lines'] ?? []) as $l) {
+        $lines[] = ['loan_key' => (string) ($l['loan_key'] ?? ''),
+                    'ngwee' => (int) round(((float) ($l['amount'] ?? 0)) * 100)];
+    }
+
+    $result = av_remittance_allocate_held($id, $lines, loadRecords());
+    if (!$result['ok']) {
+        jsonOut(['ok' => false, 'error' => $result['error'],
+                 'difference_ngwee' => $result['difference_ngwee'] ?? null], 422);
+    }
+    if ($result['posted'] > 0 && !saveRecords($result['records'])) {
+        error_log('Avesta: remittance ' . $id . ' split but records did not save');
+        jsonOut(['ok' => false,
+                 'error' => 'The split was saved but the loan book could not be updated. '
+                          . 'Do not split it again — tell your administrator, quoting '
+                          . $id . '.'], 500);
+    }
+    av_audit('remittance.allocated', $result['remittance']['employer_id'], [
+        'id'     => $id,
+        'period' => $result['remittance']['period'],
+        'lines'  => count($result['remittance']['lines']),
+        'posted' => $result['posted'],
+    ]);
+    jsonOut(['ok' => true, 'remittance' => $result['remittance'], 'posted' => $result['posted']]);
+}
+
 if ($action === 'deductionSchedule' || $action === 'remittances'
     || $action === 'remittanceRecord' || $action === 'remittanceReconcile') {
     $me = requireRole(['admin', 'staff']);
