@@ -465,3 +465,100 @@ function av_remittance_reconcile(string $employerId, string $period, array $reco
         'lines'           => $lines,
     ];
 }
+
+/** Find one remittance by id, or null. */
+function av_remittance_find(string $id): ?array {
+    foreach (av_remittances_load()['remittances'] as $r) {
+        if (($r['id'] ?? '') === $id) return $r;
+    }
+    return null;
+}
+
+/** Replace one remittance in place. */
+function av_remittance_put(array $remittance): bool {
+    $data = av_remittances_load();
+    foreach ($data['remittances'] as $i => $r) {
+        if (($r['id'] ?? '') === $remittance['id']) {
+            $data['remittances'][$i] = $remittance;
+            return av_remittances_save($data);
+        }
+    }
+    return false;
+}
+
+/**
+ * Split a payment that was held because it did not match what was asked for.
+ *
+ * This is the other half of the refusal. A payment that does not match is
+ * never guessed at, so somebody has to say how it divides — usually "this
+ * person was deducted in full, that one was missed" — and this is where that
+ * is recorded.
+ *
+ * The same rule as a breakdown sent with the payment: the parts must come to
+ * exactly the amount received. Not more, not less. A split that does not is
+ * refused rather than reconciled, because the difference would otherwise sit
+ * in the loan book forever with nothing pointing at it.
+ *
+ * Two further refusals, both of which would credit money that never arrived:
+ * a payment that has already been split, and a loan that is not on this
+ * employer's schedule for the period.
+ */
+function av_remittance_allocate_held(string $remittanceId, array $lines, array $records): array {
+    $remittance = av_remittance_find($remittanceId);
+    if ($remittance === null) {
+        return ['ok' => false, 'error' => 'That payment was not found.'];
+    }
+    if (($remittance['status'] ?? '') === 'allocated') {
+        return ['ok' => false,
+                'error' => 'That payment has already been split across its loans. '
+                         . 'Splitting it again would credit money that never arrived.'];
+    }
+
+    $sum = 0;
+    foreach ($lines as $l) $sum += (int) ($l['ngwee'] ?? 0);
+    $received = (int) $remittance['received_ngwee'];
+    if ($sum !== $received) {
+        return ['ok' => false,
+                'difference_ngwee' => abs($sum - $received),
+                'error' => 'The split and the payment do not add up: the lines come to '
+                         . av_money($sum) . ' and the payment was ' . av_money($received)
+                         . ', a difference of ' . av_money(abs($sum - $received)) . '.'];
+    }
+
+    // Only this employer's staff, for this period. Crediting anybody else is
+    // either a typo or money going to the wrong loan, and both are worse than
+    // being told to try again.
+    $schedule = av_deduction_schedule($remittance['employer_id'], $remittance['period'], $records);
+    $allowed = [];
+    foreach ($schedule['lines'] as $l) $allowed[$l['loan_key']] = true;
+
+    $clean = [];
+    foreach ($lines as $l) {
+        $key = (string) ($l['loan_key'] ?? '');
+        $ngwee = (int) ($l['ngwee'] ?? 0);
+        if ($ngwee === 0) continue;                      // zero is how you say "not deducted"
+        if ($ngwee < 0) {
+            return ['ok' => false, 'error' => 'A split cannot be a negative amount.'];
+        }
+        if (!isset($allowed[$key])) {
+            return ['ok' => false,
+                    'error' => 'Loan ' . $key . ' is not on this employer\'s schedule for '
+                             . $remittance['period'] . ', so this payment cannot be put '
+                             . 'against it.'];
+        }
+        $clean[] = ['loan_key' => $key, 'ngwee' => $ngwee];
+    }
+
+    $remittance['lines']           = $clean;
+    $remittance['allocated_ngwee'] = array_sum(array_column($clean, 'ngwee'));
+    $remittance['status']          = 'allocated';
+    $remittance['allocated_at']    = date('c');
+    $remittance['allocated_by']    = av_user()['username'] ?? 'system';
+
+    [$records, $posted] = av_remittance_post($remittance, $records);
+
+    if (!av_remittance_put($remittance)) {
+        return ['ok' => false, 'error' => 'The split could not be saved.'];
+    }
+    return ['ok' => true, 'remittance' => $remittance, 'records' => $records, 'posted' => $posted];
+}

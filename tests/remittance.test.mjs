@@ -320,3 +320,85 @@ test('the remittance store is backed up, web-denied and kept out of Git',
   assert.match(readFileSync('.gitignore', 'utf8'), /^\/remittances\.(php|json)$/m,
     'the remittance store is not gitignored');
 });
+
+// ── splitting a held payment ────────────────────────────────────────────────
+
+const HELD = PAYROLL + `
+  $out = av_remittance_record($eid, '2026-11', 150000, null, $records);
+  $rid = $out['remittance']['id'];
+  $records = $out['records'];
+`;
+
+test('a held payment is split by hand, and only if the parts match it exactly',
+  { skip: !hasPhp }, () => {
+  const short = lib(HELD + `
+    // K1,500 arrived against K1,800 asked for. Chanda was deducted in full,
+    // Mwila was missed — but these lines only come to K1,200.
+    $lines = [['loan_key'=>'a1','ngwee'=>120000]];
+    echo json_encode(av_remittance_allocate_held($rid, $lines, $records));`);
+  assert.equal(short.ok, false);
+  assert.match(short.error, /do not add up/i);
+  assert.equal(short.difference_ngwee, 30000);
+
+  const over = lib(HELD + `
+    $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'a2','ngwee'=>60000]];
+    echo json_encode(av_remittance_allocate_held($rid, $lines, $records));`);
+  assert.equal(over.ok, false);
+  assert.equal(over.difference_ngwee, 30000);
+});
+
+test('a split that matches is posted and the payment stops being held',
+  { skip: !hasPhp }, () => {
+  const r = lib(HELD + `
+    // Chanda in full, Mwila short by K300 — which is the real shape of it.
+    $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'a2','ngwee'=>30000]];
+    $done = av_remittance_allocate_held($rid, $lines, $records);
+    $a1 = null; $a2 = null;
+    foreach ($done['records'] as $x) { if ($x['_key']==='a1') $a1 = $x; if ($x['_key']==='a2') $a2 = $x; }
+    echo json_encode(['ok'=>$done['ok'], 'status'=>$done['remittance']['status'],
+      'allocated'=>$done['remittance']['allocated_ngwee'], 'posted'=>$done['posted'],
+      'a1'=>$a1['_payments'][0]['amount'], 'a2'=>$a2['_payments'][0]['amount'],
+      'stored'=>av_remittances_for($eid,'2026-11')[0]['status']]);`);
+
+  assert.equal(r.ok, true);
+  assert.equal(r.status, 'allocated');
+  assert.equal(r.allocated, 150000);
+  assert.equal(r.posted, 2);
+  assert.equal(r.a1, 1200);
+  assert.equal(r.a2, 300);
+  // The stored remittance is updated too, or it would be split again tomorrow.
+  assert.equal(r.stored, 'allocated');
+});
+
+test('a payment that has already been split cannot be split again',
+  { skip: !hasPhp }, () => {
+  // Doing it twice would credit loans with money that never arrived.
+  const r = lib(HELD + `
+    $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'a2','ngwee'=>30000]];
+    $first = av_remittance_allocate_held($rid, $lines, $records);
+    $again = av_remittance_allocate_held($rid, $lines, $first['records']);
+    echo json_encode(['first'=>$first['ok'], 'again'=>$again['ok'], 'error'=>$again['error'] ?? null]);`);
+  assert.equal(r.first, true);
+  assert.equal(r.again, false);
+  assert.match(r.error, /already been split/i);
+});
+
+test('a split cannot credit a loan that is not on this employer\'s schedule',
+  { skip: !hasPhp }, () => {
+  const r = lib(HELD + `
+    $records[] = ['_key'=>'stranger','_owner'=>'nobody','status'=>'Active',
+                  'total_repayment'=>'500.00','installments'=>'1',
+                  'first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum','_payments'=>[]];
+    $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'stranger','ngwee'=>30000]];
+    echo json_encode(av_remittance_allocate_held($rid, $lines, $records));`);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /not on this employer/i);
+});
+
+test('an unknown payment cannot be split', { skip: !hasPhp }, () => {
+  const r = lib(PAYROLL + `
+    echo json_encode(av_remittance_allocate_held('rem_nothing',
+      [['loan_key'=>'a1','ngwee'=>100]], $records));`);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /not found/i);
+});
