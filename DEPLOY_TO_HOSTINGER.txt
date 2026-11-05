@@ -61,6 +61,35 @@ limits in hPanel after .user.ini has had time to apply.
 Default company email: info@avesta.solutions
 Domain: https://www.avesta.solutions/
 
+BACKUPS
+
+Applications, accounts and uploaded identity documents exist only on this
+server. They are kept out of Git on purpose, so a deployment never restores
+them and a GitHub clone never carries them.
+
+Two copies, and neither one is optional:
+
+1. Hostinger's own backups, in hPanel. Check the schedule is daily and that a
+   backup has actually been taken in the last day. Weekly means losing up to a
+   week of applications.
+
+2. Your own copy. Sign in as Super Admin, open Accounts, and use "Download
+   backup". It gives you a .tar holding the loan book, the accounts, the audit
+   log and every uploaded document, with a MANIFEST.json listing a sha256 for
+   each file. Verify against those checksums before you trust a copy.
+
+   The file is NOT encrypted: it holds NRC scans, bank statements and password
+   hashes in the clear. Keep it on an encrypted drive, do not email it, and
+   delete old copies. The Data Protection Act applies to this file exactly as
+   it applies to the server, so it must stay in Zambia.
+
+   Only a Super Admin can take one, and only one every five minutes. Every
+   download is written to the audit log as backup.downloaded.
+
+Test a restore before you need one. Take a backup now, unpack it somewhere
+safe, and check the files are there and the checksums match. A backup nobody
+has ever restored is not a backup; it is a belief.
+
 STANDING CAVEAT
 
 Passing the checks is not a guarantee of production security. Before handling

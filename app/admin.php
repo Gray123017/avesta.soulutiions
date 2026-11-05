@@ -990,6 +990,24 @@ window.avFetchJson = async function (url, opts, ms) {
           </table>
         </div>
         <div class="acct-resets" style="margin-top:20px"><h3>Recent account recovery activity</h3><div id="acct-recovery-history"></div></div>
+
+        <!-- Removed from the page entirely for anyone who is not a Super Admin.
+             One download is every application, every NRC scan and every
+             password hash on the server. -->
+        <div class="card" id="backup-card" hidden style="margin-top:20px">
+          <h3>Download a backup</h3>
+          <p>Applications and uploaded documents live only on this server &mdash; they are
+             deliberately kept out of GitHub, because the code repository is public and sits
+             outside Zambia. This is how you take your own copy.</p>
+          <div id="backup-facts" class="acct-stats"></div>
+          <p id="backup-last" class="page-sub"></p>
+          <p><button type="button" class="btn btn-primary" id="backup-go">Download backup</button></p>
+          <div id="backup-note" aria-live="polite"></div>
+          <p class="page-sub"><strong>The file is not encrypted.</strong> It holds identity
+             documents and password hashes in the clear. Keep it on an encrypted drive, do not
+             email it, and delete old copies. Under the Data Protection Act 2021 it must stay
+             in Zambia &mdash; a cloud drive hosted abroad is not a safe place for it.</p>
+        </div>
       </div>
 
       <div class="page active" id="page-dashboard">
@@ -3791,6 +3809,88 @@ function afxInit(){
   window.showPage = function (p) {
     if (typeof orig === 'function') orig.apply(this, arguments);
     if (p === 'accounts' && !loaded) { loaded = true; load(); }
+  };
+})();
+</script>
+
+<!-- ═══ BACKUP (Super Admin only) ════════════════════════════════════════ -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var card = $('backup-card');
+  if (!card) return;
+
+  // Taken out of the document rather than hidden: an admin should not be able
+  // to find the button by opening the inspector. The server refuses them too.
+  if (!window.AV_USER || window.AV_USER.role !== 'super_admin') {
+    card.parentNode.removeChild(card);
+    return;
+  }
+  card.hidden = false;
+
+  function size(bytes) {
+    if (!bytes) return '0 B';
+    var units = ['B', 'KB', 'MB', 'GB'], i = 0, n = bytes;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n : n.toFixed(1)) + ' ' + units[i];
+  }
+  function stat(value, label) {
+    var d = document.createElement('div');
+    d.className = 'stat-card';
+    var v = document.createElement('div'); v.className = 'sc-value'; v.textContent = value;
+    var l = document.createElement('div'); l.className = 'sc-label'; l.textContent = label;
+    d.appendChild(v); d.appendChild(l);
+    return d;
+  }
+  function say(text, bad) {
+    var note = $('backup-note');
+    note.textContent = text;
+    note.style.color = bad ? '#b4232a' : '#163e33';
+  }
+
+  var status = null;
+
+  function refresh() {
+    return fetch('/api.php?action=backupStatus', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.ok) { say('Could not read the backup status.', true); return; }
+        status = d;
+        var facts = $('backup-facts');
+        facts.textContent = '';
+        facts.appendChild(stat(d.counts.records, 'Applications'));
+        facts.appendChild(stat(d.counts.documents, 'Documents'));
+        facts.appendChild(stat(d.counts.accounts, 'Accounts'));
+        facts.appendChild(stat(size(d.size_bytes), 'Download size'));
+        $('backup-last').textContent = d.last_taken
+          ? 'Last taken ' + new Date(d.last_taken).toLocaleString() + ' by ' + (d.last_by || 'someone') + '.'
+          : 'No backup has been taken yet.';
+      })
+      .catch(function () { say('Could not reach the server.', true); });
+  }
+
+  $('backup-go').addEventListener('click', function () {
+    say('Checking…');
+    refresh().then(function () {
+      if (!status) return;
+      if (status.retry_after > 0) {
+        say('A backup was taken a few minutes ago. Try again in '
+            + Math.ceil(status.retry_after / 60) + ' minute(s).', true);
+        return;
+      }
+      // Handed to the browser rather than read through fetch: a folder of
+      // scans should stream to disk, not through this page's memory.
+      say('The download will start in a moment. Keep this tab open until it finishes.');
+      window.location = '/api.php?action=backup';
+      setTimeout(refresh, 4000);
+    });
+  });
+
+  var loaded = false;
+  var orig = window.showPage;
+  window.showPage = function (p) {
+    if (typeof orig === 'function') orig.apply(this, arguments);
+    if (p === 'accounts' && !loaded) { loaded = true; refresh(); }
   };
 })();
 </script>

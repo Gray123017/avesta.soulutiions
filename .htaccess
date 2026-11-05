@@ -1,10 +1,11 @@
 # Data files must never be served over the web.
-# Data files must never be served over the web.
 #
 # Named individually rather than blocking *.json: manifest.json has to be
 # readable or the app cannot be installed on a phone, and a blanket rule
-# silently returns 403 for it. Anything new that stores data goes on this list.
-<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets|assistant_rate)\.(json|jsonl)$">
+# silently returns 403 for it. Anything new that stores data goes on this list
+# AND in av_backup_allowlist(); tests/backup.test.mjs fails the build if a
+# store appears in one and not the other.
+<FilesMatch "^(records_data|users|enquiries|rates_cache|it_questions|login_attempts|enquiry_rate|ithelp_rate|password_resets|email_recovery|assistant_rate)\.(json|jsonl)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -20,7 +21,12 @@
 # one turns every page on the site into "500 Internal Server Error".
 
 
-<FilesMatch "\.(jsonl|lock|tmp)$">
+# Archive formats, as a precaution rather than a rule about anything that
+# exists today. A downloaded backup holds every NRC scan and password hash on
+# the server; one copied into public_html by mistake would be the worst leak
+# this site is capable of, so the web server refuses them outright. The .zip,
+# .rar and .exe installers under /downloads/ are deliberately not on this list.
+<FilesMatch "\.(jsonl|lock|tmp|tar|tgz|gz|bak|sql)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

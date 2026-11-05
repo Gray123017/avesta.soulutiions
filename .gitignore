@@ -33,3 +33,14 @@
 
 /avesta-secrets.php
 /assistant_rate.php
+
+# Downloaded backups. One of these holds every NRC scan and password hash on
+# the server; this repository is public. scripts/check-release-safety.mjs fails
+# the build if one is ever tracked anyway, because an ignore rule does not
+# protect a file that has already been added.
+/avesta-backup-*
+*.tar
+*.tgz
+*.gz
+*.bak
+*.sql
