@@ -712,6 +712,25 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
         error_log('Avesta category table unusable: ' . $e->getMessage());
         jsonOut(['ok' => false, 'error' => 'Applications are unavailable right now. Please try again shortly.'], 503);
     }
+
+    // Which employer this is actually against. For somebody already on the
+    // register this overwrites whatever the browser sent: an edited form field
+    // must not be able to point a deduction at another company's payroll.
+    require_once __DIR__ . '/employers-lib.php';
+    try {
+        // av_user(), not a field from the request: the enrolment that binds
+        // this application is the signed-in account's own.
+        $who   = av_user();
+        $bound = av_employer_bind($payload, (string) ($who['id'] ?? ''),
+                                  av_employer_required_by_config());
+        if (!$bound['ok']) jsonOut(['ok' => false, 'error' => $bound['error']], 422);
+        $payload = $bound['payload'];
+    } catch (Throwable $e) {
+        // The register being unreadable must not take applications down with
+        // it; the channel falls back to the free text it used before.
+        error_log('Avesta employer register unusable: ' . $e->getMessage());
+    }
+
     $payload['loan_amt'] = round($loanAmount, 2);
     $payload['loan_amount'] = round($loanAmount, 2);
     $payload['int_rate'] = $canonicalRate;

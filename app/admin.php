@@ -2239,12 +2239,30 @@ function openModal(key) {
   let secBody = `<div class="detail-grid">
     ${di('Security Type', secType || '—')}
     ${di('Collateral Items', r.collateral_items || '—', true)}`;
+  // Whether the employer on this application is a company Avesta actually has
+  // an agreement with, or a name somebody typed. A clerk should not have to
+  // guess which, because only one of them can be deducted against.
+  function employerSource(rec) {
+    if (rec.employer_source === 'register') {
+      return 'Confirmed — this applicant is on the employer\u2019s register';
+    }
+    if (rec.employer_source === 'claimed') {
+      return 'Chosen from the register, NOT yet enrolled \u2014 confirm with payroll before approving';
+    }
+    if (rec.employer_source === 'typed') {
+      return 'Typed in \u2014 this employer is not registered with Avesta';
+    }
+    return 'Submitted before the employer register existed';
+  }
+
   if (r.checkoff_employer || r.co_employer) {
     secBody += `${diDivider('Salary Check-off / Payroll Deduction')}
     ${di('Employer / Company', r.checkoff_employer || r.co_employer || '—')}
     ${di('HR / Payroll Contact', r.checkoff_hr_name || r.co_hr_name || '—')}
     ${di('HR Phone', r.checkoff_hr_phone || r.co_hr_phone || '—')}
-    ${di('Payroll / Employee No.', r.checkoff_payroll_no || r.co_payroll_no || '—')}`;
+    ${di('Payroll / Employee No.', r.checkoff_payroll_no || r.co_payroll_no || '—')}
+    ${di('Branch', r.employer_branch || '—')}
+    ${di('Employer record', employerSource(r))}`;
   }
   if (r.guarantor_name || r.gtr_name) {
     secBody += `${diDivider('Guarantor Details')}

@@ -11,7 +11,7 @@ test('Recovery pages and administrator fallback work through real HTTP forms',
  {skip:spawnSync(php,['-v']).status!==0,timeout:30000},async()=>{
  const dir=mkdtempSync(join(tmpdir(),'avesta-recovery-http-'));let server;
  try{
-  for(const file of ['auth.php','api.php','login.php','recovery.php','recovery-lib.php','portal.php','apply.php','rates-lib.php','categories-lib.php'])copyFileSync(file,join(dir,file));
+  for(const file of ['auth.php','api.php','login.php','recovery.php','recovery-lib.php','portal.php','apply.php','rates-lib.php','categories-lib.php','employers-lib.php'])copyFileSync(file,join(dir,file));
   cpSync('app',join(dir,'app'),{recursive:true});
   // api.php requires rates-lib.php, which reads the published rate table.
   mkdirSync(join(dir,'assets','avesta'),{recursive:true});

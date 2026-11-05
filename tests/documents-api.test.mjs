@@ -13,7 +13,7 @@ test('PHP documents: upload, list, preview, download, access controls and save f
   const dir = mkdtempSync(join(tmpdir(), 'avesta-documents-'));
   let server;
   try {
-    for (const file of ['api.php','auth.php','portal.php','apply.php','rates-lib.php','categories-lib.php']) copyFileSync(file, join(dir,file));
+    for (const file of ['api.php','auth.php','portal.php','apply.php','rates-lib.php','categories-lib.php','employers-lib.php']) copyFileSync(file, join(dir,file));
     // api.php prices every application through rates-lib.php, which reads the
     // published table. Without both, the sandbox dies on require_once rather
     // than exercising the documents path this file is about.
