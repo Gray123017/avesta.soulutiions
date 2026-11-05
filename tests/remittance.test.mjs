@@ -89,10 +89,10 @@ const PAYROLL = `
   av_employer_enrol($eid, ['user_id'=>'u2','name'=>'Mwila Banda','payroll_no'=>'AV-0031','branch_id'=>$bid]);
 
   $records = [
-    ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Active',
+    ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Active','disburse_date'=>'2026-10-20',
      'total_repayment'=>'1200.00','installments'=>'2','first_payment'=>'2026-11-07',
      'repay_plan'=>'Bi-Weekly','_payments'=>[]],
-    ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila Banda','status'=>'Active',
+    ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila Banda','status'=>'Active','disburse_date'=>'2026-10-20',
      'total_repayment'=>'600.00','installments'=>'1','first_payment'=>'2026-11-25',
      'repay_plan'=>'Lump Sum','_payments'=>[]],
   ];
@@ -386,7 +386,7 @@ test('a payment that has already been split cannot be split again',
 test('a split cannot credit a loan that is not on this employer\'s schedule',
   { skip: !hasPhp }, () => {
   const r = lib(HELD + `
-    $records[] = ['_key'=>'stranger','_owner'=>'nobody','status'=>'Active',
+    $records[] = ['_key'=>'stranger','_owner'=>'nobody','status'=>'Active','disburse_date'=>'2026-10-20',
                   'total_repayment'=>'500.00','installments'=>'1',
                   'first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum','_payments'=>[]];
     $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'stranger','ngwee'=>30000]];
