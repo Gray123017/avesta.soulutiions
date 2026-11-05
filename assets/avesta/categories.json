@@ -43,6 +43,9 @@
     "doc_collateral1": "Security item: photo and proof of ownership"
   },
 
+  "_collateralLabelNote": "Published so the form and the server say the same sentence. categories-lib.php reads it for its refusal message and the application form reads it for the checklist, so the applicant is told the same thing before and after submitting.",
+  "collateralLabel": "At least one security item, with a description or a photograph",
+
   "_enforcement": "A submission that names a category must carry that category's documents, and at least one collateral item where collateralRequired is true. A submission with NO category is left alone: the form did not always ask, and refusing those would reject every application made before the chooser shipped. Once the chooser is live for everyone, set requireCategory to true and an application without one stops being accepted.",
   "requireCategory": false
 }

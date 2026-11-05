@@ -64,6 +64,26 @@ test('a self-employed applicant needs security, not a payslip', () => {
   assert.ok(!cfg.categories.self_employed.documents.includes('doc_payslip'));
 });
 
+test('security listed in the form the form actually sends it counts', () => {
+  /* The application form does not send numbered collateral fields. It joins the
+   * rows of #collateral-list into one string — "Toyota Hilux 2014 (ZMW 25000)"
+   * — and sends an em dash when there are none. Reading the real payload is
+   * what caught this: the description half of the rule did not work for the
+   * only shape it ever arrives in, so a self-employed applicant who listed
+   * their security but had not photographed it yet would be turned away. */
+  const base = { ...NRC, applicant_category: 'self_employed', doc_bank_statement_base64: 'x' };
+  const refused = ['At least one security item, with a description or a photograph'];
+
+  assert.deepEqual(missing({ ...base, collateral_items: 'Toyota Hilux 2014 (ZMW 25000)' }), []);
+  assert.deepEqual(missing({ ...base, collateral_items: 'Fridge (ZMW 2000); TV (ZMW 1500)' }), []);
+
+  // The placeholders the form sends for "nothing listed" are not security.
+  for (const empty of ['—', '-', '', '   ', 'None', 'none', 'N/A', 'n/a']) {
+    assert.deepEqual(missing({ ...base, collateral_items: empty }), refused,
+      `"${empty}" must not count as security`);
+  }
+});
+
 test('every missing item is named, not just the first', () => {
   const m = missing({ applicant_category: 'employed' });
   assert.deepEqual(m, ['NRC, front', 'NRC, back', 'Your latest payslip', 'Bank statement, 3 months']);
