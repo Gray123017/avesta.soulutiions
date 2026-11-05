@@ -10,7 +10,10 @@
       "documents": ["doc_nrc_front", "doc_nrc_back", "doc_payslip"],
       "collateralRequired": false,
       "suggestedSecurityType": "checkoff",
-      "_why": "The employer confirms employment and deducts at payroll, so no bank statement is needed to evidence income and no security is taken."
+      "_why": "The employer confirms employment and deducts at payroll, so no bank statement is needed to evidence income and no security is taken.",
+
+      "_requireRegisteredEmployerNote": "The rollout handle for this channel, the same shape as requireCategory. False means an applicant may still type an employer's name that is not in the register, so the channel keeps working while the register is being filled in. Set it to true once every employer Avesta deducts with is registered; from then on an applicant must pick one, because a name typed into a box is a wish and a register entry is an agreement. Somebody already enrolled is bound to their own employer either way — this switch only governs strangers.",
+      "requireRegisteredEmployer": false
     },
 
     "employed": {

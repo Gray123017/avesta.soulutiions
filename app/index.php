@@ -51,6 +51,23 @@ $avSeo = $avSite === 'it' ? [
 // cannot render before it knows what to ask for, and so a failed request can
 // never leave the chooser empty. If the file is unreadable the chooser hides
 // itself and the application still works exactly as it did before it existed.
+// The employer register, for the check-off channel's picker. Only for a
+// signed-in visitor: the apply tab does not exist for anyone else, and the
+// list of companies Avesta lends through is not something to publish.
+$avEmployers = null;
+$avMyEmployer = null;
+if (!$avPublic && is_file(__DIR__ . '/../employers-lib.php')) {
+    try {
+        require_once __DIR__ . '/../employers-lib.php';
+        $avEmployers  = av_employers_choosable();
+        $avMyEmployer = av_employer_for_user($me['id'] ?? '');
+    } catch (Throwable $e) {
+        // A register that cannot be read must not take the application form
+        // down with it. The picker hides and the typed box carries on.
+        error_log('Avesta employer register unavailable on the form: ' . $e->getMessage());
+    }
+}
+
 $avCategories = null;
 if (is_file(__DIR__ . '/../assets/avesta/categories.json')) {
     $avCategories = json_decode(
@@ -61,6 +78,8 @@ if (is_file(__DIR__ . '/../assets/avesta/categories.json')) {
 echo '<script>window.AV_SITE=' . json_encode($avSite)
    . ';window.AV_PUBLIC=' . ($avPublic ? 'true' : 'false')
    . ';window.AV_CATEGORIES=' . json_encode($avCategories, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+   . ';window.AV_EMPLOYERS=' . json_encode($avEmployers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+   . ';window.AV_MY_EMPLOYER=' . json_encode($avMyEmployer, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
    . ';window.AV_USER=' . ($avPublic ? 'null' : json_encode([
     'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES)) . ';</script>';
@@ -2443,8 +2462,25 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
           <div class="f-section" id="checkoff-section" style="display:none;margin-top:18px;border:1.5px solid var(--gold);border-radius:8px;padding:16px;background:rgba(217,142,59,.04)">
             <div class="f-sub" style="margin-top:0">Salary Check-off / Payroll Deduction Details</div>
             <p style="font-size:8.5pt;color:#666;margin-bottom:12px">The Borrower authorises their employer's payroll/HR department to deduct loan repayments directly from their salary and remit to Avesta Enterprises until the loan is fully repaid.</p>
+            <!-- Employer, three ways. Which one is used is decided in JS from
+                 the register: somebody already enrolled has it filled in and
+                 locked, somebody applying to a registered employer picks from
+                 the list, and while the register is still empty the typed box
+                 below is exactly what it always was. -->
+            <p id="co-employer-note" style="display:none;font-size:8.5pt;color:#163e33;background:rgba(22,62,51,.06);border-radius:6px;padding:10px 12px;margin-bottom:12px"></p>
+
+            <div class="f-grid" id="co-employer-pick" style="display:none">
+              <div class="f-group"><label for="co_employer_select">Employer / Company Name</label>
+                <select id="co_employer_select"></select></div>
+              <div class="f-group" id="co-branch-group" style="display:none"><label for="co_branch">Branch where you work</label>
+                <select id="co_branch"></select></div>
+            </div>
+
+            <input type="hidden" id="emp_id" value="">
+            <input type="hidden" id="emp_branch_id" value="">
+
             <div class="f-grid">
-              <div class="f-group"><label for="co_employer">Employer / Company Name</label><input id="co_employer" placeholder="Full registered company name"></div>
+              <div class="f-group" id="co-employer-typed"><label for="co_employer">Employer / Company Name</label><input id="co_employer" placeholder="Full registered company name"></div>
               <div class="f-group"><label for="co_hr_name">HR / Payroll Contact Person</label><input id="co_hr_name" placeholder="Name of HR/Payroll officer"></div>
               <div class="f-group"><label for="co_hr_phone">HR / Payroll Contact Phone</label><input id="co_hr_phone" type="tel" placeholder="0XXXXXXXXX"></div>
               <div class="f-group"><label for="co_payroll_no">Employee Number / Payroll No.</label><input id="co_payroll_no" placeholder="Staff/payroll number"></div>
@@ -5015,6 +5051,124 @@ function avCategoryMissing() {
 }
 // ── END APPLICANT CATEGORY ──────────────────────────────────────────────────
 
+// ── EMPLOYER PICKER ─────────────────────────────────────────────────────────
+// "My employer is signed up with Avesta" used to be a line of free text, which
+// is a wish rather than a fact. These read the register that app/index.php
+// hands the page: AV_EMPLOYERS, the employers an applicant may choose and
+// their branches, and AV_MY_EMPLOYER, this person's own enrolment if they have
+// one. Neither carries anybody else's payroll number — the API that builds
+// them decides that, and a test reads the response back to confirm it.
+//
+// The server binds the application again on arrival and ignores all of this
+// for somebody already enrolled, so an edited field cannot point a deduction
+// at another company's payroll. This is the courtesy, not the control.
+
+function avEmployerRegister() {
+  var list = window.AV_EMPLOYERS;
+  return Array.isArray(list) ? list : null;
+}
+
+function avEmployerOption(doc, value, text) {
+  var o = doc.createElement('option');
+  o.value = value;
+  o.textContent = text;          // textContent: company names are theirs
+  return o;
+}
+
+function avEmployerInit() {
+  var $ = function (id) { return document.getElementById(id); };
+  var typed = $('co-employer-typed');
+  var pick  = $('co-employer-pick');
+  var note  = $('co-employer-note');
+  if (!typed || !pick) return;            // not on this page
+
+  var mine = window.AV_MY_EMPLOYER;
+  var register = avEmployerRegister();
+
+  // 1. Already on an employer's register. Their record is the fact, so the
+  //    form shows it and will not let them contradict it.
+  if (mine && mine.employer) {
+    var name = $('co_employer');
+    if (name) { name.value = mine.employer.name || ''; name.readOnly = true; }
+
+    var payroll = $('co_payroll_no');
+    if (payroll) {
+      payroll.value = (mine.enrolment && mine.enrolment.payroll_no) || '';
+      payroll.readOnly = true;
+    }
+    $('emp_id').value = mine.employer.id || '';
+    $('emp_branch_id').value = (mine.branch && mine.branch.id) || '';
+
+    if (note) {
+      note.textContent = 'Your employer has you on their register with Avesta: '
+        + mine.employer.name
+        + ((mine.branch && mine.branch.name) ? ', ' + mine.branch.name : '')
+        + '. Repayments come off your salary before you are paid. '
+        + 'If any of this is wrong, tell us before you submit.';
+      note.style.display = 'block';
+    }
+    pick.style.display = 'none';
+    typed.style.display = '';
+    return;
+  }
+
+  // 2. Nobody registered yet, or the register could not be read: leave the
+  //    form exactly as it was. A channel that stops working because a list is
+  //    empty is worse than one that takes a typed name.
+  if (!register || !register.length) {
+    pick.style.display = 'none';
+    typed.style.display = '';
+    return;
+  }
+
+  // 3. Pick from the register. The typed box steps aside but stays in the
+  //    document, because it is what actually carries the name on submission.
+  var select = $('co_employer_select');
+  var branchGroup = $('co-branch-group');
+  var branch = $('co_branch');
+
+  select.textContent = '';
+  select.appendChild(avEmployerOption(document, '', 'Choose your employer…'));
+  register.forEach(function (e) {
+    select.appendChild(avEmployerOption(document, e.id, e.name));
+  });
+
+  select.addEventListener('change', function () {
+    var chosen = null;
+    register.forEach(function (e) { if (e.id === select.value) chosen = e; });
+
+    $('emp_id').value = chosen ? chosen.id : '';
+    // Cleared on every change: a branch belonging to the employer they just
+    // moved away from would be refused on arrival, with no obvious reason why.
+    $('emp_branch_id').value = '';
+    if ($('co_employer')) $('co_employer').value = chosen ? chosen.name : '';
+
+    branch.textContent = '';
+    branch.appendChild(avEmployerOption(document, '', ''));
+    (chosen ? chosen.branches || [] : []).forEach(function (b) {
+      branch.appendChild(avEmployerOption(document, b.id,
+        b.name + (b.town ? ' (' + b.town + ')' : '')));
+    });
+    branchGroup.style.display = (chosen && (chosen.branches || []).length) ? '' : 'none';
+    if (typeof saveProgress === 'function') saveProgress();
+  });
+
+  branch.addEventListener('change', function () {
+    $('emp_branch_id').value = branch.value;
+    if (typeof saveProgress === 'function') saveProgress();
+  });
+
+  pick.style.display = '';
+  typed.style.display = 'none';
+  if (note) {
+    note.textContent = 'Choose your employer from the list. If they are not on it they '
+      + 'have not signed up with us yet — apply as formally employed instead, and we '
+      + 'will take it from there.';
+    note.style.display = 'block';
+  }
+}
+// ── END EMPLOYER PICKER ─────────────────────────────────────────────────────
+
 let collateralCount = 1;
 function addCollateral() {
   collateralCount++;
@@ -5732,6 +5886,11 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch (e) {
     console.warn('Applicant category chooser unavailable:', e);
   }
+  try {
+    avEmployerInit();
+  } catch (e) {
+    console.warn('Employer picker unavailable:', e);
+  }
 
   checkForSavedDraft();
   // Auto-save on any input/change within the apply tab
@@ -6147,6 +6306,10 @@ async function submitToSheet() {
     // against this on arrival, so it travels with the application rather than
     // being inferred later from what happens to have been uploaded.
     applicant_category: window.avCategorySelected || getChecked('applicant_category'),
+    // Which registered employer and branch, when the check-off channel was
+    // used. The server binds these again from the register on arrival.
+    employer_id:      gv('emp_id'),
+    branch_id:        gv('emp_branch_id'),
     security_type:    getChecked('security_type'),
     checkoff_employer: gv('co_employer'),
     checkoff_hr_name: gv('co_hr_name'),

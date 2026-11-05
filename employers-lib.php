@@ -398,3 +398,103 @@ function av_employer_choice_valid(string $employerId, string $branchId): bool {
     }
     return false;
 }
+
+// ── tying an application to the register ────────────────────────────────────
+
+/**
+ * Settle which employer an application is actually against.
+ *
+ * Until this existed, "my employer is signed up with Avesta" was a line of
+ * free text — a wish rather than a fact, and Avesta would have been expecting
+ * deductions from a payroll it had no agreement with.
+ *
+ * The order matters:
+ *
+ *   1. Another channel: nothing to do. Left exactly as it arrived.
+ *   2. The applicant is enrolled: the register wins, whatever the browser
+ *      sent. Somebody does not get to choose which employer they work for
+ *      when there is already a record saying, and an edited form field must
+ *      not be able to point a deduction at a different company's payroll.
+ *   3. They named a registered, active employer: taken, and marked as claimed
+ *      rather than confirmed — nobody has checked it against a payroll yet.
+ *   4. They typed a name: allowed only while $require is false, which is the
+ *      rollout position whilst the register is being filled in.
+ *
+ * $require comes from requireRegisteredEmployer in categories.json; it is
+ * passed in rather than read here so this stays a pure decision that a test
+ * can drive both ways.
+ *
+ * Returns ['ok' => true, 'payload' => …] or ['ok' => false, 'error' => …]
+ * with a sentence written for the applicant.
+ */
+function av_employer_bind(array $payload, string $userId = '', ?bool $require = null): array {
+    if (trim((string) ($payload['applicant_category'] ?? '')) !== 'company_employee') {
+        return ['ok' => true, 'payload' => $payload];
+    }
+    $require = $require ?? false;
+
+    // 2. The register is the fact.
+    if ($userId !== '') {
+        $mine = av_employer_for_user($userId);
+        if ($mine !== null) {
+            $payload['employer_id']         = $mine['employer']['id'];
+            $payload['branch_id']           = $mine['branch']['id'] ?? '';
+            $payload['employer_branch']     = $mine['branch']['name'] ?? '';
+            $payload['checkoff_employer']   = $mine['employer']['name'];
+            $payload['checkoff_payroll_no'] = $mine['enrolment']['payroll_no'] ?? '';
+            $payload['enrolment_id']        = $mine['enrolment']['id'] ?? null;
+            $payload['employer_source']     = 'register';
+            return ['ok' => true, 'payload' => $payload];
+        }
+    }
+
+    // 3. Named from the register, but not enrolled on it yet.
+    $employerId = trim((string) ($payload['employer_id'] ?? ''));
+    $branchId   = trim((string) ($payload['branch_id'] ?? ''));
+
+    if ($employerId !== '') {
+        if (!av_employer_choice_valid($employerId, $branchId)) {
+            // Two different mistakes, two different sentences: picking a
+            // company that is not available, and picking a branch that is not
+            // theirs, need different things done about them.
+            $employer = av_employer_find($employerId);
+            if ($employer === null || ($employer['status'] ?? '') !== 'active') {
+                return ['ok' => false,
+                        'error' => 'That employer is not one we can lend through at the moment. '
+                                 . 'Choose another, or apply as formally employed instead.'];
+            }
+            return ['ok' => false,
+                    'error' => 'That branch does not belong to the employer you chose. '
+                             . 'Pick the branch where you actually work.'];
+        }
+
+        $employer = av_employer_find($employerId);
+        $branch   = av_employer_branch($employer, $branchId);
+        $payload['employer_id']       = $employerId;
+        $payload['branch_id']         = $branchId;
+        $payload['employer_branch']   = $branch['name'] ?? '';
+        $payload['checkoff_employer'] = $employer['name'];
+        $payload['enrolment_id']      = null;
+        $payload['employer_source']   = 'claimed';
+        return ['ok' => true, 'payload' => $payload];
+    }
+
+    // 4. A typed name, and whether that is still good enough.
+    if ($require) {
+        return ['ok' => false,
+                'error' => 'Please choose your employer from the list. If they are not on it, '
+                         . 'they have not signed up with us yet — apply as formally employed '
+                         . 'instead, and we will take it from there.'];
+    }
+    $payload['employer_source'] = 'typed';
+    return ['ok' => true, 'payload' => $payload];
+}
+
+/** Does the published file say this channel must name a registered employer? */
+function av_employer_required_by_config(?array $categories = null): bool {
+    if ($categories === null) {
+        if (!function_exists('av_categories_load')) return false;
+        try { $categories = av_categories_load(); } catch (Throwable $e) { return false; }
+    }
+    return !empty($categories['categories']['company_employee']['requireRegisteredEmployer']);
+}
