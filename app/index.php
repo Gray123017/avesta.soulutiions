@@ -46,8 +46,21 @@ $avSeo = $avSite === 'it' ? [
 ];
 
 
+// The three ways in, handed to the page from the same file the server enforces
+// on the way back. Read here rather than fetched by the browser so the form
+// cannot render before it knows what to ask for, and so a failed request can
+// never leave the chooser empty. If the file is unreadable the chooser hides
+// itself and the application still works exactly as it did before it existed.
+$avCategories = null;
+if (is_file(__DIR__ . '/../assets/avesta/categories.json')) {
+    $avCategories = json_decode(
+        (string) @file_get_contents(__DIR__ . '/../assets/avesta/categories.json'), true);
+    if (!is_array($avCategories) || empty($avCategories['categories'])) $avCategories = null;
+}
+
 echo '<script>window.AV_SITE=' . json_encode($avSite)
    . ';window.AV_PUBLIC=' . ($avPublic ? 'true' : 'false')
+   . ';window.AV_CATEGORIES=' . json_encode($avCategories, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
    . ';window.AV_USER=' . ($avPublic ? 'null' : json_encode([
     'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES)) . ';</script>';
@@ -2376,6 +2389,25 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 
         <!-- ═══ STEP 1: BORROWER & PARTIES ═══ -->
         <div class="wiz-panel active" id="wiz-1">
+
+        <!-- ── HOW ARE YOU APPLYING? ─────────────────────────────────────────
+             The first question, because the answer decides what the rest of the
+             form asks for. The three choices and the documents each one needs
+             are read from assets/avesta/categories.json, which is the same file
+             categories-lib.php enforces on the way in — so what an applicant is
+             shown and what is actually required cannot drift apart. -->
+        <div class="f-section" id="applicant-category-section">
+          <div class="f-head">How are you applying?</div>
+          <div class="f-sub">This decides what we need from you. Pick the one that describes you.</div>
+          <div class="method-grid" id="category-grid"></div>
+          <div id="category-needs" style="display:none;margin-top:16px">
+            <div class="f-sub">What you will need</div>
+            <p id="category-needs-why" style="font-size:8.5pt;color:#666;margin:6px 0 10px"></p>
+            <ul id="category-needs-list" style="font-size:9pt;line-height:1.9;margin:0;padding-left:20px"></ul>
+          </div>
+          <p id="category-err" class="f-err" style="display:none;margin-top:10px"></p>
+        </div>
+
         <div class="f-section">
           <div class="f-head">1. Parties to the Agreement</div>
           <div class="f-sub">A. Borrower Information</div>
@@ -2616,6 +2648,18 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 
 
 
+          </div>
+
+          <!-- Filled by the chooser in step 1: the documents this applicant's
+               channel asks for, moved up here out of the optional list below so
+               nobody has to go hunting for something that is required of them.
+               Empty, and hidden, until a channel is chosen. -->
+          <div id="category-required-docs" style="display:none;margin-bottom:18px">
+            <div style="font-size:8pt;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">
+              ✱ Required — for the way you are applying
+            </div>
+            <div class="upload-grid" id="category-required-grid"></div>
+            <p id="category-docs-err" class="f-err" style="display:none;margin-top:8px;font-size:8.5pt"></p>
           </div>
 
           <!-- ── COLLATERAL PHOTOS (shown when security=collateral) ───── -->
@@ -4707,6 +4751,270 @@ function toggleSecuritySection(radio) {
   saveProgress();
 }
 
+// ── APPLICANT CATEGORY ──────────────────────────────────────────────────────
+// The three ways in. Everything here is read from window.AV_CATEGORIES, which
+// app/index.php fills from assets/avesta/categories.json — the same file
+// categories-lib.php enforces when the application arrives. Nothing about the
+// three channels is written twice, so what an applicant is shown and what is
+// actually required cannot drift apart.
+//
+// Document boxes are MOVED rather than duplicated. Each upload box already
+// exists in the form, with the file input id the server expects; the chooser
+// lifts the ones this applicant needs out of the optional list and into a
+// required block, and puts them back if they change their answer. That way
+// handleUpload, the payload builder and the existing validation all keep
+// working on the same elements they always did.
+
+window.avCategorySelected = '';
+
+function avCategoryConfig() {
+  var c = window.AV_CATEGORIES;
+  return (c && c.categories) ? c : null;
+}
+
+/** The upload box that holds a given document field, found through the input. */
+function avCategoryBox(field) {
+  var input = document.getElementById(field);
+  return input ? input.closest('.upload-item') : null;
+}
+
+/** Remembers where each box started, so it can be put back. Runs once. */
+function avCategoryRememberHomes() {
+  var cfg = avCategoryConfig();
+  if (!cfg) return;
+  var seen = {};
+  Object.keys(cfg.categories).forEach(function (key) {
+    (cfg.categories[key].documents || []).forEach(function (field) {
+      if (seen[field]) return;
+      seen[field] = true;
+      var box = avCategoryBox(field);
+      if (box && !box._avHome) {
+        box._avHome = box.parentNode;
+        box._avNextTo = box.nextSibling;
+        var lbl = box.querySelector('.upload-label');
+        box._avLabel = lbl ? lbl.innerHTML : null;
+      }
+    });
+  });
+}
+
+function avCategoryRender() {
+  var cfg = avCategoryConfig();
+  var grid = document.getElementById('category-grid');
+  if (!cfg || !grid) {
+    // No published categories: leave the form exactly as it was.
+    var section = document.getElementById('applicant-category-section');
+    if (section) section.style.display = 'none';
+    return;
+  }
+
+  grid.textContent = '';
+  Object.keys(cfg.categories).forEach(function (key) {
+    var c = cfg.categories[key];
+    var label = document.createElement('label');
+    label.className = 'method-card mc-light';
+
+    var radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'applicant_category';
+    radio.value = key;
+    radio.addEventListener('change', function () { avCategoryChoose(key); });
+
+    var icon = document.createElement('span');
+    icon.className = 'mc-icon';
+    icon.textContent = key === 'company_employee' ? '🏢' : key === 'employed' ? '💼' : '🧰';
+
+    // The applicant's own words go large and the filing tag goes quiet:
+    // "I work for myself" is what someone recognises about themselves,
+    // "Secured" is what we call it afterwards.
+    var name = document.createElement('span');
+    name.className = 'mc-name';
+    name.textContent = c.label || key;      // textContent: this is published copy
+
+    var desc = document.createElement('span');
+    desc.className = 'mc-desc';
+    desc.textContent = c.short || '';
+
+    label.appendChild(radio);
+    label.appendChild(icon);
+    label.appendChild(name);
+    label.appendChild(desc);
+    grid.appendChild(label);
+  });
+
+  avCategoryRememberHomes();
+}
+
+function avCategoryChoose(key) {
+  var cfg = avCategoryConfig();
+  if (!cfg || !cfg.categories[key]) return;
+  var c = cfg.categories[key];
+  window.avCategorySelected = key;
+
+  var err = document.getElementById('category-err');
+  if (err) err.style.display = 'none';
+
+  var radio = document.querySelector('input[name="applicant_category"][value="' + key + '"]');
+  if (radio) radio.checked = true;
+
+  // Every box goes home first, so switching answers never leaves the previous
+  // channel's documents sitting in the required list.
+  var moved = {};
+  Object.keys(cfg.categories).forEach(function (k) {
+    (cfg.categories[k].documents || []).forEach(function (field) {
+      if (moved[field]) return;
+      moved[field] = true;
+      var box = avCategoryBox(field);
+      if (!box || !box._avHome) return;
+      box.classList.remove('error');
+      if (box.parentNode !== box._avHome) {
+        box._avHome.insertBefore(box, box._avNextTo || null);
+        box.classList.remove('required-doc');
+        var lbl = box.querySelector('.upload-label');
+        if (lbl && box._avLabel !== null) lbl.innerHTML = box._avLabel;
+      }
+    });
+  });
+
+  // Then the ones this channel asks for come up into the required block.
+  var required = document.getElementById('category-required-grid');
+  var block    = document.getElementById('category-required-docs');
+  var needed   = (c.documents || []).filter(function (f) {
+    // The NRC has its own required block directly above, for everyone.
+    return f !== 'doc_nrc_front' && f !== 'doc_nrc_back';
+  });
+
+  if (required) {
+    required.textContent = '';
+    needed.forEach(function (field) {
+      var box = avCategoryBox(field);
+      if (!box) return;
+      required.appendChild(box);
+      box.classList.add('required-doc');
+      avCategoryMarkRequired(box, field, cfg);
+    });
+  }
+  if (block) block.style.display = needed.length ? 'block' : 'none';
+
+  // Security. The suggestion is a starting point, not a cage: they can change
+  // it. What they cannot change is whether security is required — that comes
+  // from the channel, and the server checks it the same way.
+  if (c.suggestedSecurityType) {
+    var sec = document.querySelector('input[name="security_type"][value="' + c.suggestedSecurityType + '"]');
+    if (sec && !document.querySelector('input[name="security_type"]:checked')) {
+      sec.checked = true;
+      if (typeof toggleSecuritySection === 'function') toggleSecuritySection(sec);
+    }
+  }
+
+  avCategoryShowNeeds(key);
+  if (typeof saveProgress === 'function') saveProgress();
+  if (typeof updateFieldCounter === 'function') updateFieldCounter();
+}
+
+/**
+ * Label a promoted box the way the checklist labels it, and mark it required.
+ *
+ * The box said "Payslip / Proof of Income" while the checklist above said
+ * "Your latest payslip". Two names for the same thing in one form is how an
+ * applicant ends up wondering whether they are two different documents, so the
+ * published label wins here and the original is put back on demotion.
+ */
+function avCategoryMarkRequired(box, field, cfg) {
+  var label = box.querySelector('.upload-label');
+  if (!label) return;
+
+  var published = (cfg.documentLabels || {})[field];
+  label.textContent = (published || label.textContent.replace(/\s*OPTIONAL\s*$/i, '').trim()) + ' ';
+
+  var tag = document.createElement('span');
+  tag.className = 'av-req-tag';
+  tag.style.cssText = 'color:#c0392b;font-size:7.5pt;font-weight:700';
+  tag.textContent = 'REQUIRED';
+  label.appendChild(tag);
+}
+
+function avCategoryShowNeeds(key) {
+  var cfg = avCategoryConfig();
+  if (!cfg) return;
+  var c = cfg.categories[key];
+  var wrap = document.getElementById('category-needs');
+  var list = document.getElementById('category-needs-list');
+  var why  = document.getElementById('category-needs-why');
+  if (!wrap || !list) return;
+
+  list.textContent = '';
+  avCategoryChecklist(key).forEach(function (item) {
+    var li = document.createElement('li');
+    li.textContent = item;
+    list.appendChild(li);
+  });
+  if (why) why.textContent = c.summary || '';
+  wrap.style.display = 'block';
+}
+
+/** Everything this channel asks for, in the published wording. */
+function avCategoryChecklist(key) {
+  var cfg = avCategoryConfig();
+  if (!cfg || !cfg.categories[key]) return [];
+  var c = cfg.categories[key];
+  var labels = cfg.documentLabels || {};
+  var out = (c.documents || []).map(function (f) { return labels[f] || f; });
+  if (c.collateralRequired) out.push(avCategoryCollateralLabel());
+  return out;
+}
+
+function avCategoryCollateralLabel() {
+  var cfg = avCategoryConfig();
+  return (cfg && cfg.collateralLabel)
+    || 'At least one security item, with a description or a photograph';
+}
+
+/** Has a file actually been attached? The same test the submit loop makes. */
+function avCategoryHasFile(field) {
+  var el = document.getElementById(field);
+  return !!(el && el.files && el.files.length > 0);
+}
+
+/** Is there security with something in it? Mirrors av_collateral_present(). */
+function avCategoryHasCollateral() {
+  for (var i = 1; i <= 3; i++) {
+    if (avCategoryHasFile('doc_collateral' + i)) return true;
+  }
+  var rows = document.querySelectorAll('#collateral-list .collateral-item');
+  for (var r = 0; r < rows.length; r++) {
+    var inputs = rows[r].querySelectorAll('input');
+    if (inputs[0] && inputs[0].value.trim() !== '') return true;
+  }
+  return false;
+}
+
+/**
+ * What is still missing, in the published wording, all of it at once.
+ *
+ * The server decides; this exists so an applicant is told before they submit
+ * rather than after, and is told the same sentences either way. The NRC is left
+ * out because the block above it reports that with its own message.
+ */
+function avCategoryMissing() {
+  var cfg = avCategoryConfig();
+  var key = window.avCategorySelected;
+  if (!cfg || !key || !cfg.categories[key]) return [];
+  var c = cfg.categories[key];
+  var labels = cfg.documentLabels || {};
+  var out = [];
+
+  (c.documents || []).forEach(function (field) {
+    if (field === 'doc_nrc_front' || field === 'doc_nrc_back') return;
+    if (!avCategoryHasFile(field)) out.push(labels[field] || field);
+  });
+  if (c.collateralRequired && !avCategoryHasCollateral()) {
+    out.push(avCategoryCollateralLabel());
+  }
+  return out;
+}
+// ── END APPLICANT CATEGORY ──────────────────────────────────────────────────
+
 let collateralCount = 1;
 function addCollateral() {
   collateralCount++;
@@ -5067,6 +5375,29 @@ function validateStep(step) {
     }
   });
 
+  // ── Step 1: which of the three ways in ────────────────────────────────────
+  // Required here even though the server still accepts an application without
+  // one. The server has to stay lenient for anything submitted from a page
+  // cached before the chooser existed; this page is asking, so this page
+  // requires an answer. requireCategory in categories.json is what closes the
+  // server side once every applicant is being asked.
+  if (step === 1) {
+    var catGrid = document.getElementById('category-grid');
+    var catErr  = document.getElementById('category-err');
+    if (catGrid && catGrid.children.length && !window.avCategorySelected) {
+      catGrid.classList.add('error');
+      if (catErr) {
+        catErr.style.display = 'block';
+        catErr.textContent = 'Please tell us how you are applying — it decides what we need from you.';
+      }
+      errorMessages.push('How you are applying is required');
+      ok = false;
+    } else if (catGrid) {
+      catGrid.classList.remove('error');
+      if (catErr) catErr.style.display = 'none';
+    }
+  }
+
   // ── Step 2: disbursement method ───────────────────────────────────────────
   if (step === 2) {
     const checked  = panel.querySelector('input[name="disburse"]:checked');
@@ -5156,6 +5487,35 @@ function validateStep(step) {
       });
       const docErr = document.getElementById('doc-upload-err');
       if (docErr) docErr.style.display = 'none';
+    }
+
+    // ── What this applicant's channel asks for ─────────────────────────────
+    // Named all at once, in the wording categories.json publishes, so somebody
+    // with nothing uploaded is told the whole list rather than discovering it
+    // one refusal at a time. The server checks the same list on arrival.
+    var catDocsErr = document.getElementById('category-docs-err');
+    var catMissing = typeof avCategoryMissing === 'function' ? avCategoryMissing() : [];
+    if (catMissing.length) {
+      if (catDocsErr) {
+        catDocsErr.style.display = 'block';
+        catDocsErr.textContent = '⚠ Still needed: ' + catMissing.join(', ') + '.';
+      }
+      var firstBox = null;
+      var cfgDocs = (window.AV_CATEGORIES && window.AV_CATEGORIES.categories
+                     && window.AV_CATEGORIES.categories[window.avCategorySelected]) || null;
+      if (cfgDocs) {
+        (cfgDocs.documents || []).forEach(function (field) {
+          if (field === 'doc_nrc_front' || field === 'doc_nrc_back') return;
+          if (avCategoryHasFile(field)) return;
+          var box = avCategoryBox(field);
+          if (box) { box.classList.add('error'); if (!firstBox) firstBox = box; }
+        });
+      }
+      if (firstBox) firstBox.scrollIntoView({ behavior:'smooth', block:'center' });
+      catMissing.forEach(function (m) { errorMessages.push(m + ' is required'); });
+      ok = false;
+    } else if (catDocsErr) {
+      catDocsErr.style.display = 'none';
     }
 
     // ── Collateral photo required if security type = collateral ────────────
@@ -5363,6 +5723,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   updateSigButtons('borrower');
   updateLateFee();
+
+  // Before the draft is restored, so a resumed draft can re-select its channel
+  // and find the cards already on the page. Wrapped for the same reason the
+  // signature pads are: a broken chooser must not take the application with it.
+  try {
+    avCategoryRender();
+  } catch (e) {
+    console.warn('Applicant category chooser unavailable:', e);
+  }
+
   checkForSavedDraft();
   // Auto-save on any input/change within the apply tab
   applyTab.addEventListener('input', debounce(saveProgress, 800));
@@ -5773,6 +6143,10 @@ async function submitToSheet() {
     occupation:       gv('b_occupation'),
     monthly_income:   gv('b_income'),
     collateral_items: collateral,
+    // Which of the three ways in. categories-lib.php checks the documents
+    // against this on arrival, so it travels with the application rather than
+    // being inferred later from what happens to have been uploaded.
+    applicant_category: window.avCategorySelected || getChecked('applicant_category'),
     security_type:    getChecked('security_type'),
     checkoff_employer: gv('co_employer'),
     checkoff_hr_name: gv('co_hr_name'),

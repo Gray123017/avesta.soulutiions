@@ -98,18 +98,42 @@ function av_collateral_present(array $payload): bool {
         }
     }
 
-    // The form may also send the items as a list rather than numbered fields.
+    // The form sends the items as ONE joined string, not numbered fields:
+    // "Toyota Hilux 2014 (ZMW 25000); Fridge (ZMW 2000)", and an em dash when
+    // the applicant listed none. That string is the only shape this ever
+    // arrives in from the website, so it is the shape that matters most.
     $list = $payload['collateral_items'] ?? $payload['collateral'] ?? null;
+
+    if (is_string($list)) return av_collateral_text_present($list);
+
     if (is_array($list)) {
         foreach ($list as $item) {
-            if (is_string($item) && trim($item) !== '') return true;
+            if (is_string($item) && av_collateral_text_present($item)) return true;
             if (is_array($item)) {
-                $desc = trim((string) ($item['description'] ?? $item['desc'] ?? $item['item'] ?? ''));
-                if ($desc !== '') return true;
+                $desc = (string) ($item['description'] ?? $item['desc'] ?? $item['item'] ?? '');
+                if (av_collateral_text_present($desc)) return true;
             }
         }
     }
     return false;
+}
+
+/**
+ * Does this text describe an actual item?
+ *
+ * The form writes an em dash for "nothing listed", and people type "none" or
+ * "N/A" into a box they do not want to fill. Treating any of those as security
+ * would let a secured loan through with nothing behind it.
+ */
+function av_collateral_text_present(string $text): bool {
+    $t = trim($text);
+    if ($t === '') return false;
+
+    // Strip the punctuation the joined string carries so "—; —" is still empty.
+    $bare = trim(preg_replace('#[\s;,./\\\\\-\x{2010}-\x{2015}]+#u', '', $t));
+    if ($bare === '') return false;
+
+    return !in_array(strtolower($bare), ['none', 'na', 'nil', 'nothing', 'n0ne'], true);
 }
 
 /**
@@ -141,7 +165,11 @@ function av_category_missing(array $payload, ?array $cfg = null): array {
         }
     }
     if (!empty($category['collateralRequired']) && !av_collateral_present($payload)) {
-        $missing[] = 'At least one security item, with a description or a photograph';
+        // Published, so the checklist on the form and this refusal are the same
+        // sentence. Being told one thing before submitting and another after is
+        // how an applicant decides the website is broken.
+        $missing[] = $cfg['collateralLabel']
+            ?? 'At least one security item, with a description or a photograph';
     }
     return $missing;
 }

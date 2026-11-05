@@ -22,6 +22,13 @@ jobs:
         # api.php, which is what actually binds a borrower. This fails the
         # build if any of them drifts.
         run: node scripts/check-rates.mjs
+      - name: The three ways in agree everywhere they appear
+        # categories.json is the single published source: the application form
+        # reads it to show an applicant their own list, categories-lib.php reads
+        # it to enforce that list on arrival. This fails the build if either
+        # copy drifts — a requirement with no box to upload into, or a sentence
+        # that says one thing before submitting and another after.
+        run: node scripts/check-categories.mjs
       - name: Protect software download catalogue
         run: |
           # Installers are retained on Hostinger and are intentionally not committed to Git.
