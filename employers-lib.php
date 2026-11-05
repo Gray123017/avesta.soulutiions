@@ -552,7 +552,7 @@ function av_employer_staff_view(string $employerId, string $period, array $recor
             $outstanding = av_record_outstanding_ngwee($r);
             if ($outstanding <= 0) continue;
 
-            $total = av_ngwee($r['total_repayment'] ?? 0);
+            $total = av_record_total_ngwee($r);
             $weeks = (int) preg_replace('/[^0-9]/', '', (string) ($r['sel_dur'] ?? 0));
             $due = null;
             if ($weeks > 0 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {

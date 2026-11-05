@@ -82,6 +82,26 @@ function av_remittances_for(string $employerId, string $period = ''): array {
 
 // ── when a loan's instalments fall ──────────────────────────────────────────
 
+/**
+ * What a loan is due to repay in total, in ngwee.
+ *
+ * The application form writes this as `total_repay`; `total_repayment` is an
+ * alias the admin page builds for display and some older records carry. One
+ * function knows that, so a caller cannot pick the wrong one — which is
+ * exactly what happened in the employer view before this existed, where a
+ * real record showed a total repayable of zero beside a correct balance.
+ */
+function av_record_total_ngwee(array $record): int {
+    foreach (['total_repay', 'total_repayment'] as $field) {
+        $v = $record[$field] ?? null;
+        if ($v !== null && trim((string) $v) !== '' && trim((string) $v) !== '—') {
+            $n = av_ngwee($v);
+            if ($n > 0) return $n;
+        }
+    }
+    return 0;
+}
+
 /** Kwacha as written on a record, to whole ngwee. */
 function av_ngwee(string|int|float|null $amount): int {
     return (int) round(((float) $amount) * 100);
@@ -106,7 +126,7 @@ function av_plan_step(string $plan): ?array {
  * person's wages on a date nobody agreed to.
  */
 function av_loan_due_dates(array $record): ?array {
-    $total = av_ngwee($record['total_repayment'] ?? $record['total_repay'] ?? null);
+    $total = av_record_total_ngwee($record);
     $count = (int) ($record['installments'] ?? $record['num_inst'] ?? 0);
     $first = trim((string) ($record['first_payment'] ?? ''));
     $plan  = (string) ($record['repay_plan'] ?? $record['repayment_plan'] ?? '');
@@ -160,7 +180,7 @@ function av_period_bounds(string $period): ?array {
 
 /** What is still owed on a record, in ngwee, from its own payment list. */
 function av_record_outstanding_ngwee(array $record): int {
-    $total = av_ngwee($record['total_repayment'] ?? $record['total_repay'] ?? null);
+    $total = av_record_total_ngwee($record);
     $paid  = 0;
     foreach (($record['_payments'] ?? []) as $p) {
         $paid += av_ngwee($p['amount'] ?? 0);
