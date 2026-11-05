@@ -4204,6 +4204,60 @@ function afxInit(){
     c.appendChild(el('h4', null, 'Staff'));
     c.appendChild(staffTable(emp));
     c.appendChild(enrolForm(emp));
+
+    // Giving a company a login hands a third party a standing view of their
+    // staff's borrowing. That is a decision about somebody else's personal
+    // data, so it is admin work and it says plainly what the company will see.
+    if (isAdmin) {
+      c.appendChild(el('h4', null, 'Their own login'));
+      c.appendChild(el('p', 'page-sub',
+        'Lets this company sign in and see its own staff, what to deduct this month and what '
+        + 'is still owed. They never see documents, NRC numbers, addresses, or anything about '
+        + 'anybody else’s staff.'));
+
+      var user = el('input');
+      user.placeholder = 'Username for the company, e.g. avantohr';
+      var mail = el('input');
+      mail.placeholder = 'Their email (optional, for password resets)';
+
+      var loginRow = el('div', 'emp-row');
+      [['Username', user], ['Email', mail]].forEach(function (pair) {
+        var g = el('div', 'emp-f');
+        g.appendChild(el('label', null, pair[0]));
+        g.appendChild(pair[1]);
+        loginRow.appendChild(g);
+      });
+      c.appendChild(loginRow);
+
+      var out = el('div');
+      out.style.cssText = 'margin-top:8px;font-size:9.5pt';
+      var make = el('button', 'btn btn-ghost btn-sm', 'Create a login');
+      make.type = 'button';
+      make.onclick = function () {
+        if (!user.value.trim()) { say('Choose a username for the company.', true); return; }
+        say('Creating…');
+        post('employerLogin', { employer_id: emp.id, username: user.value.trim(),
+                                email: mail.value.trim() }).then(function (r) {
+          if (!r.d || !r.d.ok) { say(r.d && r.d.error ? r.d.error : 'That did not work.', true); return; }
+          say('');
+          out.textContent = '';
+          // Shown once. It is never stored in readable form, here or anywhere.
+          var box = el('div', 'card');
+          box.style.cssText = 'padding:12px 14px;border-left:4px solid #176b4d';
+          box.appendChild(el('div', null, 'Username: ' + r.d.username));
+          var pw = el('div');
+          pw.innerHTML = '';
+          pw.appendChild(el('strong', null, 'One-time password: ' + r.d.temporary_password));
+          box.appendChild(pw);
+          box.appendChild(el('p', 'page-sub', r.d.note
+            + ' This is shown once — it is not stored anywhere you can read it again.'));
+          out.appendChild(box);
+          user.value = ''; mail.value = '';
+        }).catch(function () { say('Could not reach the server.', true); });
+      };
+      c.appendChild(make);
+      c.appendChild(out);
+    }
     return c;
   }
 

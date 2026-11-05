@@ -498,3 +498,110 @@ function av_employer_required_by_config(?array $categories = null): bool {
     }
     return !empty($categories['categories']['company_employee']['requireRegisteredEmployer']);
 }
+
+// ── what a company may see about its own staff ──────────────────────────────
+
+/**
+ * The employer's view of its own payroll.
+ *
+ * A company deducting at source needs to know who is enrolled, what comes off
+ * which salary this month, and what is still owed. It does not need — and must
+ * never be shown — the NRC scan, the bank statement, the home address, the
+ * security, the location the application was made from, or how the borrower
+ * paid anything themselves. The employee handed those to a lender, not to
+ * their boss.
+ *
+ * So this is built as a narrow projection rather than a loan record with a few
+ * fields hidden. A field has to be named here to be seen, which means a new
+ * field added to an application tomorrow is invisible to employers by default
+ * rather than published to them by accident.
+ *
+ * Nothing is read from the request: the caller passes the employer id it got
+ * from the session.
+ */
+function av_employer_staff_view(string $employerId, string $period, array $records): array {
+    $employer = av_employer_find($employerId);
+    $empty = ['employer' => null, 'period' => $period, 'branches' => [], 'staff' => [],
+              'totals' => ['staff' => 0, 'with_loans' => 0,
+                           'outstanding_ngwee' => 0, 'due_this_month_ngwee' => 0]];
+    if ($employer === null) return $empty;
+
+    // The schedule already knows what is due this month, and already refuses to
+    // count a loan that was never paid out. Reusing it keeps the number the
+    // employer sees and the number Avesta asks for as the same number.
+    $schedule = av_deduction_schedule($employerId, $period, $records);
+    $dueByLoan = [];
+    foreach ($schedule['lines'] as $l) $dueByLoan[$l['loan_key']] = (int) $l['expected_ngwee'];
+
+    $today = date('Y-m-d');
+    $staff = [];
+    $totOut = 0; $totDue = 0; $withLoans = 0;
+
+    foreach ($employer['employees'] as $person) {
+        $owner = (string) ($person['user_id'] ?? '');
+        $loans = [];
+
+        foreach ($records as $r) {
+            if ((string) ($r['_owner'] ?? '') !== $owner || $owner === '') continue;
+            if (av_status_closed((string) ($r['status'] ?? ''))) continue;
+            // Not paid out means nothing to collect, and nothing to tell the
+            // employer about. Same rule as the deduction schedule.
+            $start = trim((string) ($r['disburse_date'] ?? ''));
+            if ($start === '') continue;
+
+            $outstanding = av_record_outstanding_ngwee($r);
+            if ($outstanding <= 0) continue;
+
+            $total = av_ngwee($r['total_repayment'] ?? 0);
+            $weeks = (int) preg_replace('/[^0-9]/', '', (string) ($r['sel_dur'] ?? 0));
+            $due = null;
+            if ($weeks > 0 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
+                $ts = strtotime($start . ' +' . $weeks . ' weeks');
+                if ($ts) $due = date('Y-m-d', $ts);
+            }
+
+            $loans[] = [
+                'reference'             => (string) ($r['_key'] ?? ''),
+                'borrowed_ngwee'        => av_ngwee($r['loan_amt'] ?? $r['loan_amount'] ?? 0),
+                'total_repayable_ngwee' => $total,
+                'paid_ngwee'            => max(0, $total - $outstanding),
+                'outstanding_ngwee'     => $outstanding,
+                'due_this_month_ngwee'  => $dueByLoan[$r['_key'] ?? ''] ?? 0,
+                'due_date'              => $due,
+                // Flagged so the company knows to chase the deduction. What
+                // Avesta charges for lateness is between Avesta and the
+                // borrower, so no penalty figure travels with it.
+                'overdue'               => $due !== null && $due < $today,
+                'started'               => $start,
+            ];
+            $totOut += $outstanding;
+            $totDue += $dueByLoan[$r['_key'] ?? ''] ?? 0;
+        }
+
+        if ($loans) $withLoans++;
+        $branch = av_employer_branch($employer, (string) ($person['branch_id'] ?? ''));
+        $staff[] = [
+            'name'       => (string) ($person['name'] ?? ''),
+            'payroll_no' => (string) ($person['payroll_no'] ?? ''),
+            'branch'     => $branch['name'] ?? '',
+            'left'       => ($person['status'] ?? '') === 'left',
+            'left_at'    => $person['left_at'] ?? null,
+            'loans'      => $loans,
+        ];
+    }
+
+    $branches = [];
+    foreach ($employer['branches'] as $b) {
+        $branches[] = ['name' => $b['name'], 'town' => $b['town'] ?? ''];
+    }
+
+    return [
+        'employer' => ['id' => $employer['id'], 'name' => $employer['name'],
+                       'status' => $employer['status']],
+        'period'   => $period,
+        'branches' => $branches,
+        'staff'    => $staff,
+        'totals'   => ['staff' => count($staff), 'with_loans' => $withLoans,
+                       'outstanding_ngwee' => $totOut, 'due_this_month_ngwee' => $totDue],
+    ];
+}

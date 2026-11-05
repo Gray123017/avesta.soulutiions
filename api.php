@@ -1825,6 +1825,27 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
                  'enrolment' => $mine['enrolment'] ?? null]);
     }
 
+    // A company's own view of its own payroll. The employer is read from the
+    // signed-in account, never from the request, so no amount of editing a
+    // field reaches another company's staff. The projection itself is narrow
+    // by construction — see av_employer_staff_view().
+    if ($action === 'employerPortal') {
+        $me = requireRole(['employer']);
+        $mine = av_employer_of($me);
+        if ($mine === '') {
+            jsonOut(['ok' => false,
+                     'error' => 'This login is not linked to an employer. Ask Avesta to '
+                              . 'set it up.'], 403);
+        }
+        require_once __DIR__ . '/remittance-lib.php';
+        $period = trim((string) ($_GET['period'] ?? '')) ?: date('Y-m');
+        if (av_period_bounds($period) === null) $period = date('Y-m');
+
+        av_audit('employer.portal_viewed', $mine, ['period' => $period]);
+        jsonOut(['ok' => true,
+                 'view' => av_employer_staff_view($mine, $period, loadRecords())]);
+    }
+
     if ($action === 'employers') {
         requireRole(['admin', 'staff']);
         av_audit('employers.list');
@@ -1881,6 +1902,37 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
         // down here as well as in the register itself.
         $send($r, 'employer.enrolled', $employerId,
               ['name' => $b['name'] ?? '', 'payroll_no' => $b['payroll_no'] ?? '']);
+    }
+
+    // Give a company a login of its own. Admin work: it hands a third party a
+    // standing view of their staff's borrowing, which is a decision about
+    // somebody else's personal data, not a clerical task.
+    if ($action === 'employerLogin') {
+        requireRole(['admin']);
+        $employer = av_employer_find($employerId);
+        if ($employer === null) jsonOut(['ok' => false, 'error' => 'Employer not found.'], 404);
+
+        $username = trim((string) ($b['username'] ?? ''));
+
+        // Created with a throwaway, then put through the ordinary reset path:
+        // that is what issues the temporary password and sets must_change, so
+        // a company login goes through exactly the same door as every other
+        // account rather than a second one written for this.
+        $made = av_create_user($username, av_temp_password(),
+            $employer['name'], 'employer', trim((string) ($b['email'] ?? '')), $employerId);
+        if (!$made['ok']) jsonOut(['ok' => false, 'error' => $made['error']], 409);
+
+        $reset = av_admin_reset_password($made['user']['id'], $me['username']);
+        if (!$reset['ok']) {
+            jsonOut(['ok' => false, 'error' => $reset['error'] ?? 'Could not set a password.'], 500);
+        }
+
+        // Shown once, here, and never stored in readable form.
+        av_audit('employer.login_created', $employerId, ['username' => $username]);
+        jsonOut(['ok' => true, 'username' => $username,
+                 'temporary_password' => $reset['temporary_password'],
+                 'note' => 'Give this to the company once, by a means other than email if you '
+                         . 'can. They will be asked to set their own password when they sign in.']);
     }
 
     if ($action === 'employerLeft') {

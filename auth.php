@@ -208,6 +208,27 @@ function av_save_users(array $users): bool {
     return avStoreWrite(USERS_FILE, $users);
 }
 
+/**
+ * Which employer a signed-in account belongs to, or ''.
+ *
+ * Read from the user store on every request, never from the session and never
+ * from a parameter. A company must not be able to ask for another company's
+ * payroll by editing a field, and an employer login that is revoked or moved
+ * should stop working on the next request, not the next sign-in.
+ */
+function av_employer_of(?array $user = null): string {
+    $user = $user ?? av_user();
+    if ($user === null || ($user['role'] ?? '') !== 'employer') return '';
+
+    foreach (av_load_users() as $u) {
+        if (($u['id'] ?? '') === ($user['id'] ?? '')) {
+            if (empty($u['active'])) return '';
+            return (string) ($u['employer_id'] ?? '');
+        }
+    }
+    return '';
+}
+
 function av_find_user(string $username): ?array {
     $u = strtolower(trim($username));
     foreach (av_load_users() as $row) {
@@ -255,7 +276,8 @@ function av_password_problem(string $p, string $username = ''): ?string {
 }
 
 function av_create_user(string $username, string $password, string $name,
-                        string $role = 'borrower', string $email = ''): array {
+                        string $role = 'borrower', string $email = '',
+                        string $employerId = ''): array {
     $username = trim($username);
     if (!av_username_ok($username)) {
         return ['ok' => false, 'error' => 'Username must be 3–32 letters, numbers, dot, dash or underscore.'];
@@ -270,7 +292,15 @@ function av_create_user(string $username, string $password, string $name,
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return ['ok' => false, 'error' => 'Enter a valid recovery email address.'];
     }
-    if (!in_array($role, ['super_admin', 'admin', 'staff', 'borrower'], true)) $role = 'borrower';
+    // 'employer' is a company's own login. It sees one employer's payroll and
+    // nothing else, so an account with that role is useless — and refused
+    // below — without an employer attached to it.
+    if (!in_array($role, ['super_admin', 'admin', 'staff', 'borrower', 'employer'], true)) {
+        $role = 'borrower';
+    }
+    if ($role === 'employer' && trim($employerId) === '') {
+        return ['ok' => false, 'error' => 'An employer login must be tied to an employer.'];
+    }
 
     $users = av_load_users();
     $row = [
@@ -284,6 +314,10 @@ function av_create_user(string $username, string $password, string $name,
         'last_login' => null,
         'email'      => $email,
         'email_verified_at' => null,
+        // Only ever set for the 'employer' role. av_employer_of() reads it
+        // from here at request time rather than from the session, so removing
+        // it takes effect on the next request instead of the next sign-in.
+        'employer_id' => $role === 'employer' ? trim($employerId) : '',
     ];
     $users[] = $row;
     if (!av_save_users($users)) {

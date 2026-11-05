@@ -91,7 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($r['ok']) {
             $to = (string) ($_POST['next'] ?? '');
             if ($to === '' || !preg_match('#^/?[A-Za-z0-9._/-]*$#', $to)) {
-                $to = in_array($r['user']['role'], ['admin', 'staff'], true) ? 'portal.php' : 'index.php';
+                // A company's login has its own page, and nothing to do on the
+                // others. super_admin was falling through to index.php, which
+                // was always wrong — it belongs in the portal with the rest of
+                // the staff roles.
+                $role = $r['user']['role'];
+                $to = $role === 'employer' ? 'employer.php'
+                    : (in_array($role, ['super_admin', 'admin', 'staff'], true)
+                        ? 'portal.php' : 'index.php');
             }
             header('Location: ' . $to);
             exit;
