@@ -2836,14 +2836,32 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 
           <!-- GPS LOCATION CONSENT -->
           <div class="f-section">
-            <div class="f-head">📍 Location Verification</div>
+            <div class="f-head">📍 Location Verification <span style="color:#c0392b;font-size:8pt">REQUIRED</span></div>
             <div class="gps-consent-box">
               <div class="gps-icon">📡</div>
               <div class="gps-text">
-                <h4>Allow Location Access</h4>
-                <p>To help verify your application and for security purposes, Avesta Enterprises requests your current GPS location at the time of submission. By signing below, you consent to share your location alongside your application. This helps us confirm you are within our service area and protects against fraudulent applications.</p>
-                <button class="gps-btn" id="gps-btn" onclick="captureGPS()">📍 Capture My Location</button>
+                <h4>Share your location</h4>
+                <p>Your location at the time of applying is <strong>required</strong>. It confirms
+                   you are within the area we lend in and protects you and us against applications
+                   made in somebody else's name. By signing below you consent to it being recorded
+                   alongside your application.</p>
+                <button class="gps-btn" id="gps-btn" type="button" onclick="captureGPS()">📍 Capture My Location</button>
                 <div class="gps-coords" id="gps-coords"></div>
+
+                <!-- The way out for a phone with location switched off, or a
+                     browser that refuses outright. Not a way to skip it: the
+                     reason is required, recorded, and shown to staff on the
+                     application. A blank field told us nothing; this does. -->
+                <label style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:8.5pt;cursor:pointer">
+                  <input type="checkbox" id="gps-declined" onchange="avGpsToggle()" style="margin-top:3px">
+                  <span>I cannot share my location on this device</span>
+                </label>
+                <div id="gps-declined-row" style="display:none;margin-top:8px">
+                  <label for="gps_declined_reason" style="font-size:8pt;color:#666">Tell us why — this is recorded with your application</label>
+                  <input id="gps_declined_reason" placeholder="e.g. location is switched off on this phone"
+                         style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:9pt;margin-top:4px">
+                </div>
+                <p id="gps-err" class="f-err" style="display:none;margin-top:8px"></p>
               </div>
             </div>
             <input type="hidden" id="gps_lat">
@@ -5698,6 +5716,17 @@ function validateStep(step) {
 
   // ── Step 5: terms + signature ─────────────────────────────────────────────
   if (step === 5) {
+    // Location: a position, or a stated reason there is not one. Not optional.
+    const gpsProblem = typeof avGpsMissing === 'function' ? avGpsMissing() : '';
+    const gpsErr = document.getElementById('gps-err');
+    if (gpsProblem) {
+      if (gpsErr) { gpsErr.style.display = 'block'; gpsErr.textContent = gpsProblem; }
+      errorMessages.push('Your location is required');
+      ok = false;
+    } else if (gpsErr) {
+      gpsErr.style.display = 'none';
+    }
+
     const terms    = document.getElementById('agree_terms');
     const termsErr = document.getElementById('terms-err');
     if (!terms.checked) {
@@ -5940,6 +5969,58 @@ function debounce(fn, ms) {
   return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
 }
 
+
+// ── LOCATION REQUIRED ───────────────────────────────────────────────────────
+// Location used to be a button somebody could walk past, so most applications
+// arrived without one and the field was worthless. It is now required to get
+// past step 5.
+//
+// It is not an absolute block, and that is deliberate. A phone with location
+// switched off, or a browser that denies the permission outright, would lose
+// the application entirely with nothing anybody could do about it. So there is
+// one other way through: say you cannot, and say why. The reason is required,
+// recorded, and shown to staff on the application. "Declined, and here is why"
+// is something a clerk can act on; a blank field never was.
+
+/** 'captured' when there is a position, 'declined' when there is a stated
+ *  reason there is not one, 'none' when the applicant has done neither. */
+function avGpsState() {
+  var lat = (document.getElementById('gps_lat') || {}).value || '';
+  var lng = (document.getElementById('gps_lng') || {}).value || '';
+  if (lat.trim() !== '' && lng.trim() !== '') return 'captured';
+
+  var box = document.getElementById('gps-declined');
+  var why = (document.getElementById('gps_declined_reason') || {}).value || '';
+  if (box && box.checked && why.trim() !== '') return 'declined';
+
+  return 'none';
+}
+
+/** What is still wrong, in a sentence, or '' when nothing is. */
+function avGpsMissing() {
+  var state = avGpsState();
+  if (state !== 'none') return '';
+
+  var box = document.getElementById('gps-declined');
+  if (box && box.checked) {
+    return 'Please say why you cannot share your location.';
+  }
+  return 'Your location is required. Tap "Capture My Location", or tick the box '
+       + 'below it if you cannot share it on this device.';
+}
+
+function avGpsToggle() {
+  var box = document.getElementById('gps-declined');
+  var row = document.getElementById('gps-declined-row');
+  if (!box || !row) return;
+  row.style.display = box.checked ? 'block' : 'none';
+  if (box.checked) {
+    var why = document.getElementById('gps_declined_reason');
+    if (why) why.focus();
+  }
+  if (typeof saveProgress === 'function') saveProgress();
+}
+// ── END LOCATION REQUIRED ───────────────────────────────────────────────────
 
 /* ══ GPS LOCATION CAPTURE ════════════════════════════════════════════════ */
 function captureGPS() {
@@ -6353,6 +6434,10 @@ async function submitToSheet() {
     gps_latitude:     gv('gps_lat') || '—',
     gps_longitude:    gv('gps_lng') || '—',
     gps_accuracy_m:   gv('gps_accuracy') || '—',
+    // Whether there is a position, or a stated reason there is not one. A
+    // blank used to mean "nobody pressed the button"; now it means something.
+    gps_status:            avGpsState(),
+    gps_declined_reason:   gv('gps_declined_reason'),
     status:           'New Application',
   };
 
