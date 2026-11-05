@@ -51,7 +51,7 @@ const SETUP = `
 
   $records = [
     ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Disbursed',
-     'disburse_date'=>'2026-10-20','loan_amt'=>1000.00,'total_repayment'=>'1200.00',
+     'disburse_date'=>'2026-10-20','loan_amt'=>1000.00,'total_repay'=>'1200.00',
      'installments'=>'2','first_payment'=>'2026-11-07','repay_plan'=>'Bi-Weekly',
      'sel_dur'=>'4 Weeks','_payments'=>[['id'=>'p1','amount'=>200.00,'date'=>'2026-11-01',
        'method'=>'Airtel Money','reference'=>'AM-887766']],
@@ -61,7 +61,7 @@ const SETUP = `
      'doc_bank_statement_url'=>'/api.php?action=doc&key=a1','collateral_items'=>'Toyota Hilux',
      'gps_latitude'=>'-12.958870','next_of_kin'=>'Mary Mulenga'],
     ['_key'=>'a2','_owner'=>'u9','full_name'=>'Peter Zulu','status'=>'Disbursed',
-     'disburse_date'=>'2026-10-20','loan_amt'=>400.00,'total_repayment'=>'500.00',
+     'disburse_date'=>'2026-10-20','loan_amt'=>400.00,'total_repay'=>'500.00',
      'installments'=>'1','first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum',
      'nrc_number'=>'999999/99/9','_payments'=>[]],
   ];
@@ -223,13 +223,13 @@ test('a company login reaches its own payroll and nothing else',
 
       avStoreWrite(__DIR__.'/records_data.json', [
         ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Disbursed',
-         'disburse_date'=>'2026-10-20','loan_amt'=>1000.00,'total_repayment'=>'1200.00',
+         'disburse_date'=>'2026-10-20','loan_amt'=>1000.00,'total_repay'=>'1200.00',
          'installments'=>'1','first_payment'=>'2026-11-07','repay_plan'=>'Lump Sum',
          'sel_dur'=>'4 Weeks','nrc_number'=>'123456/78/1','phone'=>'0966123456',
          'address'=>'Plot 44 Kabundi Road','doc_nrc_front_url'=>'/api.php?action=doc&key=a1',
          '_payments'=>[]],
         ['_key'=>'a2','_owner'=>'u9','full_name'=>'Peter Zulu','status'=>'Disbursed',
-         'disburse_date'=>'2026-10-20','loan_amt'=>400.00,'total_repayment'=>'500.00',
+         'disburse_date'=>'2026-10-20','loan_amt'=>400.00,'total_repay'=>'500.00',
          'installments'=>'1','first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum',
          'sel_dur'=>'2 Weeks','_payments'=>[]]]);
     `);

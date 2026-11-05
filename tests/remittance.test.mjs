@@ -39,7 +39,7 @@ function lib(body) {
 test('a weekly plan puts its instalments a week apart, to the ngwee',
   { skip: !hasPhp }, () => {
   const r = lib(`
-    $rec = ['total_repayment' => '1250.00', 'installments' => '3',
+    $rec = ['total_repay' => '1250.00', 'installments' => '3',
             'first_payment' => '2026-11-07', 'repay_plan' => 'Weekly'];
     echo json_encode(av_loan_due_dates($rec));`);
 
@@ -53,14 +53,14 @@ test('a weekly plan puts its instalments a week apart, to the ngwee',
 test('a monthly plan lands on the same day each month, and a lump sum is one date',
   { skip: !hasPhp }, () => {
   const monthly = lib(`
-    echo json_encode(av_loan_due_dates(['total_repayment' => '900.00', 'installments' => '3',
+    echo json_encode(av_loan_due_dates(['total_repay' => '900.00', 'installments' => '3',
       'first_payment' => '2026-11-30', 'repay_plan' => 'Monthly']));`);
   // 30 November, then the end of each following month rather than spilling
   // into the next one: 31 Dec and 31 Jan, never 30 Feb.
   assert.deepEqual(monthly.map(d => d.date), ['2026-11-30', '2026-12-30', '2027-01-30']);
 
   const lump = lib(`
-    echo json_encode(av_loan_due_dates(['total_repayment' => '2600.00', 'installments' => '1',
+    echo json_encode(av_loan_due_dates(['total_repay' => '2600.00', 'installments' => '1',
       'first_payment' => '2026-11-28', 'repay_plan' => 'Lump Sum']));`);
   assert.deepEqual(lump, [{ date: '2026-11-28', ngwee: 260000 }]);
 });
@@ -70,8 +70,8 @@ test('a record with no usable schedule expects nothing, and says so',
   // Never invent an amount to take off somebody's salary. A record that does
   // not say when it is due is a question for staff, not a guess.
   for (const rec of [
-    `['total_repayment' => '1000.00', 'installments' => '2', 'repay_plan' => 'Weekly']`,
-    `['total_repayment' => '1000.00', 'first_payment' => '2026-11-07', 'installments' => '0']`,
+    `['total_repay' => '1000.00', 'installments' => '2', 'repay_plan' => 'Weekly']`,
+    `['total_repay' => '1000.00', 'first_payment' => '2026-11-07', 'installments' => '0']`,
     `['installments' => '2', 'first_payment' => '2026-11-07']`,
   ]) {
     assert.equal(lib(`echo json_encode(av_loan_due_dates(${rec}));`), null);
@@ -90,10 +90,10 @@ const PAYROLL = `
 
   $records = [
     ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Active','disburse_date'=>'2026-10-20',
-     'total_repayment'=>'1200.00','installments'=>'2','first_payment'=>'2026-11-07',
+     'total_repay'=>'1200.00','installments'=>'2','first_payment'=>'2026-11-07',
      'repay_plan'=>'Bi-Weekly','_payments'=>[]],
     ['_key'=>'a2','_owner'=>'u2','full_name'=>'Mwila Banda','status'=>'Active','disburse_date'=>'2026-10-20',
-     'total_repayment'=>'600.00','installments'=>'1','first_payment'=>'2026-11-25',
+     'total_repay'=>'600.00','installments'=>'1','first_payment'=>'2026-11-25',
      'repay_plan'=>'Lump Sum','_payments'=>[]],
   ];
 `;
@@ -387,7 +387,7 @@ test('a split cannot credit a loan that is not on this employer\'s schedule',
   { skip: !hasPhp }, () => {
   const r = lib(HELD + `
     $records[] = ['_key'=>'stranger','_owner'=>'nobody','status'=>'Active','disburse_date'=>'2026-10-20',
-                  'total_repayment'=>'500.00','installments'=>'1',
+                  'total_repay'=>'500.00','installments'=>'1',
                   'first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum','_payments'=>[]];
     $lines = [['loan_key'=>'a1','ngwee'=>120000], ['loan_key'=>'stranger','ngwee'=>30000]];
     echo json_encode(av_remittance_allocate_held($rid, $lines, $records));`);

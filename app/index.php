@@ -1545,7 +1545,14 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
           title="Install Avesta on this device">
     <span aria-hidden="true">&#8681;</span><span class="ib-text">Install app</span>
   </button>
-  <a class="office-out" href="logout.php" title="Sign out of Avesta">
+  <!-- A borrower's own loans. Shown only once they are signed in; the script
+       that reveals "Sign out" reveals this with it. -->
+  <a class="office-out" id="my-account-link" href="account.php" title="My loans with Avesta"
+     style="display:none">
+    <span aria-hidden="true">&#128188;</span>
+    <span class="oo-text">My account</span>
+  </a>
+  <a class="office-out" id="sign-out-link" href="logout.php" title="Sign out of Avesta">
     <span aria-hidden="true">&#9211;</span>
     <span class="oo-text">Sign out</span>
   </a>
@@ -1578,7 +1585,9 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
   <button data-site="lending" onclick="showTab('apply');closeMobileNav()">Apply Now</button>
   <button data-site="both" onclick="showTab('contact');closeMobileNav()">Contact</button>
   <button data-site="lending" onclick="showStaffLogin();closeMobileNav()">🔐 Staff Records</button>
-  <a class="mob-out" href="logout.php"
+  <a class="mob-out" id="my-account-mob" href="account.php"
+     style="display:none;padding:14px 20px;text-decoration:none">&#128188; My account</a>
+  <a class="mob-out" id="sign-out-mob" href="logout.php"
      style="display:block;padding:14px 20px;text-decoration:none">&#9211; Sign out</a>
 </div>
 
@@ -7488,7 +7497,7 @@ async function submitToSheet() {
     a.className = 'mob-pw';
     a.style.cssText = 'display:block;padding:14px 20px;text-decoration:none';
     a.textContent = 'Change my password';
-    var out = menu.querySelector('.mob-out');
+    var out = document.getElementById('sign-out-mob') || menu.querySelector('.mob-out');
     if (out) menu.insertBefore(a, out); else menu.appendChild(a);
     var recovery = a.cloneNode(false);
     recovery.href = 'recovery.php?setup=1';
@@ -7496,7 +7505,7 @@ async function submitToSheet() {
     if (out) menu.insertBefore(recovery, out); else menu.appendChild(recovery);
   }
   if (window.AV_USER) {
-    var desktopOut = document.querySelector('.office-out');
+    var desktopOut = document.getElementById('sign-out-link');
     if (desktopOut) {
       var link = document.createElement('a');
       link.href = 'recovery.php?setup=1';
@@ -7543,12 +7552,26 @@ async function submitToSheet() {
     return orig.apply(this, arguments);
   };
 
-  var out = document.querySelector('.office-out');       // "Sign out" makes no sense yet
+  // By id, not by class: "My account" is also an .office-out and sits before
+  // this one, so querySelector would relabel the wrong link.
+  var out = document.getElementById('sign-out-link');   // "Sign out" makes no sense yet
   if (out) {
     out.href = 'login.php';
     var label = out.querySelector('.oo-text');
     if (label) label.textContent = 'Sign in';
   }
+})();
+
+/* A borrower's own loans. Staff have the portal and a company has its own
+   page, so the link is only for the role it belongs to. */
+(function () {
+  if (window.AV_PUBLIC) return;
+  var role = (window.AV_USER && window.AV_USER.role) || '';
+  if (role !== 'borrower') return;
+  ['my-account-link', 'my-account-mob'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = id === 'my-account-mob' ? 'block' : '';
+  });
 })();
 </script>
 </body>

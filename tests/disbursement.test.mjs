@@ -37,7 +37,7 @@ function lib(body) {
 
 const APPROVED = `
   $rec = ['_key'=>'a1','_owner'=>'u1','full_name'=>'Chanda Mulenga','status'=>'Approved',
-          'loan_amt'=>2000.00,'total_repayment'=>'2600.00','sel_dur'=>'4 Weeks',
+          'loan_amt'=>2000.00,'total_repay'=>'2600.00','sel_dur'=>'4 Weeks',
           'disburse'=>'mobile_mtn'];
 `;
 
@@ -176,7 +176,7 @@ test('payroll is never asked to deduct for a loan that has not been paid out',
     av_employer_set_status($eid,'active');
     av_employer_enrol($eid, ['user_id'=>'u1','name'=>'Chanda','payroll_no'=>'AV-0012','branch_id'=>$bid]);
 
-    $base = ['_key'=>'a1','_owner'=>'u1','total_repayment'=>'1200.00','installments'=>'1',
+    $base = ['_key'=>'a1','_owner'=>'u1','total_repay'=>'1200.00','installments'=>'1',
              'first_payment'=>'2026-11-10','repay_plan'=>'Lump Sum','_payments'=>[]];
 
     $approved  = av_deduction_schedule($eid, '2026-11', [$base + ['status'=>'Approved']]);
