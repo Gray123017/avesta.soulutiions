@@ -2367,7 +2367,20 @@ function openModal(key) {
 
   // ── GPS LOCATION ───────────────────────────────────────────────────────────
   const hasGps = r.gps_latitude && r.gps_latitude !== '—';
-  html += section('📍 GPS Location', `<div class="detail-grid">
+  // A blank used to mean "nobody pressed the button". Now an application
+  // either carries a position or says why it does not, so the absence of one
+  // is a thing a clerk should read rather than skip past.
+  const gpsDeclined = !hasGps && r.gps_status === 'declined';
+  const gpsNote = gpsDeclined
+    ? `<div class="detail-item" style="grid-column:1/-1"><label>No location, because</label>`
+      + `<span style="color:#b4232a;font-weight:600">`
+      + String(r.gps_declined_reason || 'no reason given').replace(/[<>&]/g, '') + `</span></div>`
+    : (!hasGps
+        ? `<div class="detail-item" style="grid-column:1/-1"><label>Location</label>`
+          + `<span style="color:#b4232a">Not captured, and no reason recorded — `
+          + `this application predates location being required.</span></div>`
+        : '');
+  html += section('📍 GPS Location', `<div class="detail-grid">${gpsNote}
     ${di('Latitude', r.gps_latitude || '—')}
     ${di('Longitude', r.gps_longitude || '—')}
     ${di('Accuracy', r.gps_accuracy_m && r.gps_accuracy_m !== '—' ? r.gps_accuracy_m + ' m' : '—')}
