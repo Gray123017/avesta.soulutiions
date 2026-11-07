@@ -4,9 +4,9 @@ Build: Subscription Desk 1.1.0, 7 November 2026.
 
 ## Completed
 
-- GitHub Actions run 42350886900 built the Linux amd64 `.deb` and Windows x64 installer from commit `72f49eabde1037b998103faaa0423183fc61893a`. Both jobs passed `node --check src/renderer/app.js` and all 13 core tests (13 passed, 0 failed). The uploaded artifacts are `subscription-desk-linux-amd64` (129,271,608 bytes) and `subscription-desk-windows-x64` (164,882,091 bytes), retained until 7 December 2026.
-- The Linux website-protection workflow run 42350890299 passed its build, tests, PHP syntax, route and download-catalogue checks. No website deployment was performed.
-- The 1.1.0 overview includes currency-separated monthly-cost and unused-spend estimates, service-risk counts and confirmed 30-day deadline counts. These calculations are covered by the core build/test gate; they do not represent live provider or bank balances.
+- GitHub Actions run 42351801724 built the Linux amd64 `.deb` and Windows x64 installer from commit `438371aa7821b5f2af78d88b9e413d56f1d81a6d`. Both jobs passed the renderer syntax check and all 13 core tests (13 passed, 0 failed). The Linux desktop interaction suite also passed all 16 checks. Fresh artifacts: `subscription-desk-linux-amd64` (129,268,867 bytes; SHA-256 `88426385d565fff42f18946bdfd16f894d05e14a81eb2e3b8ffa362c81933669`) and `subscription-desk-windows-x64` (164,879,130 bytes; SHA-256 `ed1e5cc89610ca2279d356fe528134c44f5131d0bab32b7c369c387d37ef7a28`). Both are retained until 7 December 2026.
+- Website-protection workflow run 42351801776 passed its build, tests, PHP syntax, route and download-catalogue checks. No website deployment was performed.
+- The 1.1.0 overview includes currency-separated monthly-cost and unused-spend estimates, service-risk counts and confirmed 30-day deadline counts. The CI validates renderer syntax and the dashboard's presence/layout through the desktop smoke test; it does not compare these financial estimates against live provider or bank balances.
 
 - 13 automated core tests passed. They cover payment/cancellation/refund distinctions; ambiguous dates; chronological reconciliation; account separation; cancellation invalidating prior renewals; attachment exclusion; HTML and link sanitization; five-day reminders; safe evidence links; Desktop OAuth validation; legacy imports; memory-only credential fallback; PKCE and rejection of an invalid OAuth state; paginated Gmail scans and partial failures; and text-safe Excel/PDF exports.
 - Desktop interaction tests passed in an actual Linux Electron process using a headless display: application launch, isolated renderer, sample-data loading, editing and persistence, search, timezone settings, Excel/PDF/JSON exports, atomic edit rejection, and cancellation of a provider-action confirmation.
@@ -18,8 +18,6 @@ Build: Subscription Desk 1.1.0, 7 November 2026.
 - The `.deb` declares `Architecture: amd64`. Installer contents and all 11 packaged runtime files were checked against the tested source. A stale Linux build detected during verification was discarded and rebuilt in a fresh directory. Both build scripts now reject a bundle with an old version or different runtime source; that rejection was exercised.
 
 ## Boundaries
-
-- The 1.1.0 GitHub build above ran the core tests and renderer syntax check. The full Playwright desktop interaction suite was last recorded on the 1.0.1 baseline; it is now added to the Linux CI workflow for a fresh 1.1.0 run. Do not treat the current 1.1.0 UI suite as passed until that workflow finishes.
 
 - This Linux container requires Chromium's `--no-sandbox` flag for headless testing and cannot support normal Unix singleton sockets. The test harness uses a development-only isolated data profile. The production app enables the renderer sandbox and single-instance behavior; no sandbox-disabling flag is shipped in a launcher.
 - No real Google OAuth client, Google user consent, live Gmail mailbox or Calendar event was used by the new app. OAuth state/PKCE and API flow tests use local mocks. Complete a live sign-in and scan with your own OAuth setup before relying on the results.
