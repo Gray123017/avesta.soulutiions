@@ -64,9 +64,13 @@ function monthlyCostRows(rows){
   for(const r of rows){
     if(closed(r)||!['Monthly','Annual'].includes(r.cycle))continue;
     const raw=String(r.amount||'').trim();
-    const match=raw.match(/^(?:(USD|ZMW|ZAR|GBP|EUR|INR|CAD|AUD)\\s*|(US\\$|([$€£])\\s*)?([0-9][0-9,]*(?:\\.[0-9]{1,2})?)(?:\\s*(USD|ZMW|ZAR|GBP|EUR|INR|CAD|AUD))?(?:\\s*(?:per|/)\\s*(?:month|year|annum))?$/i);
+    const match=raw.match(/^(?:(USD|ZMW|ZAR|GBP|EUR|INR|CAD|AUD)\s*|(US\$)\s*|([$€£])\s*)?([0-9][0-9,]*(?:\.[0-9]{1,2})?)(?:\s*(USD|ZMW|ZAR|GBP|EUR|INR|CAD|AUD))?(?:\s*(?:per|\/)\s*(?:month|year|annum))?$/i);
     if(!match)continue;
-    const symbolCode=match[1]==='US
+    const symbolCode=match[2]==='US$'?'USD':match[3]==='$'?'USD':match[3]==='€'?'EUR':match[3]==='£'?'GBP':'';
+    const supplied=String(r.currency||'').toUpperCase();
+    const code=supplied&&supplied!=='UNSPECIFIED'?supplied:(match[1]||match[5]||symbolCode);
+    if(!supported.has(code))continue;
+    const amount=Number(match[4].replaceAll(',',''));
     if(!Number.isFinite(amount)||amount<=0)continue;
     totals.set(code,(totals.get(code)||0)+(r.cycle==='Annual'?amount/12:amount));
   }
