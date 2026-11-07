@@ -10,7 +10,7 @@ The desktop source is not part of the Hostinger website deployment. See [reposit
 
 ## Start here
 
-1. Install the package for your computer. Windows: run the `.exe` installer. Debian/Ubuntu: run `sudo apt install ./Subscription-Desk-1.0.1-linux-amd64.deb` from the download directory.
+1. Install the package for your computer. Windows: run the `.exe` installer. Debian/Ubuntu: run `sudo apt install ./Subscription-Desk-1.1.0-linux-amd64.deb` from the download directory.
 2. Open **Subscription Desk** from the application menu. Select **Explore sample data** to see how it works, or **Import register** to load an existing subscription register JSON.
 3. For your email, follow **Settings & connection** to configure Google once. Then use **Sign in with Google** and **Scan Gmail**.
 4. Open each record, confirm its account/project and dates, mark usage and choose **Keep**, **Review** or **Cancel**. Save the review.
@@ -29,6 +29,8 @@ This is an unsigned private build. Windows may display an unknown-publisher warn
 - Excel, PDF and JSON exports. JSON backup and the previous subscription/deadline register format can be imported. Existing record IDs are preserved on import, not overwritten.
 
 ## Interface improvements in 1.1.0
+
+The overview adds four financial indicators: known monthly cost, unused spend to review, service risks, and confirmed deadlines in the next 30 days. Monthly and annual recurring prices are normalized to monthly equivalents; supported currencies are shown separately, never added together. Only parseable prices with recognized currency codes are included, and unused spend uses records explicitly marked Unused. These are review estimates, not bank or payment-provider balances.
 
 A cleaner toolbar, consistent icons, clearer text contrast and adaptive cards keep the workspace readable in windows down to 820 × 640. Collapse or expand the sidebar using the top-left navigation button; your choice is remembered on this device. The review panel supports keyboard focus containment, Escape to close, and focus return to the selected record. Short transitions respect the operating system’s reduced-motion preference.
 
