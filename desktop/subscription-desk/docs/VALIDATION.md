@@ -1,8 +1,12 @@
 # Validation record
 
-Build: Subscription Desk 1.0.1, 17 October 2026.
+Build: Subscription Desk 1.1.0, 7 November 2026.
 
 ## Completed
+
+- GitHub Actions run 42351801724 built the Linux amd64 `.deb` and Windows x64 installer from commit `438371aa7821b5f2af78d88b9e413d56f1d81a6d`. Both jobs passed the renderer syntax check and all 13 core tests (13 passed, 0 failed). The Linux desktop interaction suite also passed all 16 checks. Fresh artifacts: `subscription-desk-linux-amd64` (129,268,867 bytes; SHA-256 `88426385d565fff42f18946bdfd16f894d05e14a81eb2e3b8ffa362c81933669`) and `subscription-desk-windows-x64` (164,879,130 bytes; SHA-256 `ed1e5cc89610ca2279d356fe528134c44f5131d0bab32b7c369c387d37ef7a28`). Both are retained until 7 December 2026.
+- Website-protection workflow run 42351801776 passed its build, tests, PHP syntax, route and download-catalogue checks. No website deployment was performed.
+- The 1.1.0 overview includes currency-separated monthly-cost and unused-spend estimates, service-risk counts and confirmed 30-day deadline counts. The CI validates renderer syntax and the dashboard's presence/layout through the desktop smoke test; it does not compare these financial estimates against live provider or bank balances.
 
 - 13 automated core tests passed. They cover payment/cancellation/refund distinctions; ambiguous dates; chronological reconciliation; account separation; cancellation invalidating prior renewals; attachment exclusion; HTML and link sanitization; five-day reminders; safe evidence links; Desktop OAuth validation; legacy imports; memory-only credential fallback; PKCE and rejection of an invalid OAuth state; paginated Gmail scans and partial failures; and text-safe Excel/PDF exports.
 - Desktop interaction tests passed in an actual Linux Electron process using a headless display: application launch, isolated renderer, sample-data loading, editing and persistence, search, timezone settings, Excel/PDF/JSON exports, atomic edit rejection, and cancellation of a provider-action confirmation.
