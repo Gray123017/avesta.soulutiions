@@ -9,7 +9,7 @@
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/*.test.cjs",
+    "test": "node --check src/renderer/app.js && node --test test/*.test.cjs",
     "test:ui": "node scripts/smoke.cjs",
     "dist:linux": "node scripts/build-linux.cjs",
     "dist:windows": "node scripts/build-windows.cjs",
