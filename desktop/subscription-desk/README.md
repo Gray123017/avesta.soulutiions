@@ -1,4 +1,4 @@
-# Subscription Desk 1.0.1
+# Subscription Desk 1.1.0
 
 A private desktop subscription manager for **Windows x64** and **Linux amd64 (.deb)**. It finds subscription-related Gmail messages, keeps dated evidence, helps you decide what to keep, and opens provider account pages to review payments, renewals and cancellations.
 
@@ -28,7 +28,7 @@ This is an unsigned private build. Windows may display an unknown-publisher warn
 - Google Calendar reminders five days before reviewed, explicit or user-confirmed future dates, at 09:00 in the chosen timezone. Deterministic IDs prevent duplicates created by this app. `.ics` export is available without Calendar permission.
 - Excel, PDF and JSON exports. JSON backup and the previous subscription/deadline register format can be imported. Existing record IDs are preserved on import, not overwritten.
 
-## Interface improvements in 1.0.1
+## Interface improvements in 1.1.0
 
 A cleaner toolbar, consistent icons, clearer text contrast and adaptive cards keep the workspace readable in windows down to 820 × 640. Collapse or expand the sidebar using the top-left navigation button; your choice is remembered on this device. The review panel supports keyboard focus containment, Escape to close, and focus return to the selected record. Short transitions respect the operating system’s reduced-motion preference.
 
