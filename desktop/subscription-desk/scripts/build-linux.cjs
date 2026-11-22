@@ -35,7 +35,7 @@ try{
   if(rpmFiles.length!==1)throw new Error('Expected exactly one Fedora RPM; found '+rpmFiles.length);
   const rpmFile=path.join(rpmOutput,rpmFiles[0]);
   const contents=execFileSync('rpm',['-qpl',rpmFile],{encoding:'utf8'});
-  if(!contents.includes('subscription-desk'))throw new Error('RPM package contents could not be verified.');
+  if(!contents.includes('app.asar'))throw new Error('RPM package contents could not be verified.');
   fs.copyFileSync(rpmFile,path.join(destination,rpmFiles[0]));
   console.log('Fedora x86_64 .rpm created from the clean staging tree.');
 
