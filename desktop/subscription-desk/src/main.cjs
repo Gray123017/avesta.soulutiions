@@ -18,7 +18,7 @@ function getRow(id){const row=store.state.items.find(x=>x.id===id);if(!row)throw
 function state(){return{...store.snapshot(),providers,scanning:!!scanController,version:app.getVersion()};}
 function emit(){if(win&&!win.isDestroyed())win.webContents.send('state-changed',state());}
 function createWindow(){
-  win=new BrowserWindow({width:1400,height:920,minWidth:820,minHeight:640,title:'Avesta Subscription Tracker',backgroundColor:'#f5f7f2',icon:path.join(__dirname,'../assets/icon.png'),autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+  win=new BrowserWindow({width:1400,height:920,minWidth:820,minHeight:640,title:'Subscription Tracker',backgroundColor:'#f5f7f2',icon:path.join(__dirname,'../assets/icon.png'),autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   win.webContents.on('will-navigate',(e,url)=>{if(url!==rendererURL)e.preventDefault();});
   win.webContents.session.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
