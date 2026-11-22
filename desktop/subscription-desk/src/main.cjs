@@ -2,6 +2,7 @@
 const {app,BrowserWindow,ipcMain,shell,dialog,safeStorage}=require('electron');
 const fs=require('node:fs');const path=require('node:path');const {pathToFileURL}=require('node:url');const crypto=require('node:crypto');
 const {Store}=require('./core/store.cjs');
+const {readPublisherOAuth}=require('./core/publisher-oauth.cjs');
 const {GoogleClient,validateClient,authorize}=require('./core/google.cjs');
 const {mergeEvidence,importRegister,validDate}=require('./core/model.cjs');
 const {providers,getProvider,isSafeEvidenceUrl}=require('./core/catalog.cjs');
@@ -12,10 +13,12 @@ if(testProfile)app.setPath('userData',testProfile);
 // A development-only profile avoids Unix singleton sockets in isolated CI containers.
 if(!testProfile && !app.requestSingleInstanceLock())app.quit();
 let win,store,google,scanController,authBusy=false;
+const publisherOAuth=readPublisherOAuth();
+function configuredGoogleClient(){return publisherOAuth.googleClientId?{client_id:publisherOAuth.googleClientId}:store.state.client;}
 const rendererFile=path.join(__dirname,'renderer','index.html');
 const rendererURL=pathToFileURL(rendererFile).href;
 function getRow(id){const row=store.state.items.find(x=>x.id===id);if(!row)throw new Error('Subscription not found.');return row;}
-function state(){return{...store.snapshot(),providers,scanning:!!scanController,version:app.getVersion()};}
+function state(){const snap=store.snapshot();return{...snap,auth:{...snap.auth,configured:!!configuredGoogleClient()?.client_id,providers:{google:!!configuredGoogleClient()?.client_id,microsoft:false},publisherReady:!!publisherOAuth.googleClientId},providers,scanning:!!scanController,version:app.getVersion()};}
 function emit(){if(win&&!win.isDestroyed())win.webContents.send('state-changed',state());}
 function createWindow(){
   win=new BrowserWindow({width:1400,height:920,minWidth:820,minHeight:640,title:'Subscription Tracker',backgroundColor:'#f5f7f2',icon:path.join(__dirname,'../assets/icon.png'),autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
@@ -46,7 +49,7 @@ async function chooseSave(extension){const r=await dialog.showSaveDialog(win,{de
 const actions={
   state:()=>state(),
   async importOAuth(){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Google Desktop client JSON',extensions:['json']}]});if(r.canceled)return{cancelled:true};if(fs.statSync(r.filePaths[0]).size>100000)throw new Error('Choose the small Google OAuth client JSON file.');store.state.client=validateClient(JSON.parse(fs.readFileSync(r.filePaths[0],'utf8')));store.saveTokens(null);store.log('Setup','Google Desktop OAuth client configured.');return state();},
-  async connect(){if(authBusy)throw new Error('Finish the current Google sign-in first.');if(scanController)throw new Error('Wait for the scan to finish before changing accounts.');authBusy=true;try{const tokens=await authorize(store.state.client,url=>shell.openExternal(url),store.state.settings.calendarAccess,store.tokens?.email||'');store.saveTokens(tokens);store.log('Connected','Gmail connected: '+tokens.email);return state();}finally{authBusy=false;}},
+  async connect(){if(authBusy)throw new Error('Finish the current Google sign-in first.');if(scanController)throw new Error('Wait for the scan to finish before changing accounts.');authBusy=true;try{const tokens=await authorize(configuredGoogleClient(),url=>shell.openExternal(url),store.state.settings.calendarAccess,store.tokens?.email||'');store.saveTokens(tokens);store.log('Connected','Gmail connected: '+tokens.email);return state();}finally{authBusy=false;}},
   async disconnect(){if(scanController)throw new Error('Stop the scan before disconnecting.');await google.revoke();store.saveTokens(null);store.log('Disconnected','Google access revoked; local records retained.');return state();},
   async settings(p){if(typeof p.zone!=='string'||p.zone.length>100)throw new Error('Enter a valid timezone.');new Intl.DateTimeFormat('en',{timeZone:p.zone}).format(new Date());store.state.settings={zone:p.zone,calendarAccess:!!p.calendarAccess,scanOnOpen:!!p.scanOnOpen};store.save();return state();},
   scan:p=>runScan(p?.range==='all'?'all':'13m'),
@@ -92,7 +95,7 @@ const actions={
   }
 };
 app.whenReady().then(()=>{
-  store=new Store(app.getPath('userData'),safeStorage);google=new GoogleClient(()=>store.state.client,()=>store.tokens,t=>store.saveTokens(t));
+  store=new Store(app.getPath('userData'),safeStorage);google=new GoogleClient(()=>configuredGoogleClient(),()=>store.tokens,t=>store.saveTokens(t));
   ipcMain.handle('desk',async(event,action,payload)=>{try{if(event.senderFrame!==win.webContents.mainFrame||event.senderFrame.url!==rendererURL)throw new Error('Untrusted application frame.');if(typeof action!=='string'||!Object.hasOwn(actions,action))throw new Error('Unsupported action.');if(JSON.stringify(payload||{}).length>50000)throw new Error('Request too large.');return{ok:true,data:await actions[action](payload||{})};}catch(error){return{ok:false,error:error.message||'The action could not be completed.'};}});
   createWindow();
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
