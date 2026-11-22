@@ -41,6 +41,12 @@ jobs:
           cache-dependency-path: desktop/subscription-desk/package-lock.json
       - run: npm ci
       - run: npm test
+      - name: Embed publisher-owned OAuth client configuration
+        run: node scripts/configure-publisher-oauth.cjs
+        env:
+          SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID: ${{ vars.SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID }}
+          SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET }}
+          SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID: ${{ vars.SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID }}
       - name: Install RPM verification tool
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y rpm
