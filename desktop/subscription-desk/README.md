@@ -14,6 +14,20 @@ sudo dnf remove subscription-desk
 
 This removes the app package, not necessarily the local subscription database, export files, or application settings. Back up any records you need before deleting personal data.
 
+## Installer release gate
+
+**Do not install development artifacts as a completed multi-user release.**
+The CI workflow fails before packaging when its Google publisher client ID is
+not configured, or when a maintainer has not explicitly attested successful
+live Gmail sign-in and a subscription scan. This prevents further misleading
+"green build = working sign-in" packages. To pass the gate, the publisher
+must set `SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID` and, **only after live
+testing**, `SUBSCRIPTION_TRACKER_GOOGLE_LIVE_TEST_APPROVED=true` as GitHub
+Actions repository variables. The latter is a human attestation, not a
+machine-run OAuth test. Refer to `docs/MULTIUSER_V1_2.md` for the full
+checklist. Separate account isolation and Outlook integration are still
+release blockers.
+
 ## Publisher-only OAuth registration
 
 The end user must **never** need to create an OAuth app or import a client JSON. The publisher configures public-client application registrations once:
