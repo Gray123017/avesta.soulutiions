@@ -10,6 +10,32 @@
 - If the provider does not return a display name, show a neutral avatar placeholder instead of inventing a name. Existing v1.1 Gmail integration currently returns email but not a profile display name; full personalized initials require its v1.2 sign-in upgrade.
 - Profiles are not yet selectable or securely isolated in the running desktop UI; the helper does not make the current release multi-user.
 
+## End-user onboarding and publisher setup (Fedora feedback, November 22)
+
+The old Google Cloud / JSON import wizard is removed from the normal desktop UI.
+Users must not be asked to register an OAuth application or supply developer keys.
+The app shows **Continue with Google** only when its publisher's Google client
+configuration was included during packaging; otherwise it clearly shows the
+Google option as unavailable. Microsoft's button is explicitly disabled until
+the Graph adapter, authentication, and account isolation are implemented.
+
+**One-time publisher action, not end-user action:** register a Google Desktop
+OAuth client with the Gmail read-only scope and a Microsoft desktop/public
+client with Microsoft Graph delegated Mail.Read. For GitHub Actions, set
+repository variable `SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID`, optionally
+repository secret `SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET` (Google
+desktop applications cannot keep embedded values confidential), and
+`SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID` as a repository variable.
+The packaging job writes these into the app's public-client configuration
+without logging the values. Do not distribute an installer containing an
+unapproved production client, and do not assume a green CI build proves
+OAuth login works. Google restricted Gmail scopes may require verification
+before unlisted users can authorize the app.
+
+**Current limitation:** This development branch still uses a single
+workspace. Do not connect different people's mailboxes on a shared OS
+login until identity-verified vault isolation and migration are implemented.
+
 ## Product decisions
 
 - Support sign-in with **Google/Gmail** and **Microsoft Outlook / Microsoft 365**, using provider-hosted login and OAuth 2.0 authorization code with PKCE.
