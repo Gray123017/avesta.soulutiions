@@ -47,6 +47,10 @@ jobs:
           SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID: ${{ vars.SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID }}
           SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET }}
           SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID: ${{ vars.SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID }}
+      - name: Require verified Google sign-in before packaging
+        env:
+          SUBSCRIPTION_TRACKER_GOOGLE_LIVE_TEST_APPROVED: ${{ vars.SUBSCRIPTION_TRACKER_GOOGLE_LIVE_TEST_APPROVED }}
+        run: node scripts/assert-google-release-ready.cjs
       - name: Install RPM verification tool
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y rpm
