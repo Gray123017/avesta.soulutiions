@@ -28,4 +28,15 @@ try{
   const destination=path.join(root,'dist','linux-package');fs.mkdirSync(destination,{recursive:true});
   fs.copyFileSync(built,path.join(destination,filename));
   console.log('Linux amd64 .deb created from the clean staging tree.');
+  // Build Fedora's RPM from the same verified release tree, never from stale source.
+  const rpmOutput=fs.mkdtempSync(path.join(root,'dist','rpm-package-'));
+  build(['--linux','rpm','--x64','--prepackaged',stage,'--config.directories.output='+rpmOutput]);
+  const rpmFiles=fs.readdirSync(rpmOutput).filter(name=>name.endsWith('.rpm'));
+  if(rpmFiles.length!==1)throw new Error('Expected exactly one Fedora RPM; found '+rpmFiles.length);
+  const rpmFile=path.join(rpmOutput,rpmFiles[0]);
+  const contents=execFileSync('rpm',['-qpl',rpmFile],{encoding:'utf8'});
+  if(!contents.includes('app.asar'))throw new Error('RPM package contents could not be verified.');
+  fs.copyFileSync(rpmFile,path.join(destination,rpmFiles[0]));
+  console.log('Fedora x86_64 .rpm created from the clean staging tree.');
+
 }catch(e){console.error(e);process.exitCode=1;}

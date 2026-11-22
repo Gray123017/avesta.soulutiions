@@ -36,7 +36,7 @@ h3 { font-weight: 600; }
 ::-webkit-scrollbar-track { background: transparent; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); z-index: 2; background: #163c3c; color: #e4efe9; display: flex; flex-direction: column; padding: 28px 15px 18px; overflow: hidden; }
 .brand { display: flex; gap: 12px; align-items: center; padding: 0 11px; margin-bottom: 42px; font-size: 19px; font-weight: 600; letter-spacing: -.5px; line-height: 1.1; white-space: nowrap; }
-.brand > div:last-child > span { display: block; color: #a6c5b8; font-weight: 400; margin-top: 3px; }
+.brand > div:last-child > span { display: block; color: #a6c5b8; font-weight: 400; margin-top: 3px; font-size: 12px; letter-spacing: -.2px; }
 .brand-mark { background: var(--lime); color: #153b3e; border-radius: 13px; font-size: 29px; font-weight: 650; line-height: 43px; height: 43px; width: 43px; min-width: 43px; text-align: center; letter-spacing: -5px; padding-right: 4px; }
 .brand-mark span { color: #38806b; }
 .workspace-label { font-size: 10px; letter-spacing: 1.6px; color: #97b8ac; padding: 0 14px; margin-bottom: 13px; white-space: nowrap; }
