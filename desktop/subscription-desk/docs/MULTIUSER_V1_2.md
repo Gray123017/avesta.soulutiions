@@ -2,6 +2,14 @@
 
 **Status:** foundation only. The existing v1.1.0 runtime is still single-workspace and Gmail-only. Do not describe this branch as production-ready multi-user software.
 
+## Naming and profile display
+
+- **Application brand:** Avesta Subscription Tracker. This is constant across all installations and all users.
+- **Signed-in account avatar:** derive one or two initials from the provider-verified account owner's display name (e.g. "Gray Banda" -> "GB"; "Chipo" -> "C"). Never hardcode a particular account owner's name or initials.
+- Use the display name only for presentation. The workspace identity and authorization still rely on immutable verified identity claims, **never** display name or initials.
+- If the provider does not return a display name, show a neutral avatar placeholder instead of inventing a name. Existing v1.1 Gmail integration currently returns email but not a profile display name; full personalized initials require its v1.2 sign-in upgrade.
+- Profiles are not yet selectable or securely isolated in the running desktop UI; the helper does not make the current release multi-user.
+
 ## Product decisions
 
 - Support sign-in with **Google/Gmail** and **Microsoft Outlook / Microsoft 365**, using provider-hosted login and OAuth 2.0 authorization code with PKCE.
