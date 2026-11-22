@@ -1,6 +1,8 @@
 # Subscription Desk 1.1.0
 
-A private desktop subscription manager for **Windows x64** and **Linux amd64 (.deb)**. It finds subscription-related Gmail messages, keeps dated evidence, helps you decide what to keep, and opens provider account pages to review payments, renewals and cancellations.
+> **v1.2 development:** Multi-user/Outlook support is a planned feature, not available in this release. See [design and security gates](docs/MULTIUSER_V1_2.md). Do not treat account-key helpers as authentication or data encryption.
+
+A private desktop subscription manager for **Windows x64**, **Debian/Kali Linux amd64 (.deb)**, and **Fedora Linux x86_64 (.rpm)**. It finds subscription-related Gmail messages, keeps dated evidence, helps you decide what to keep, and opens provider account pages to review payments, renewals and cancellations.
 
 ## Working inside the Avesta repository
 
@@ -10,7 +12,7 @@ The desktop source is not part of the Hostinger website deployment. See [reposit
 
 ## Start here
 
-1. Install the package for your computer. Windows: run the `.exe` installer. Debian/Ubuntu: run `sudo apt install ./Subscription-Desk-1.1.0-linux-amd64.deb` from the download directory.
+1. Install the package for your computer. Windows: run the `.exe` installer. Debian/Ubuntu: run `sudo apt install ./Subscription-Desk-1.1.0-linux-amd64.deb` from the download directory. Fedora: install the RPM artifact with `sudo dnf install ./<downloaded-rpm-filename>.rpm` (replace the placeholder with the downloaded file name).
 2. Open **Subscription Desk** from the application menu. Select **Explore sample data** to see how it works, or **Import register** to load an existing subscription register JSON.
 3. For your email, follow **Settings & connection** to configure Google once. Then use **Sign in with Google** and **Scan Gmail**.
 4. Open each record, confirm its account/project and dates, mark usage and choose **Keep**, **Review** or **Cancel**. Save the review.
