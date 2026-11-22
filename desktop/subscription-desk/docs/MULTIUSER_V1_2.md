@@ -36,6 +36,40 @@ before unlisted users can authorize the app.
 workspace. Do not connect different people's mailboxes on a shared OS
 login until identity-verified vault isolation and migration are implemented.
 
+## Google release gate for the next installer
+
+The **next downloadable build must not be made available** until Google
+sign-in has been verified. GitHub Actions now runs
+`scripts/assert-google-release-ready.cjs` **before** packaging or uploading
+Windows EXE, Kali/Debian DEB, or Fedora RPM installers.
+
+The release gate requires:
+1. The publisher has registered a Google OAuth **Desktop** client and set
+   GitHub Actions repository variable `SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID`.
+2. Gmail API is enabled and `gmail.readonly` is approved for the authorized
+   tester(s); public users may require Google verification.
+3. A maintainer runs the desktop application from development source, follows
+   **Continue with Google**, approves access in the Google browser window,
+   confirms the callback, and performs a real read-only Gmail subscription
+   scan without errors.
+4. **Only after the live test**, a maintainer sets GitHub Actions repository
+   variable `SUBSCRIPTION_TRACKER_GOOGLE_LIVE_TEST_APPROVED=true` and records
+   the test date/result in the PR. This is a human attestation, not an
+   automated substitute for the live test.
+5. Re-run GitHub Actions and verify the packaged app and installation on the
+   target systems. Continue to block public multi-user distribution until
+   verified account isolation and Outlook requirements are met.
+
+If the Google ID or the live-test attestation is missing, CI **fails by
+design** and uploads no new installable artifacts. Earlier historical
+artifacts remain separately accessible and must not be mistaken for verified
+releases. Installer/test package names may still include the legacy internal
+version 1.1.0 until versioning is updated.
+
+The publisher must not request that individual end users create Google
+projects, API keys or OAuth JSON. A user signs in through the provider's own
+browser page and grants read-only mailbox access.
+
 ## Product decisions
 
 - Support sign-in with **Google/Gmail** and **Microsoft Outlook / Microsoft 365**, using provider-hosted login and OAuth 2.0 authorization code with PKCE.
