@@ -46,7 +46,8 @@
     "artifactName": "Subscription-Desk-${version}-${os}-${arch}.${ext}",
     "linux": {
       "target": [
-        "deb"
+        "deb",
+        "rpm"
       ],
       "category": "Office",
       "icon": "assets/icon.png",
