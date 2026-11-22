@@ -14,7 +14,7 @@ if(testProfile)app.setPath('userData',testProfile);
 if(!testProfile && !app.requestSingleInstanceLock())app.quit();
 let win,store,google,scanController,authBusy=false;
 const publisherOAuth=readPublisherOAuth();
-function configuredGoogleClient(){return publisherOAuth.googleClientId?{client_id:publisherOAuth.googleClientId}:store.state.client;}
+function configuredGoogleClient(){return publisherOAuth.googleClientId?{client_id:publisherOAuth.googleClientId,client_secret:publisherOAuth.googleDesktopClientSecret||''}:store.state.client;}
 const rendererFile=path.join(__dirname,'renderer','index.html');
 const rendererURL=pathToFileURL(rendererFile).href;
 function getRow(id){const row=store.state.items.find(x=>x.id===id);if(!row)throw new Error('Subscription not found.');return row;}
