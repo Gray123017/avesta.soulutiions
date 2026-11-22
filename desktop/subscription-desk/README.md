@@ -4,6 +4,26 @@
 
 A private desktop subscription manager for **Windows x64**, **Debian/Kali Linux amd64 (.deb)**, and **Fedora Linux x86_64 (.rpm)**. It finds subscription-related Gmail messages, keeps dated evidence, helps you decide what to keep, and opens provider account pages to review payments, renewals and cancellations.
 
+## Fedora uninstall and personal data
+
+On Fedora, remove the installed RPM with:
+
+```bash
+sudo dnf remove subscription-desk
+```
+
+This removes the app package, not necessarily the local subscription database, export files, or application settings. Back up any records you need before deleting personal data.
+
+## Publisher-only OAuth registration
+
+The end user must **never** need to create an OAuth app or import a client JSON. The publisher configures public-client application registrations once:
+- Google Cloud: **Desktop OAuth client**, enable Gmail API with read-only Gmail permissions. Google verification may be needed for distribution to the public.
+- Microsoft Entra: **Mobile and desktop / public client** registration with delegated Microsoft Graph access. Outlook sign-in is not yet implemented.
+- For package builds, set repository variable `SUBSCRIPTION_TRACKER_GOOGLE_CLIENT_ID` and, if the Google Desktop OAuth token exchange needs it, `SUBSCRIPTION_TRACKER_GOOGLE_DESKTOP_CLIENT_SECRET` as an Actions secret; optionally `SUBSCRIPTION_TRACKER_MICROSOFT_CLIENT_ID` for later development. Desktop client values cannot be kept confidential once packaged, so never use a web-server client secret.
+- The packaging workflow embeds these IDs into the installer and **does not** prompt end users. Missing configuration safely disables Google sign-in, rather than displaying a broken login button.
+
+A passing CI build does **not** prove real OAuth login works. Public release requires publisher-owned registration, provider approvals, isolated multi-user data stores, and end-to-end login testing.
+
 ## Working inside the Avesta repository
 
 This desktop project lives in `desktop/subscription-desk`. Run the commands below from that directory, not the website root. The repository workflow `.github/workflows/subscription-desk.yml` builds Windows x64 and Linux amd64 installers and uploads them as GitHub Actions artifacts. Open a completed workflow run to download `subscription-desk-windows-x64` or `subscription-desk-linux-amd64`, then extract the artifact ZIP. These artifacts are not a signed public release.
@@ -14,7 +34,7 @@ The desktop source is not part of the Hostinger website deployment. See [reposit
 
 1. Install the package for your computer. Windows: run the `.exe` installer. Debian/Ubuntu: run `sudo apt install ./Subscription-Desk-1.1.0-linux-amd64.deb` from the download directory. Fedora: install the RPM artifact with `sudo dnf install ./<downloaded-rpm-filename>.rpm` (replace the placeholder with the downloaded file name).
 2. Open **Subscription Desk** from the application menu. Select **Explore sample data** to see how it works, or **Import register** to load an existing subscription register JSON.
-3. For your email, follow **Settings & connection** to configure Google once. Then use **Sign in with Google** and **Scan Gmail**.
+3. For your email, select **Settings & connection → Continue with Google**, then grant read-only Gmail access in your browser. No developer setup is shown to end users. **Important:** this button is only available after the publisher has configured its Google OAuth client when building the installer; otherwise it is disabled and clearly labelled unavailable. Microsoft sign-in remains under development.
 4. Open each record, confirm its account/project and dates, mark usage and choose **Keep**, **Review** or **Cancel**. Save the review.
 5. Use **Review payment**, **Review renewal**, or **Review cancellation** to open the provider account. Review and approve the actual transaction or cancellation on that provider's site. Scan again for confirmation.
 
