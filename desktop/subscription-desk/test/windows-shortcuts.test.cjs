@@ -7,7 +7,7 @@ const path = require('node:path');
 test('Windows installer shortcuts target the actual packaged executable', () => {
   const root = path.resolve(__dirname, '..');
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-  const exe = (pkg.build.win?.executableName || pkg.build.productName || pkg.name) + '.exe';
+  const exe = (pkg.build.win?.executableName || pkg.productName || pkg.name) + '.exe';
   const installer = fs.readFileSync(path.join(root, 'assets', 'installer.nsi'), 'utf8');
   const targets = [...installer.matchAll(/^\s*CreateShortCut\s+"[^"]+"\s+"([^"]+)"/gm)].map(m => m[1]);
 
