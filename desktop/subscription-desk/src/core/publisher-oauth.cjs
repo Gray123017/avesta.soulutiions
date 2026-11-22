@@ -10,8 +10,11 @@ function readPublisherOAuth(file=path.join(__dirname,'../config/publisher-oauth.
   try {data=JSON.parse(fs.readFileSync(file,'utf8'));} catch(e) {if(e.code!=='ENOENT')throw e;}
   const googleId=typeof data.googleClientId==='string'?data.googleClientId.trim():'';
   const microsoftId=typeof data.microsoftClientId==='string'?data.microsoftClientId.trim():'';
+  // Installed/desktop clients are public applications; this optional Google-issued
+  // desktop value cannot be kept confidential in a distributed executable.
+  const googleDesktopClientSecret=typeof data.googleDesktopClientSecret==='string'?data.googleDesktopClientSecret.trim():'';
   if(googleId && !GOOGLE_ID.test(googleId))throw new Error('Publisher Google client ID is malformed.');
   if(microsoftId && !MS_ID.test(microsoftId))throw new Error('Publisher Microsoft client ID is malformed.');
-  return Object.freeze({googleClientId:googleId,microsoftClientId:microsoftId});
+  return Object.freeze({googleClientId:googleId,googleDesktopClientSecret,microsoftClientId:microsoftId});
 }
 module.exports={readPublisherOAuth};
