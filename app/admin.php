@@ -3845,11 +3845,39 @@ function afxInit(){
                          K(amt) + ' is more than the ' + K(balance) + ' outstanding. Record it anyway?',
                          { tone: 'warn', okText: 'Record it', cancelText: 'Cancel' })) return;
 
+    // One id for this attempt, made before anything is sent and reused by the
+    // retry below. The server records an id once, so a request that arrives
+    // twice adds one payment.
+    //
+    // This is the half that matters. avFetchJson gives up after twelve seconds
+    // and on shared hosting, behind a lock, past twelve seconds happens — and
+    // the request it gave up on may have finished. Telling the staff member
+    // who just took K500 in cash that it failed is what makes them do it
+    // again, so the retry happens here, quietly, with the id already sent,
+    // instead of in their hands with a fresh one.
+    var requestId = (window.crypto && window.crypto.randomUUID)
+      ? window.crypto.randomUUID()
+      : 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+
     try {
-      var got = await window.avFetchJson(getScriptUrl() + '?action=addPayment', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key, amount: amt, method: 'Cash' })
-      }, 12000);
+      var got = null, lastErr = null;
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          got = await window.avFetchJson(getScriptUrl() + '?action=addPayment', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, amount: amt, method: 'Cash',
+                                   request_id: requestId })
+          }, 12000);
+          break;
+        } catch (err) {
+          // A timeout or a dropped connection says nothing about whether the
+          // payment was recorded, so ask again with the same id: either it
+          // records it, or it tells us it already did.
+          lastErr = err;
+          if (attempt === 0) avToast('Still working…', 'info');
+        }
+      }
+      if (!got) throw lastErr || new Error('Could not reach the server');
       if (!got.res.ok || got.data.ok === false) throw new Error(got.data.error || 'Could not record it');
       avToast(got.data.message, 'ok');
       if (got.data.summary && got.data.summary.settled) {
