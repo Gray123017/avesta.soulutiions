@@ -111,6 +111,114 @@ test('an unhandled request is refused, not answered with ok',
   }
 });
 
+test('no answer from the API may be stored by anything in between',
+  { skip: !hasPhp, timeout: 30000 }, async () => {
+  /* api.php set Cache-Control on exactly two endpoints — doc and backup. Every
+   * other answer, the loan book and the account list among them, went out with
+   * no cache directives at all.
+   *
+   * Two separate consequences, and the same one-line fix closes both:
+   *
+   * 1. A response with no directives is heuristically cacheable, so a browser
+   *    may write it to disk. On a shared machine at a branch, the loan book is
+   *    then still on that disk after the staff member signs out, and still
+   *    there for the back button.
+   *
+   * 2. Hostinger's CDN sits in front of this site and was observed returning
+   *    `cache-control: public, max-age=604800` on a response whose origin never
+   *    set it — so its default for an answer with no directives is to cache it
+   *    publicly for a week. Whether it does that to a cookie-bearing request is
+   *    Hostinger's business and not something this repository can depend on.
+   *
+   * Declaring it is free and settles the question wherever the answer travels.
+   */
+  const dir = mkdtempSync(join(tmpdir(), 'avesta-api-nostore-'));
+  let server;
+  try {
+    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+                     'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
+                     'notify-lib.php']) {
+      copyFileSync(f, join(dir, f));
+    }
+    mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });
+    for (const f of ['rates.json', 'categories.json']) {
+      copyFileSync(join('assets', 'avesta', f), join(dir, 'assets', 'avesta', f));
+    }
+    cpSync('app', join(dir, 'app'), { recursive: true });
+    mkdirSync(join(dir, 'sessions'));
+
+    // A real applicant in the store, so the cacheable answer is a real one.
+    writeFileSync(join(dir, 'records_data.php'),
+      '<?php http_response_code(404); exit; ?>\n' +
+      JSON.stringify([{ _key: 'AV-2026-0041', full_name: 'Chanda Mulenga',
+                        nrc_number: '123456/78/1', loan_amt: 2000 }]));
+
+    writeFileSync(join(dir, 'fixture.php'), `<?php
+      require __DIR__.'/auth.php';
+      foreach (['admin'=>'admin','staff'=>'staff','borrower'=>'borrower'] as $key => $role) {
+        session_id('test-'.$key); av_session_start();
+        $_SESSION = ['uid'=>$key,'username'=>$key,'name'=>'Test',
+          'role'=>$role,'seen'=>time(),'started'=>time()];
+        session_write_close();
+      }
+    `);
+    const config = ['-d', 'session.save_path=' + join(dir, 'sessions')];
+    const fx = spawnSync(php, [...config, join(dir, 'fixture.php')], { encoding: 'utf8' });
+    assert.equal(fx.status, 0, fx.stderr);
+
+    const socket = createServer();
+    await new Promise(r => socket.listen(0, '127.0.0.1', r));
+    const port = socket.address().port;
+    await new Promise(r => socket.close(r));
+    const base = 'http://127.0.0.1:' + port;
+    server = spawn(php, [...config, '-S', '127.0.0.1:' + port, '-t', dir], { stdio: 'ignore' });
+
+    const head = async (path, role) => {
+      const res = await fetch(base + path, {
+        headers: role ? { Cookie: 'AVESTASESS=test-' + role } : {},
+      });
+      return { status: res.status, cc: res.headers.get('cache-control'),
+               body: await res.text() };
+    };
+    for (let i = 0; i < 40; i++) {
+      try { await head('/api.php?action=ping'); break; }
+      catch { await new Promise(r => setTimeout(r, 50)); }
+    }
+
+    // The answer that matters most: a signed-in read of the loan book.
+    const book = await head('/api.php?action=getRecords', 'admin');
+    assert.equal(book.status, 200, book.body.slice(0, 300));
+    assert.ok(book.body.includes('Chanda Mulenga'),
+      'this test is worthless if the answer carries no applicant');
+    assert.match(book.cc || '', /no-store/,
+      `the loan book went out cacheable — Cache-Control: ${book.cc}`);
+    assert.match(book.cc || '', /private/);
+
+    // And every other answer, whatever it is and whoever asked.
+    const cases = [
+      ['/api.php?action=users', 'admin'],
+      ['/api.php?action=employers', 'staff'],
+      ['/api.php?action=remittances', 'staff'],
+      ['/api.php?action=auditLog', 'admin'],
+      ['/api.php?action=me', 'borrower'],
+      ['/api.php?action=myEmployer', 'borrower'],
+      ['/api.php?action=ping', null],            // public, but no reason to store it
+      ['/api.php?action=rates', null],
+      ['/api.php?action=users', null],           // the 401 as well
+      ['/api.php?action=noSuchAction', null],    // and the 404
+      ['/api.php', null],
+    ];
+    for (const [path, role] of cases) {
+      const r = await head(path, role);
+      assert.match(r.cc || '', /no-store/,
+        `${path} as ${role || 'a stranger'} → Cache-Control: ${r.cc} (status ${r.status})`);
+    }
+  } finally {
+    if (server) { const closed = new Promise(r => server.once('exit', r)); server.kill(); await closed; }
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('ping tells a stranger that the site is up and nothing else',
   { skip: !hasPhp, timeout: 30000 }, async () => {
   /* ping answered anybody with the PHP version, the live loan-book count and

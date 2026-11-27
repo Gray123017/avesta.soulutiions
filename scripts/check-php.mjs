@@ -19,4 +19,9 @@ const bogus=await fetch(base+'/api.php?action=noSuchAction');assert.equal(bogus.
 const ping=await fetch(base+'/api.php?action=ping');assert.equal(ping.status,200);
 const pinged=await ping.json();assert.equal(pinged.ok,true);
 for(const f of ['php','records','post_max_size','memory_limit','docs_writable'])assert.ok(!(f in pinged),`ping must not tell a stranger ${f}`);
+// Nothing in between keeps a copy of an API answer. api.php declares this for
+// itself rather than inheriting it from the host's session.cache_limiter.
+for(const p of ['/api.php','/api.php?action=ping','/api.php?action=rates','/api.php?action=getRecords','/api.php?action=noSuchAction']){
+ const cc=(await fetch(base+p)).headers.get('cache-control')||'';assert.match(cc,/no-store/,`${p} -> Cache-Control: ${cc}`);
+}
 console.log('Public PHP routes and anonymous application sign-in gate passed. No account or customer records created.');
