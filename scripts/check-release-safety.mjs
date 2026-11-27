@@ -83,3 +83,39 @@ for (const path of tracked) {
   }
 }
 console.log(`Checked ${tracked.length} tracked files: no applicant data, secrets or backups.`);
+
+// ── Nothing outside the website is reachable from the website ────────────────
+// The repository root IS the Hostinger document root, so every directory added
+// to this repo for any reason is deployed and served. A desktop application's
+// source sitting at the web root of a money-lending site is the shape of that
+// problem; the rule exists so a new top-level directory has to be considered
+// rather than quietly published.
+const htaccess = readFileSync('.htaccess', 'utf8');
+const refused = (htaccess.match(/RedirectMatch 404 \^\/\(([^)]+)\)/) || [, ''])[1]
+  .split('|').map(s => s.replace(/\\/g, ''));
+
+const webDirs = new Set(
+  tracked.filter(p => p.includes('/')).map(p => p.split('/')[0]));
+// Directories the website itself asks for. Everything else deploying to the
+// document root has to be named in the refusal rule above, so adding a
+// directory to this repository for some other purpose fails the build until
+// somebody decides which of the two it is.
+const servedOnPurpose = new Set([
+  'app',        // the pages themselves
+  'assets',     // stylesheets, the published rate and category tables
+  'documents',  // applicant uploads, protected by their own .htaccess
+  'downloads',  // the software catalogue the site offers
+  'icons',      // PWA icons: without these the app cannot be installed
+  'images',
+  'preview',
+]);
+
+for (const dir of webDirs) {
+  if (servedOnPurpose.has(dir)) continue;
+  assert(refused.includes(dir),
+    `/${dir}/ deploys to the live web root but .htaccess does not refuse it.\n` +
+    `Add it to the RedirectMatch rule, or add it to servedOnPurpose here if the ` +
+    `website genuinely serves it.`);
+}
+console.log(`Web root: ${refused.join(', ')} refused; ` +
+  `${[...webDirs].filter(d => servedOnPurpose.has(d)).join(', ')} served on purpose.`);

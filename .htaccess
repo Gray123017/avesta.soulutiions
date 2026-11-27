@@ -63,10 +63,16 @@
   </IfModule>
 </FilesMatch>
 
-# Build and CI directories. These deploy because the repo root is the document
-# root; nothing in them is ever requested by a page. 404 rather than 403 so the
-# response does not confirm the path exists.
-RedirectMatch 404 ^/(scripts|\.github|tests)(/|$)
+# Build, CI and desktop-app directories. These deploy because the repo root is
+# the document root; nothing in them is ever requested by a page. 404 rather
+# than 403 so the response does not confirm the path exists.
+#
+# `desktop` holds desktop applications that happen to share this repository.
+# Their .md and package.json files were already refused by the rules above, but
+# /desktop/subscription-desk/src/renderer/app.js was being served from a
+# money-lending site's web root — harmless in itself, and exactly the sort of
+# thing that stops being harmless the next time a file is added there.
+RedirectMatch 404 ^/(scripts|\.github|tests|desktop)(/|$)
 
 # Compression. Pages are ~373 KB of text and compress to ~92 KB — the single
 # biggest thing you can do for someone on a mobile bundle.
