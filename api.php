@@ -185,15 +185,10 @@ function loadRecords() {
  * jsonOut() exits in the middle of an error path.
  */
 function av_lock_records(): bool {
-    static $fp = null;
-    if ($fp !== null) return true;
-
-    $handle = fopen(LOCK_FILE, 'c+');
-    if (!$handle) return false;
-    if (!flock($handle, LOCK_EX)) { fclose($handle); return false; }
-
-    $fp = $handle;
-    return true;
+    // The same primitive every other store uses, on the same lock file the
+    // LOCK_FILE constant names: av_store_lock() derives records_data.lock from
+    // records_data.json. One implementation, so a fix to one is a fix to all.
+    return av_store_lock(DATA_FILE);
 }
 
 function saveRecords($records) {

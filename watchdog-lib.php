@@ -94,6 +94,23 @@ function av_watchdog_cache(?array $set = null, bool $clear = false): ?array {
     return $data;
 }
 
+/**
+ * Take the watchdog's own ledger for this request, before reading it.
+ *
+ * The lock has to cover the read: this store is written by reading the whole
+ * file, changing part of it and writing the whole file back, so two requests
+ * that both read it will each write back a copy without the other's change.
+ *
+ * The cache is dropped as well. A request that read the store earlier and then
+ * locked would write back what it cached before the lock, which is the same
+ * lost update wearing a different hat.
+ */
+function av_watchdog_lock(): bool {
+    if (!av_store_lock(av_watchdog_path())) return false;
+    av_watchdog_reset_cache();
+    return true;
+}
+
 function av_watchdog_load(): array {
     $cached = av_watchdog_cache();
     if ($cached !== null) return $cached;
@@ -538,6 +555,11 @@ function av_watchdog_run(?callable $send = null, ?string $now = null,
 
     try {
         $now = $now ?: date('c');
+        // Before the read: the run changes the ledger of what has already been
+        // reported, and two runs overlapping would each write back a copy
+        // without the other's entries, so a standing problem could be sent
+        // twice or go quiet.
+        av_watchdog_lock();
         $state = av_watchdog_load();
 
         // The window runs from the last run, so an incident cannot be reported

@@ -62,6 +62,23 @@ function av_employers_cache(?array $set = null, bool $clear = false): ?array {
     return $data;
 }
 
+/**
+ * Take the employer register for this request, before reading it.
+ *
+ * The lock has to cover the read: this store is written by reading the whole
+ * file, changing part of it and writing the whole file back, so two requests
+ * that both read it will each write back a copy without the other's change.
+ *
+ * The cache is dropped as well. A request that read the store earlier and then
+ * locked would write back what it cached before the lock, which is the same
+ * lost update wearing a different hat.
+ */
+function av_employers_lock(): bool {
+    if (!av_store_lock(av_employers_path())) return false;
+    av_employers_reset_cache();
+    return true;
+}
+
 function av_employers_load(): array {
     $cached = av_employers_cache();
     if ($cached !== null) return $cached;
@@ -120,6 +137,7 @@ function av_employer_id(string $prefix): string {
  * employer until a person has checked that the employer agreed to any of this.
  */
 function av_employer_create(array $in): array {
+    av_employers_lock();
     $name = trim((string) ($in['name'] ?? ''));
     if ($name === '') return ['ok' => false, 'error' => 'An employer needs a name.'];
 
@@ -156,6 +174,7 @@ function av_employer_create(array $in): array {
 }
 
 function av_employer_set_status(string $id, string $status): array {
+    av_employers_lock();
     if (!in_array($status, AV_EMPLOYER_STATUSES, true)) {
         return ['ok' => false, 'error' => 'Unknown status.'];
     }
@@ -169,6 +188,7 @@ function av_employer_set_status(string $id, string $status): array {
 }
 
 function av_employer_update(string $id, array $in): array {
+    av_employers_lock();
     $employer = av_employer_find($id);
     if ($employer === null) return ['ok' => false, 'error' => 'Employer not found.'];
 
@@ -193,6 +213,7 @@ function av_employer_update(string $id, array $in): array {
 // ── branches ─────────────────────────────────────────────────────────────────
 
 function av_employer_add_branch(string $employerId, string $name, string $town = ''): array {
+    av_employers_lock();
     $employer = av_employer_find($employerId);
     if ($employer === null) return ['ok' => false, 'error' => 'Employer not found.'];
 
@@ -220,6 +241,7 @@ function av_employer_add_branch(string $employerId, string $name, string $town =
  * would strand are exactly the ones already repaying.
  */
 function av_employer_remove_branch(string $employerId, string $branchId): array {
+    av_employers_lock();
     $employer = av_employer_find($employerId);
     if ($employer === null) return ['ok' => false, 'error' => 'Employer not found.'];
 
@@ -294,6 +316,7 @@ function av_employer_for_user(string $userId): ?array {
  * wrong salary, which is worse than an enrolment that has to be done twice.
  */
 function av_employer_enrol(string $employerId, array $in): array {
+    av_employers_lock();
     $employer = av_employer_find($employerId);
     if ($employer === null) return ['ok' => false, 'error' => 'Employer not found.'];
 
@@ -351,6 +374,7 @@ function av_employer_enrol(string $employerId, array $in): array {
  * of who was enrolled when is the thing a dispute is settled from.
  */
 function av_employer_mark_left(string $employerId, string $enrolmentId, string $date = ''): array {
+    av_employers_lock();
     $employer = av_employer_find($employerId);
     if ($employer === null) return ['ok' => false, 'error' => 'Employer not found.'];
 
