@@ -161,15 +161,46 @@ function loadRecords() {
     return is_array($data) ? $data : [];
 }
 
+/**
+ * Take the loan book for this request, and hold it.
+ *
+ * Every write to the book is read-the-whole-thing, change one loan, write the
+ * whole thing back. Locking only the write keeps the file from being torn but
+ * does nothing about the real problem: two requests both read the same book,
+ * each changes its own loan, and each writes back a book that does not contain
+ * the other's change. The second one wins and the first change is gone.
+ *
+ * It is silent. The audit log has payment.recorded for both, the staff member
+ * who took the money was told it was recorded, and the borrower still owes it.
+ * Reproduced in tests/concurrent-writes.test.mjs: a K500 payment vanished
+ * while a K1,000 payment on another loan went through.
+ *
+ * So the lock has to cover the read as well. Call this before loadRecords() in
+ * anything that will save, and the whole read-change-write is one at a time.
+ *
+ * Idempotent, and the handle is kept for the life of the request: asking a
+ * second time on a second handle would wait for a lock this same process
+ * already holds, which never ends. There is no unlock, deliberately — the
+ * operating system releases it when the request finishes, including when
+ * jsonOut() exits in the middle of an error path.
+ */
+function av_lock_records(): bool {
+    static $fp = null;
+    if ($fp !== null) return true;
+
+    $handle = fopen(LOCK_FILE, 'c+');
+    if (!$handle) return false;
+    if (!flock($handle, LOCK_EX)) { fclose($handle); return false; }
+
+    $fp = $handle;
+    return true;
+}
+
 function saveRecords($records) {
-    $fp = fopen(LOCK_FILE, 'c+');
-    if ($fp && flock($fp, LOCK_EX)) {
-        $ok = avStoreWrite(DATA_FILE, $records);
-        flock($fp, LOCK_UN);
-        fclose($fp);
-        return $ok;
-    }
-    if ($fp) fclose($fp);
+    // Takes the lock if the caller has not already. A caller that has is the
+    // normal case and is what makes the write safe; one that has not at least
+    // gets an atomic write.
+    av_lock_records();
     return avStoreWrite(DATA_FILE, $records);
 }
 
@@ -705,6 +736,9 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
         jsonOut(['ok' => false, 'error' => 'Invalid or missing JSON payload (' . $jsonErr . '). Received ' . strlen($raw) . ' bytes.'], 400);
     }
 
+    // The lock covers the read as well as the write: two requests that both
+    // read this book will each write back a copy without the other's change.
+    av_lock_records();
     $records = loadRecords();
 
     if (count($records) >= MAX_RECORDS) {
@@ -900,6 +934,7 @@ if ($action === 'updateStatus') {
         jsonOut(['ok' => false, 'msg' => 'Missing key or status'], 400);
     }
 
+    av_lock_records();
     $records = loadRecords();
     $found = false;
     foreach ($records as &$r) {
@@ -934,6 +969,7 @@ if ($action === 'deleteRecord') {
         jsonOut(['ok' => false, 'msg' => 'Missing key'], 400);
     }
 
+    av_lock_records();
     $records = loadRecords();
     $before  = count($records);
     $records = array_values(array_filter($records, function($r) use ($key) {
@@ -972,6 +1008,7 @@ if ($action === 'updateRecord') {
         jsonOut(['ok' => false, 'error' => $e->getMessage()], $e->getCode() === 422 ? 422 : 500);
     }
 
+    av_lock_records();
     $records = loadRecords();
     $found = false;
     foreach ($records as &$r) {
@@ -1272,6 +1309,7 @@ if ($action === 'addPayment') {
         jsonOut(['ok' => false, 'error' => 'That date is in the future. Payments are recorded when received.'], 422);
     }
 
+    av_lock_records();
     $records = loadRecords();
     $found = false;
     $summary = null;
@@ -1337,6 +1375,7 @@ if ($action === 'deletePayment') {
     $pid = trim((string) ($b['payment_id'] ?? ''));
     if ($key === '' || $pid === '') jsonOut(['ok' => false, 'error' => 'Missing loan or payment id.'], 400);
 
+    av_lock_records();
     $records = loadRecords();
     $found = false; $removed = null; $summary = null;
 
@@ -2152,6 +2191,7 @@ if ($action === 'disbursementQueue' || $action === 'disburse') {
     $b   = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;
     $key = trim((string) ($b['_key'] ?? ''));
 
+    av_lock_records();
     $records = loadRecords();
     $found = null;
     foreach ($records as $i => $r) {
@@ -2196,6 +2236,7 @@ if ($action === 'remittanceAllocate') {
                     'ngwee' => (int) round(((float) ($l['amount'] ?? 0)) * 100)];
     }
 
+    av_lock_records();
     $result = av_remittance_allocate_held($id, $lines, loadRecords());
     if (!$result['ok']) {
         jsonOut(['ok' => false, 'error' => $result['error'],
@@ -2260,6 +2301,7 @@ if ($action === 'deductionSchedule' || $action === 'remittances'
         }
     }
 
+    av_lock_records();
     $records = loadRecords();
     $result  = av_remittance_record($employerId, $period, $received, $lines, $records);
     if (!$result['ok']) {
