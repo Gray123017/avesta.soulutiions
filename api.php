@@ -481,7 +481,20 @@ if (defined('AVESTA_LIB')) return;
  * summed. Floats lose a ngwee here and there, and "balance == 0" then never
  * quite becomes true, leaving loans that look unpaid forever.
  */
-function loanSummary(array $r): array {
+/**
+ * Everything about where one loan stands: what is owed, when it was due, how
+ * late it is and what the delay penalty did to the figure signed at the start.
+ *
+ * $today exists so this can be asked about a date other than this minute. The
+ * watchdog needs that — a rule about which loans are overdue has to agree with
+ * what the borrower is shown on their own account page, and the only way to be
+ * sure of that is for both to come through here. Left null it means today, so
+ * every existing caller is unchanged.
+ */
+function loanSummary(array $r, ?string $today = null): array {
+    $today = ($today !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $today))
+        ? $today : date('Y-m-d');
+
     $toNgwee = function ($v) {
         $n = (float) preg_replace('/[^0-9.\-]/', '', (string) $v);
         return (int) round($n * 100);
@@ -516,7 +529,7 @@ function loanSummary(array $r): array {
 
     $daysLeft = null;
     if ($due !== null) {
-        $daysLeft = (int) floor((strtotime($due) - strtotime(date('Y-m-d'))) / 86400);
+        $daysLeft = (int) floor((strtotime($due) - strtotime($today)) / 86400);
     }
 
     // ── The delay penalty ────────────────────────────────────────────────
@@ -548,7 +561,7 @@ function loanSummary(array $r): array {
         if ($terms['engine'] === 'ladder') {
             try {
                 $owing = av_amount_owing(
-                    $principal, $weeks, $due, date('Y-m-d'), $paid
+                    $principal, $weeks, $due, $today, $paid
                 );
                 if ($owing['totalDue'] > $total) {
                     $total          = $owing['totalDue'];
@@ -2011,6 +2024,43 @@ if (strncmp($action, 'employer', 8) === 0 || $action === 'myEmployer') {
 // Where new-application alerts go. Admin only: it decides who receives a
 // customer's name and loan amount, which is a decision about somebody else's
 // personal data rather than a preference.
+// ── THE WATCHDOG ─────────────────────────────────────────────────────────────
+// A preview, and only a preview: it applies the rules and shows what it would
+// say, without sending anything and without touching the ledger that keeps a
+// standing problem from being reported every night. Sending is
+// watchdog-cron.php's job, which runs from the command line on a schedule —
+// so there is no way to make this server send a digest by asking it over the
+// web, and no token in a URL to leak.
+//
+// Admins only, not staff. The digest names the account that opened identity
+// documents at two in the morning, and showing that to the person it is about
+// defeats the point of having it.
+if ($action === 'watchdogDigest') {
+    requireRole(['admin']);
+    require_once __DIR__ . '/watchdog-lib.php';
+
+    $state = av_watchdog_load();
+    $since = (string) ($state['last_run'] ?? '');
+    if ($since === '' || av_watchdog_time($since) === null) {
+        $since = (new DateTimeImmutable('-1 day'))->format('c');
+    }
+
+    $scan = av_watchdog_scan([
+        'now'         => date('c'),
+        'since'       => $since,
+        'audit'       => av_watchdog_audit_window($since),
+        'records'     => loadRecords(),
+        'remittances' => av_watchdog_remittance_rows(),
+    ]);
+
+    jsonOut(['ok' => true,
+             'findings'   => $scan['findings'],
+             'window'     => $scan['window'],
+             'last_run'   => (string) ($state['last_run'] ?? ''),
+             'thresholds' => av_watchdog_thresholds(),
+             'message'    => av_watchdog_message($scan['findings'], $scan['window'])]);
+}
+
 if ($action === 'notifySettings' || $action === 'notifySave' || $action === 'notifyTest') {
     requireRole(['admin']);
     require_once __DIR__ . '/notify-lib.php';

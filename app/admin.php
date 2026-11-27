@@ -911,6 +911,10 @@ window.avFetchJson = async function (url, opts, ms) {
         <span class="nav-icon">&#128184;</span> Payouts
         <span id="nb-payouts" class="nav-badge" style="background:#d98e3b;display:none"></span>
       </a>
+      <a class="nav-item" id="nav-watchdog" hidden onclick="showPage('watchdog')" href="javascript:void(0)">
+        <span class="nav-icon">&#128065;&#65039;</span> What needs a look
+        <span id="nb-watchdog" class="nav-badge" style="background:#c0392b;display:none"></span>
+      </a>
       <div class="nav-section">Settings</div>
       <a class="nav-item" href="/recovery.php?setup=1"><span class="nav-icon">✉️</span> Recovery email</a>
       <a class="nav-item" href="/login.php?change=1"><span class="nav-icon">🔑</span> Change password</a>
@@ -1116,6 +1120,41 @@ window.avFetchJson = async function (url, opts, ms) {
 
         <h3 style="margin-top:4px">Waiting to go out</h3>
         <div id="payout-queue"></div>
+      </div>
+
+      <!-- ═══ THE WATCHDOG ════════════════════════════════════════════════
+           What the digest would say if it went out now. Reading only: the
+           sending is a cron job (watchdog-cron.php), so nothing here can make
+           the server send a message, and opening this page does not count as
+           having been told — a standing problem will still be in tonight's
+           digest. Admins only: this names the account that opened identity
+           documents at two in the morning. -->
+      <div class="page" id="page-watchdog">
+        <div class="acct-head">
+          <div>
+            <h2 class="page-title">What needs a look</h2>
+            <p class="page-sub">Rules over what the site already writes down &mdash; who
+               opened which identity document and when, which loans are past their date,
+               which money arrived and could not be matched to anybody. It is a checklist,
+               not a judgement: everything here is something a person should decide about.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="wd-refresh">Refresh</button>
+        </div>
+
+        <div id="wd-note" aria-live="polite" style="margin-bottom:10px"></div>
+        <div id="wd-findings"></div>
+
+        <div class="card" style="margin-top:18px">
+          <h3 style="margin-top:0">What goes out, and to whom</h3>
+          <p class="page-sub" id="wd-window" style="margin-bottom:10px"></p>
+          <p class="page-sub">The digest is sent by a scheduled job on the server, to the
+             same people who get told about a new application &mdash; set those under
+             Sync Settings. It carries no applicant's name and no NRC number, because a
+             forwarded message should not be able to.</p>
+          <pre id="wd-preview" style="white-space:pre-wrap;font-size:9pt;background:#f6f7f6;
+               border:1px solid #e2e6e2;border-radius:8px;padding:12px;margin:0;
+               overflow-x:auto"></pre>
+        </div>
       </div>
 
       <!-- ═══ PAYROLL DEDUCTIONS ══════════════════════════════════════════ -->
@@ -1913,13 +1952,16 @@ function showToast(msg, color) {
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(id) {
-  if (window.AV_USER && window.AV_USER.role === 'staff' && (id === 'settings' || id === 'accounts')) {
+  if (window.AV_USER && window.AV_USER.role === 'staff'
+      && (id === 'settings' || id === 'accounts' || id === 'watchdog')) {
     avToast('This section is available to administrators only.', 'warn'); id = 'dashboard';
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  const titles = {dashboard:'Dashboard', applications:'All Applications', settings:'Settings — Sync', fx:'Currency Rates'};
+  const titles = {dashboard:'Dashboard', applications:'All Applications', settings:'Settings — Sync',
+                  fx:'Currency Rates', watchdog:'What needs a look', payouts:'Payouts',
+                  payroll:'Payroll deductions', employers:'Employers', accounts:'Accounts'};
   document.getElementById('topbar-title').textContent = titles[id] || id;
   // Mark the matching nav item active
   document.querySelectorAll('.nav-item').forEach(n => {
@@ -1930,6 +1972,7 @@ function showPage(id) {
   });
   if (id === 'applications') { loadRecords(); applyFilters(); renderTable(); }
   if (id === 'settings') { showPage_settings_init(); }
+  if (id === 'watchdog' && window.avWatchdogLoad) window.avWatchdogLoad();
   if (id === 'dashboard') renderDashboard();
   if (id === 'fx') afxInit();
   if (window.innerWidth <= 768) toggleSidebar(true);
@@ -4960,6 +5003,120 @@ function afxInit(){
     if (typeof orig === 'function') orig.apply(this, arguments);
     if (p === 'accounts' && !loaded) { loaded = true; refresh(); }
   };
+})();
+</script>
+
+<!-- ═══ THE WATCHDOG ═══════════════════════════════════════════════════════
+     Reads api.php?action=watchdogDigest, which applies the rules and returns
+     what the digest would say without sending it and without marking anything
+     as reported. Admins only, both here and at the server. -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('wd-refresh')) return;
+
+  var role = (window.AV_USER && window.AV_USER.role) || 'staff';
+  if (role !== 'admin' && role !== 'super_admin') {
+    // Taken out of the document rather than hidden. The digest names the
+    // account that opened identity documents in the middle of the night, and
+    // the person it is about is the last one who should be reading it.
+    ['nav-watchdog', 'page-watchdog'].forEach(function (id) {
+      var el = $(id); if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    return;
+  }
+  $('nav-watchdog').hidden = false;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;     // textContent: never innerHTML
+    return e;
+  }
+  function say(text, bad) {
+    var n = $('wd-note');
+    n.textContent = text || '';
+    n.style.color = bad ? '#c0392b' : '#4a5a52';
+  }
+
+  var COLOURS = { high: '#c0392b', medium: '#d98e3b', low: '#4a5a52' };
+  var WORDS   = { high: 'Urgent', medium: 'Worth a look', low: 'For information' };
+
+  function render(data) {
+    var box = $('wd-findings');
+    box.textContent = '';
+
+    var findings = data.findings || [];
+    var badge = $('nb-watchdog');
+    var urgent = findings.filter(function (f) { return f.severity === 'high'; }).length;
+    if (badge) {
+      badge.textContent = urgent || findings.length || '';
+      badge.style.display = findings.length ? 'inline-block' : 'none';
+      badge.style.background = urgent ? '#c0392b' : '#d98e3b';
+    }
+
+    if (!findings.length) {
+      var ok = el('div', 'card');
+      ok.appendChild(el('h3', null, 'Nothing to report'));
+      ok.appendChild(el('p', 'page-sub',
+        'No failed sign-in bursts, no identity documents opened out of hours, no loans '
+        + 'past their date and no money waiting to be matched. Nothing will be sent '
+        + 'tonight either — a digest that arrives every day saying all is well is '
+        + 'one nobody reads.'));
+      box.appendChild(ok);
+    }
+
+    findings.forEach(function (f) {
+      var card = el('div', 'card');
+      card.style.borderLeft = '4px solid ' + (COLOURS[f.severity] || '#4a5a52');
+      card.style.marginBottom = '10px';
+
+      var tag = el('span', null, WORDS[f.severity] || f.severity);
+      tag.style.cssText = 'display:inline-block;font-size:7.5pt;font-weight:700;'
+        + 'text-transform:uppercase;letter-spacing:.6px;padding:2px 8px;border-radius:999px;'
+        + 'color:#fff;margin-bottom:6px;background:' + (COLOURS[f.severity] || '#4a5a52');
+      card.appendChild(tag);
+
+      var h = el('h3', null, f.headline || '');
+      h.style.margin = '2px 0 4px';
+      card.appendChild(h);
+
+      if (f.detail) card.appendChild(el('p', 'page-sub', f.detail));
+      box.appendChild(card);
+    });
+
+    var w = data.window || {};
+    var when = data.last_run
+      ? 'Looking at everything since the watchdog last ran, ' + data.last_run.slice(0, 16).replace('T', ' ') + ' UTC.'
+      : 'The watchdog has not run yet, so this is the last 24 hours. '
+        + 'Until the scheduled job is set up in hPanel, nothing is sent — this page is all there is.';
+    $('wd-window').textContent = when;
+    $('wd-preview').textContent = (data.message && data.message.subject ? data.message.subject + '\n\n' : '')
+      + ((data.message && data.message.text) || '');
+  }
+
+  function load() {
+    say('Looking…');
+    // avFetchJson answers { res, data } — the response and the parsed body, not
+    // the body on its own. Reading .ok off the wrapper instead of off .data is
+    // why this panel first shipped saying "Could not read the digest" while the
+    // endpoint behind it was answering 200 perfectly well.
+    window.avFetchJson(getScriptUrl() + '?action=watchdogDigest', {}, 15000)
+      .then(function (out) {
+        var data = out && out.data;
+        if (!data || !data.ok) throw new Error((data && data.error) || 'Could not read the digest.');
+        say('');
+        render(data);
+      })
+      .catch(function (err) { say(err.message || String(err), true); });
+  }
+
+  $('wd-refresh').addEventListener('click', load);
+  window.avWatchdogLoad = load;
+
+  // Load once in the background so the sidebar count is right before anybody
+  // opens the page.
+  load();
 })();
 </script>
 </body>
