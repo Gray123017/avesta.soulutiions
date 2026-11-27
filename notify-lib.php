@@ -153,11 +153,26 @@ function av_notify_recipient_ok(string $channel, string $to): bool {
  * was down would be the worst trade in this codebase.
  */
 function av_notify_new_application(array $record, ?callable $send = null): array {
+    return av_notify_send(av_notify_message($record), $send);
+}
+
+/**
+ * Send one already-built message to whoever is configured, on every channel
+ * that is switched on.
+ *
+ * Split out of av_notify_new_application() so the watchdog digest goes through
+ * the same fan-out rather than a second copy of it. This loop is where the
+ * never-throw rule lives, along with recipient validation and the API-key
+ * check; two copies of it would drift, and the copy that drifted would be the
+ * one that threw in the middle of accepting somebody's application.
+ *
+ * It never throws, for the same reason.
+ */
+function av_notify_send(array $message, ?callable $send = null): array {
     $out = ['sent' => [], 'failed' => [], 'skipped' => []];
 
     try {
         $settings = av_notify_load();
-        $message  = av_notify_message($record);
         // Whether we are using the built-in sender matters below: only it needs
         // an API key, and a caller that supplies its own delivery should not
         // be refused for the want of one.

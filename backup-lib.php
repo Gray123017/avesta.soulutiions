@@ -54,6 +54,10 @@ function av_backup_allowlist(): array {
         'notify.php'        => 'Who gets told when a new application arrives. No API key is '
                              . 'ever kept here — notify-lib.php reads that from the secrets '
                              . 'file, which this archive deliberately leaves out.',
+        'watchdog.php'      => 'What the watchdog has already reported, so a restored '
+                             . 'server does not open by re-sending every standing problem '
+                             . 'as though it were new. No thresholds are kept here — those '
+                             . 'are in watchdog-lib.php, deliberately not published.',
         'it_questions.php'  => 'Questions put to the IT help desk.',
         'password_resets.php' => 'Password resets still in flight.',
         'email_recovery.php'  => 'Recovery-email checks still in flight.',
