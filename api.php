@@ -1297,6 +1297,21 @@ if ($action === 'addPayment') {
     if ($amt <= 0)    jsonOut(['ok' => false, 'error' => 'Enter an amount greater than zero.'], 400);
     if ($amt > 10000000) jsonOut(['ok' => false, 'error' => 'That amount looks wrong. Check it and try again.'], 422);
 
+    // One attempt at recording a payment, identified by the caller.
+    //
+    // The portal gives up on this request after twelve seconds and tells the
+    // staff member it failed. On shared hosting, behind a lock, past twelve
+    // seconds happens — and the request it gave up on may have finished
+    // perfectly well here. So the person who just took K500 in cash is told it
+    // failed and does the sensible thing, which is to do it again. Nothing
+    // stopped the second one, and the borrower was credited twice for money
+    // they handed over once.
+    //
+    // Matching on amount and date instead would refuse real money: two
+    // instalments of K500 in a day is an ordinary thing. Only the id can tell
+    // a retry from a second payment.
+    $requestId = substr(trim((string) ($b['request_id'] ?? '')), 0, 64);
+
     $date = (string) ($b['date'] ?? date('Y-m-d'));
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
     // A payment dated in the future is almost always a typing slip
@@ -1315,13 +1330,32 @@ if ($action === 'addPayment') {
 
         if (!isset($r['_payments']) || !is_array($r['_payments'])) $r['_payments'] = [];
 
+        // Already done. Answered with what happened the first time rather than
+        // done again, and rather than an error — an error here sends the staff
+        // member round the loop a third time.
+        if ($requestId !== '') {
+            foreach ($r['_payments'] as $existing) {
+                if (($existing['request_id'] ?? '') !== $requestId) continue;
+                jsonOut([
+                    'ok'               => true,
+                    'already_recorded' => true,
+                    'payment'          => $existing,
+                    'summary'          => loanSummary($r),
+                    'message'          => 'Payment of ' . av_money((int) round(((float) $existing['amount']) * 100))
+                                        . ' was already recorded.',
+                ]);
+            }
+        }
+
         $before = loanSummary($r);
         // Warn rather than refuse: a small overpayment is a real thing that
         // happens, and refusing it would leave staff unable to record reality.
         $overpay = $amt > $before['balance'] + 0.005;
 
         $r['_payments'][] = [
-            'id'        => 'p_' . bin2hex(random_bytes(6)),
+            'id'         => 'p_' . bin2hex(random_bytes(6)),
+            // Stored, or the protection lasts exactly one request.
+            'request_id' => $requestId !== '' ? $requestId : null,
             'amount'    => round($amt, 2),
             'date'      => $date,
             'method'    => substr(trim((string) ($b['method'] ?? 'Cash')), 0, 40),
@@ -1330,6 +1364,7 @@ if ($action === 'addPayment') {
             'recorded'  => date('c'),
         ];
 
+        $recorded = $r['_payments'][count($r['_payments']) - 1];
         $summary = loanSummary($r);
 
         // Settle the loan automatically once nothing is left to pay
@@ -1354,7 +1389,10 @@ if ($action === 'addPayment') {
         jsonOut(['ok' => false, 'error' => 'Could not save the payment — check folder permissions.'], 500);
     }
 
-    jsonOut(['ok' => true, 'summary' => $summary,
+    // The same shape the already-recorded answer uses, so a caller does not
+    // have to care which of the two it got.
+    jsonOut(['ok' => true, 'already_recorded' => false,
+             'payment' => $recorded ?? null, 'summary' => $summary,
              'overpaid' => $overpay ?? false,
              'message' => 'Payment of K' . number_format($amt, 2) . ' recorded. Balance K'
                         . number_format($summary['balance'], 2) . '.']);
