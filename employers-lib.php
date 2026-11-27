@@ -33,6 +33,12 @@ const AV_EMPLOYER_STATUSES = ['pending', 'active', 'suspended'];
  * Where the register lives. Call with a path once, at the top of a test, to
  * point the whole library at a throwaway file.
  */
+// av_weeks_from_duration() reads a stored term. Required here rather than
+// assumed, because this file was loaded in contexts that had it and contexts
+// that did not, and the difference only shows at the moment somebody is told
+// what to deduct from a salary.
+require_once __DIR__ . '/rates-lib.php';
+
 function av_employers_path(?string $set = null): string {
     static $path = null;
     if ($set !== null) { $path = $set; av_employers_reset_cache(); }
@@ -553,7 +559,7 @@ function av_employer_staff_view(string $employerId, string $period, array $recor
             if ($outstanding <= 0) continue;
 
             $total = av_record_total_ngwee($r);
-            $weeks = (int) preg_replace('/[^0-9]/', '', (string) ($r['sel_dur'] ?? 0));
+            $weeks = av_weeks_from_duration($r['sel_dur'] ?? '');
             $due = null;
             if ($weeks > 0 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
                 $ts = strtotime($start . ' +' . $weeks . ' weeks');
