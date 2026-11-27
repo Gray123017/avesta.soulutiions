@@ -560,8 +560,13 @@ function loanSummary(array $r, ?string $today = null): array {
     if ($isOverdue && !$settledAtSignedTerms && $principal > 0 && $weeks > 0) {
         if ($terms['engine'] === 'ladder') {
             try {
+                // The terms on the borrower's paper, not the terms in the file
+                // today. Without this argument every loan already signed gets
+                // whatever rates.json currently says, so changing the late
+                // charge would reprice agreements nobody was asked about.
                 $owing = av_amount_owing(
-                    $principal, $weeks, $due, $today, $paid
+                    $principal, $weeks, $due, $today, $paid,
+                    av_rates_cfg_for_version($terms['version'])
                 );
                 if ($owing['totalDue'] > $total) {
                     $total          = $owing['totalDue'];

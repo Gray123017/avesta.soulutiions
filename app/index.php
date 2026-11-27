@@ -84,8 +84,33 @@ if (is_file(__DIR__ . '/../assets/avesta/categories.json')) {
     if (!is_array($avCategories) || empty($avCategories['categories'])) $avCategories = null;
 }
 
+// The published price list, so the form quotes what the server will charge.
+//
+// It used to carry its own copy: four tiles with the rates typed into the
+// markup, and a formula — 30% plus 5% a week — inventing a price for anything
+// past four weeks. The server prices from rates.json and refuses a term that
+// is not in it, so an applicant could choose six weeks, be quoted 40%, upload
+// their NRC and payslip, sign, submit, and only then be told the term is not
+// offered. At eight weeks it was worse: the form said 50% and the table says
+// 55%, so somebody signed one figure and was bound to another.
+$avRates = null;
+try {
+    require_once __DIR__ . '/../rates-lib.php';
+    $cfg = av_rates_load();
+    $avRates = [
+        'version' => $cfg['version'],
+        'terms'   => array_filter($cfg['terms'], fn($k) => $k[0] !== '_', ARRAY_FILTER_USE_KEY),
+        'overdue' => array_filter($cfg['overdue'], fn($k) => $k[0] !== '_', ARRAY_FILTER_USE_KEY),
+    ];
+} catch (Throwable $e) {
+    // The form still works without it; the duration tiles keep their markup
+    // and the server remains the thing that decides the price.
+    error_log('Avesta: rate table unreadable for the form: ' . $e->getMessage());
+}
+
 echo '<script>window.AV_SITE=' . json_encode($avSite)
    . ';window.AV_PUBLIC=' . ($avPublic ? 'true' : 'false')
+   . ';window.AV_RATES=' . json_encode($avRates, JSON_UNESCAPED_SLASHES)
    . ';window.AV_CATEGORIES=' . json_encode($avCategories, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
    . ';window.AV_EMPLOYERS=' . json_encode($avEmployers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
    . ';window.AV_MY_EMPLOYER=' . json_encode($avMyEmployer, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
@@ -2609,13 +2634,13 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
             <div class="dur-tile" onclick="selectDur(this,2,20)"><div class="dt-weeks">2 Weeks</div><div class="dt-rate">20%</div><div class="dt-tag">Interest</div></div>
             <div class="dur-tile" onclick="selectDur(this,3,25)"><div class="dt-weeks">3 Weeks</div><div class="dt-rate">25%</div><div class="dt-tag">Interest</div></div>
             <div class="dur-tile" onclick="selectDur(this,4,30)"><div class="dt-weeks">4 Weeks</div><div class="dt-rate">30%</div><div class="dt-tag">Interest</div></div>
-            <div class="dur-tile" id="dur-tile-custom" onclick="selectLongTermDur(this)"><div class="dt-weeks">More than 1 Month</div><div class="dt-rate">+5%/wk</div><div class="dt-tag">Custom Term</div></div>
+            <div class="dur-tile" id="dur-tile-custom" onclick="selectLongTermDur(this)"><div class="dt-weeks">More than 1 Month</div><div class="dt-rate" id="dt-rate-long">Longer term</div><div class="dt-tag">Custom Term</div></div>
           </div>
           <div class="f-grid" id="custom-dur-detail" style="display:none;margin-top:10px;margin-bottom:4px">
             <div class="f-group"><label for="custom_weeks">Number of Weeks <span style="color:#999;font-weight:normal">(5 or more)</span></label><input id="custom_weeks" type="number" min="5" step="1" placeholder="e.g. 8" oninput="updateLongTermDur()"></div>
             <div class="f-group auto-field"><label for="custom_rate_display">Applicable Interest Rate</label><input id="custom_rate_display" placeholder="Auto-calculated" readonly></div>
           </div>
-          <p style="font-size:8pt;color:#888;margin:-2px 0 8px">For loans longer than 4 weeks (1 month), interest increases by an additional 5% for every extra week — e.g. 5 weeks = 35%, 8 weeks = 50%.</p>
+          <p style="font-size:8pt;color:#888;margin:-2px 0 8px" id="dur-long-note">Longer terms are available at the published rate.</p>
           <div class="f-err" id="dur-err" style="margin-bottom:8px">Please select a loan duration above</div>
           <input type="hidden" id="sel_dur"><input type="hidden" id="int_rate">
           <div class="f-grid" style="margin-top:14px">
@@ -2623,7 +2648,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
             <div class="f-group auto-field"><label for="total_repay">Total Repayment Amount (ZMW)</label><input id="total_repay" placeholder="Auto-calculated" readonly></div>
             <div class="f-group auto-field"><label for="num_inst">Number of Installments</label><input type="number" placeholder="Choose a repayment schedule" id="num_inst" readonly></div>
             <div class="f-group auto-field"><label for="inst_amt">Installment Amount (ZMW)</label><input id="inst_amt" placeholder="Auto-calculated" readonly></div>
-            <div class="f-group auto-field"><label for="late_rate_display">Late Payment Interest Rate</label><input id="late_rate_display" placeholder="Auto: 7.5% per week overdue" readonly></div>
+            <div class="f-group auto-field"><label for="late_rate_display">Late Payment Interest Rate</label><input id="late_rate_display" placeholder="Auto \u2014 from the published terms" readonly></div>
             <div class="f-group"><label for="weeks_overdue">Weeks Overdue <span style="color:#999;font-weight:normal">(for illustration)</span></label><input id="weeks_overdue" type="number" min="0" step="1" placeholder="0" oninput="updateLateFee()"></div>
             <div class="f-group auto-field"><label for="late_fee">Late Interest Amount (ZMW)</label><input id="late_fee" placeholder="Auto-calculated" readonly></div>
             <div class="f-group auto-field"><label for="first_payment">First Payment Due Date <span style="color:#999;font-weight:normal">(auto, editable)</span></label><input id="first_payment" type="date" oninput="userEditedDate('first_payment')"></div>
@@ -2645,7 +2670,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
               <p id="repayment-plan-summary" aria-live="polite" style="font-size:8.5pt;color:#555;margin-top:10px">Choose one repayment schedule to see the payment count and amounts. The monthly option uses four-week intervals, with the final payment due at the end of the term.</p>
             </div>
           </div>
-          <p style="font-size:8.5pt;color:#666;margin-top:12px">Late-charge illustration: the fields above use 7.5% of the scheduled total repayment for each week entered. This example does not account for partial payments or the grace period. Your signed agreement confirms any actual late charges.</p>
+          <p style="font-size:8.5pt;color:#666;margin-top:12px" id="late-illustration-note">Late-charge illustration. Your signed agreement confirms any actual late charges.</p>
           <div class="f-sub" style="margin-top:18px" data-req="1">How Borrower Will Make Repayments <span style="color:#c0392b">*</span></div>
           <div class="method-grid">
             <label class="method-card mc-light"><input type="radio" name="repay_method" value="cash" onchange="showRepayDetail(this)"><span class="mc-icon">💵</span><span class="mc-name">Cash</span><span class="mc-desc">Pay at our office</span></label>
@@ -4429,9 +4454,35 @@ function selectDur(tile, weeks, rate) {
   saveProgress();
 }
 
+// ── PUBLISHED TERMS ───────────────────────────────────────────────────────────
+// Every price below comes from window.AV_RATES, which is assets/avesta/rates.json
+// — the same file the server prices from and refuses unpublished terms against.
+// What was here before was a formula, 30% plus 5% for each extra week, which
+// invented prices nobody could actually be given: the server has no rate for
+// five, six, seven or nine weeks and answers "that loan term is not offered",
+// and at eight weeks the formula said 50% while the table says 55%.
 const LONG_TERM_BASE_WEEKS = 4;
-const LONG_TERM_BASE_RATE = 30;
-const LONG_TERM_RATE_PER_EXTRA_WEEK = 5;
+
+/** Published week counts, ascending. Empty if the table could not be read. */
+function avPublishedWeeks() {
+  var t = (window.AV_RATES && window.AV_RATES.terms) || null;
+  if (!t) return [];
+  return Object.keys(t).map(Number).filter(function (n) { return n > 0; })
+    .sort(function (a, b) { return a - b; });
+}
+
+/** The published rate for a term, or null if that term is not sold. */
+function avPublishedRate(weeks) {
+  var t = (window.AV_RATES && window.AV_RATES.terms) || null;
+  if (!t) return null;
+  var r = t[String(weeks)];
+  return (typeof r === 'number' && isFinite(r)) ? r : null;
+}
+
+/** The longer-than-a-month terms, for the custom tile's own list. */
+function avLongTerms() {
+  return avPublishedWeeks().filter(function (w) { return w > LONG_TERM_BASE_WEEKS; });
+}
 
 function selectLongTermDur(tile) {
   document.querySelectorAll('.dur-tile').forEach(t => t.classList.remove('active'));
@@ -4447,20 +4498,30 @@ function updateLongTermDur() {
   const weeksInput = document.getElementById('custom_weeks');
   const display = document.getElementById('custom_rate_display');
   const weeks = parseInt(weeksInput.value) || 0;
-  if (weeks >= LONG_TERM_BASE_WEEKS + 1) {
-    const extraWeeks = weeks - LONG_TERM_BASE_WEEKS;
-    const rate = LONG_TERM_BASE_RATE + (LONG_TERM_RATE_PER_EXTRA_WEEK * extraWeeks);
+  const rate = avPublishedRate(weeks);
+  const clear = function () {
+    document.getElementById('sel_dur').value = '';
+    document.getElementById('int_rate').value = '';
+    selectedDurationWeeks = 0;
+    updateTotals();
+  };
+
+  if (weeks > LONG_TERM_BASE_WEEKS && rate !== null) {
     display.value = rate + '% (' + weeks + ' weeks)';
     document.getElementById('sel_dur').value = weeks + ' Weeks (' + rate + '% interest)';
     document.getElementById('int_rate').value = rate;
     selectedDurationWeeks = weeks;
     updateTotals();
+  } else if (weeks > 0) {
+    // Say so here rather than after the NRC, the payslip and the signature.
+    const offered = avLongTerms();
+    display.value = offered.length
+      ? 'Not offered — choose ' + offered.join(' or ') + ' weeks'
+      : 'Not offered';
+    clear();
   } else {
     display.value = '';
-    document.getElementById('sel_dur').value = '';
-    document.getElementById('int_rate').value = '';
-    selectedDurationWeeks = 0;
-    updateTotals();
+    clear();
   }
   saveProgress();
 }
@@ -4565,18 +4626,115 @@ function updateRepaymentDates() {
   if (!userEditedDates.first_payment) first.value = disburseDate && plan ? addWeeksToDate(disburseDate, plan.firstWeeks) : '';
   if (!userEditedDates.last_payment) last.value = disburseDate && plan ? addWeeksToDate(disburseDate, selectedDurationWeeks) : '';
 }
-const LATE_RATE_PER_WEEK = 7.5; // % increment per week overdue
+// The late charge, as the engine actually works it out.
+//
+// This field said "7.5% per week overdue" and was stored with the application
+// as late_payment_rate. That figure has not been what the engine charges since
+// the delay penalty was published: the applicant signed one number and would
+// have been charged another. Everything here now comes from AV_RATES.overdue,
+// the same block rates-lib.php prices from.
+function avOverdueTerms() {
+  var o = (window.AV_RATES && window.AV_RATES.overdue) || null;
+  if (!o || typeof o.startPercent !== 'number') return null;
+  return { start: o.startPercent, step: o.stepPercent || 0,
+           every: o.stepEveryDays || 28, grace: o.gracePeriodDays || 0,
+           cap: (typeof o.capPercent === 'number') ? o.capPercent : null };
+}
+
+/** The rate a loan carries once it is this many days past due. */
+function avOverdueRate(daysLate) {
+  var t = avOverdueTerms();
+  if (!t) return null;
+  var past = daysLate - t.grace;
+  if (past <= 0) return 0;
+  var band = t.start + Math.floor(past / t.every) * t.step;
+  return t.cap !== null ? Math.min(band, t.cap) : band;
+}
+
+/** One line a borrower can be read over the phone. */
+function avOverdueSentence() {
+  var t = avOverdueTerms();
+  if (!t) return '';
+  var s = t.grace > 0
+    ? t.grace + ' day' + (t.grace === 1 ? '' : 's') + ' grace, then ' + t.start + '% of the amount borrowed'
+    : t.start + '% of the amount borrowed';
+  if (t.step > 0) {
+    s += ', rising ' + t.step + ' points every ' + t.every + ' days';
+    if (t.cap !== null) s += ', never past ' + t.cap + '%';
+  } else {
+    s += ', however long the delay';
+  }
+  return s;
+}
+
+// Everything the page says about price, written from the published table.
+// Nothing below is typed into the markup, so none of it can drift from what
+// the server charges.
+function avRatesRender() {
+  var long = (typeof avLongTerms === 'function') ? avLongTerms() : [];
+
+  var tileRate = document.getElementById('dt-rate-long');
+  if (tileRate) {
+    tileRate.textContent = long.length
+      ? long.map(function (w) { return avPublishedRate(w) + '%'; }).join(' / ')
+      : 'Ask us';
+  }
+
+  var note = document.getElementById('dur-long-note');
+  if (note) {
+    note.textContent = long.length
+      ? 'Longer terms: ' + long.map(function (w) {
+          return w + ' weeks at ' + avPublishedRate(w) + '%';
+        }).join(', ') + '. Those are the only terms longer than a month we can price.'
+      : 'For a term longer than a month, speak to us first.';
+  }
+
+  var tiles = document.querySelectorAll('.dur-tile[onclick^="selectDur"]');
+  for (var i = 0; i < tiles.length; i++) {
+    var m = tiles[i].getAttribute('onclick').match(/selectDur\(this,\s*(\d+)/);
+    if (!m) continue;
+    var published = avPublishedRate(parseInt(m[1], 10));
+    var cell = tiles[i].querySelector('.dt-rate');
+    // A tile whose rate is not in the table is not something we can sell.
+    if (published === null) { tiles[i].style.display = 'none'; continue; }
+    if (cell) cell.textContent = published + '%';
+  }
+
+  var illustration = document.getElementById('late-illustration-note');
+  if (illustration) {
+    var sentence = avOverdueSentence();
+    illustration.textContent = sentence
+      ? 'If you pay late: ' + sentence + '. The figures above are an illustration '
+        + 'for the number of weeks entered and do not account for part payments. '
+        + 'Your signed agreement confirms the late charges.'
+      : 'Your signed agreement confirms any late charges.';
+  }
+}
+
 function updateLateFee() {
-  const total = parseFloat(document.getElementById('total_repay').value) || 0;
+  const principal = parseFloat(document.getElementById('loan_amt').value) || 0;
   const weeks = parseInt(document.getElementById('weeks_overdue').value) || 0;
   const display = document.getElementById('late_rate_display');
   const lateFee = document.getElementById('late_fee');
+  const terms = avOverdueTerms();
+
+  if (!terms) {                      // table unreadable: say nothing rather than guess
+    display.value = '';
+    lateFee.value = '';
+    return;
+  }
   if (weeks > 0) {
-    const ratePct = LATE_RATE_PER_WEEK * weeks;
-    display.value = ratePct + '% (' + weeks + ' wk' + (weeks>1?'s':'') + ' \u00d7 ' + LATE_RATE_PER_WEEK + '%/wk)';
-    lateFee.value = total > 0 ? (total * ratePct / 100).toFixed(2) : '';
+    const rate = avOverdueRate(weeks * 7);
+    const termRate = parseFloat(document.getElementById('int_rate').value) || 0;
+    // The penalty replaces the term rate and may never reduce what is owed,
+    // which is what the engine does; showing less here would be a promise the
+    // engine will not keep.
+    const applied = Math.max(rate, termRate);
+    display.value = applied + '% after ' + weeks + ' week' + (weeks > 1 ? 's' : '') + ' overdue';
+    lateFee.value = principal > 0
+      ? (principal * (applied - termRate) / 100).toFixed(2) : '';
   } else {
-    display.value = LATE_RATE_PER_WEEK + '% per week overdue';
+    display.value = avOverdueSentence();
     lateFee.value = '';
   }
 }
@@ -5615,7 +5773,7 @@ function validateStep(step) {
       ok = false;
     } else if (activeTile.id === 'dur-tile-custom') {
       const weeks = parseInt(document.getElementById('custom_weeks').value) || 0;
-      if (weeks < LONG_TERM_BASE_WEEKS + 1) {
+      if (avPublishedRate(weeks) === null || weeks <= LONG_TERM_BASE_WEEKS) {
         durErr.style.display = 'block';
         durErr.textContent = 'Enter number of weeks (minimum 5) for a long-term loan';
         if (durRow) durRow.classList.add('error');
@@ -5796,7 +5954,7 @@ function updateFieldCounter() {
     if (!activeTile) remaining++;
     else if (activeTile.id === 'dur-tile-custom') {
       const weeks = parseInt(document.getElementById('custom_weeks').value) || 0;
-      if (weeks < LONG_TERM_BASE_WEEKS + 1) remaining++;
+      if (avPublishedRate(weeks) === null || weeks <= LONG_TERM_BASE_WEEKS) remaining++;
     }
     if (!document.querySelector('input[name="repay_method"]:checked')) remaining++;
   }
@@ -5923,6 +6081,14 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!applyTab) return;
 
   updateSigButtons('borrower');
+  // Before updateLateFee(), so the first thing the applicant reads about price
+  // is already the published figure rather than a placeholder.
+  try {
+    avRatesRender();
+  } catch (e) {
+    console.warn('Published rates unavailable:', e);
+  }
+
   updateLateFee();
 
   // Before the draft is restored, so a resumed draft can re-select its channel

@@ -197,14 +197,58 @@ footer a{color:var(--gold-deep)}
   </ul>
 
   <h3>If you pay late</h3>
-  <p>A grace period of three days applies before any late charge. After that, a
-     late penalty is applied as set out in your agreement. Interest on an overdue
-     amount continues at the rate in the contract and is not increased.</p>
-  <p>The application includes a late-charge illustration using 7.5% of the
-     scheduled total repayment for each overdue week entered. It does not account
-     for partial payments or the grace period, and is not a statement of your
-     actual balance or a final charge. Your signed agreement confirms the
-     applicable late charges and how they are calculated.</p>
+  <?php
+  /* Written from assets/avesta/rates.json rather than typed here, because this
+     page said the overdue rate "is not increased" while the engine applied a
+     delay penalty, and promised three days' grace that the engine did not give.
+     A terms page that disagrees with the thing doing the charging is worse than
+     no terms page. scripts/check-rates.mjs fails the build if the two drift. */
+  $lateTerms = null;
+  try {
+      require_once __DIR__ . '/rates-lib.php';
+      $o = av_rates_load()['overdue'];
+      $lateTerms = [
+          'grace' => (int) ($o['gracePeriodDays'] ?? 0),
+          'start' => (float) $o['startPercent'],
+          'step'  => (float) ($o['stepPercent'] ?? 0),
+          'every' => (int) ($o['stepEveryDays'] ?? 28),
+          'cap'   => isset($o['capPercent']) ? (float) $o['capPercent'] : null,
+      ];
+  } catch (Throwable $e) {
+      error_log('Avesta legal page: rate table unreadable: ' . $e->getMessage());
+  }
+  ?>
+  <?php if ($lateTerms): ?>
+  <p>
+    <?php if ($lateTerms['grace'] > 0): ?>
+      A grace period of <?= $lateTerms['grace'] ?> day<?= $lateTerms['grace'] === 1 ? '' : 's' ?>
+      applies before any late charge. After that, the
+    <?php else: ?>
+      The
+    <?php endif ?>
+    charge on an overdue loan is <?= rtrim(rtrim(number_format($lateTerms['start'], 1), '0'), '.') ?>%
+    of the amount you borrowed<?php if ($lateTerms['step'] > 0): ?>,
+    rising by <?= rtrim(rtrim(number_format($lateTerms['step'], 1), '0'), '.') ?> percentage
+    points for every further <?= $lateTerms['every'] ?> days the loan stays
+    unpaid<?php endif ?>.
+    It replaces the interest rate on your agreement rather than being added to
+    it, and it can never make a loan cost less than the figure you signed.
+  </p>
+  <?php if ($lateTerms['step'] > 0 && $lateTerms['cap'] !== null): ?>
+  <p>There is a ceiling. The interest on a loan can never exceed the amount you
+     borrowed, so whatever happens you can never owe us more than
+     <?= rtrim(rtrim(number_format(1 + $lateTerms['cap'] / 100, 1), '0'), '.') ?> times
+     what you took out. On a loan of K4,000 that is K<?= number_format(4000 * (1 + $lateTerms['cap'] / 100)) ?>,
+     and it stops there however long the loan runs.</p>
+  <?php endif ?>
+  <p>The application shows an illustration for a number of overdue weeks you
+     enter. It does not account for part payments and is not a statement of your
+     balance. Your signed agreement confirms the late charges and how they are
+     worked out.</p>
+  <?php else: ?>
+  <p>The late charges that apply to your loan are set out in your signed
+     agreement, which confirms how they are worked out.</p>
+  <?php endif ?>
   <p>If you are struggling, tell us early. We would far rather agree a revised
      schedule than pursue a default.</p>
 
