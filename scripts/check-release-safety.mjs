@@ -94,6 +94,15 @@ const htaccess = readFileSync('.htaccess', 'utf8');
 const refused = (htaccess.match(/RedirectMatch 404 \^\/\(([^)]+)\)/) || [, ''])[1]
   .split('|').map(s => s.replace(/\\/g, ''));
 
+// The deploy's own checkout. It is never a tracked path, so the loop below
+// cannot discover it from the repository — it has to be asserted by name, or
+// the one directory holding the entire history of the site is the one
+// directory this guard says nothing about.
+assert(refused.includes('.git'),
+  '.htaccess must refuse /.git/ — it is the deploy checkout at the web root, ' +
+  'it holds the whole history of the site, and it is not a tracked path, so ' +
+  'nothing else here can notice it going missing from the rule.');
+
 const webDirs = new Set(
   tracked.filter(p => p.includes('/')).map(p => p.split('/')[0]));
 // Directories the website itself asks for. Everything else deploying to the

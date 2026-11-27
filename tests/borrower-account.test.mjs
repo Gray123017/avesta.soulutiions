@@ -100,9 +100,18 @@ test('a borrower sees their own loans, with the working, and nobody else\'s',
 
     // Nothing of the other borrower's, not even over the wire.
     const wire = JSON.stringify(mine);
-    for (const theirs of ['Mwila', 'b1', '999999/99/9']) {
+    for (const theirs of ['Mwila', '999999/99/9']) {
       assert.ok(!wire.includes(theirs), `a borrower must not be sent ${theirs}`);
     }
+    // The other borrower's record is checked by key rather than as a substring
+    // of the payload. '_owner' is 'u_' + 16 random hex characters, and a
+    // two-character key like 'b1' turns up inside one by chance about one run
+    // in seventeen — this failed in CI having passed locally. A leak assertion
+    // that fails at random is worse than no assertion: it teaches everybody to
+    // re-run the build until it is green, which is how a real leak would get
+    // waved through. Naming the keys is also stronger than the substring was,
+    // because any record that is not theirs fails it, not only this one.
+    assert.deepEqual(mine.records.map(r => r._key), ['a1']);
 
     // The working, in full. They were told the price before borrowing; the
     // arithmetic afterwards should not need a phone call.
