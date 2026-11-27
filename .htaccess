@@ -72,7 +72,13 @@
 # /desktop/subscription-desk/src/renderer/app.js was being served from a
 # money-lending site's web root — harmless in itself, and exactly the sort of
 # thing that stops being harmless the next time a file is added there.
-RedirectMatch 404 ^/(scripts|\.github|tests|desktop)(/|$)
+#
+# `.git` is the deploy's own checkout, not a tracked path, so nothing that
+# reads this repository can warn us about it. It is already refused on this
+# host, but by the host's own handling of dot-directories rather than by
+# anything written down here — and /.git/ is the whole history of the site,
+# which is not a thing to leave resting on somebody else's default.
+RedirectMatch 404 ^/(scripts|\.github|tests|desktop|\.git)(/|$)
 
 # Compression. Pages are ~373 KB of text and compress to ~92 KB — the single
 # biggest thing you can do for someone on a mobile bundle.
