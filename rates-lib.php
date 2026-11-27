@@ -120,6 +120,29 @@ function av_instalments(int $totalNgwee, int $count): array {
 }
 
 /**
+ * How many weeks a stored duration means.
+ *
+ * The form writes the rate into the text — "4 Weeks (30% interest)" — and this
+ * was read back in two places by stripping out everything that was not a
+ * digit, which turns that into "430". A four-week loan was priced with a due
+ * date in 2034: never overdue, never carrying the delay charge, never on an
+ * overdue list, and showing the borrower "on track" the better part of a year
+ * after it should have been repaid. The employer's view of what to deduct from
+ * a salary read it the same way.
+ *
+ * Every test in the suite used the bare "4 Weeks", which parses either way, so
+ * nothing caught it for as long as it was there.
+ *
+ * Only the leading number is the term. Anything else is 0, because a duration
+ * nobody can read is not a reason to invent one.
+ */
+function av_weeks_from_duration($text): int {
+    if (!is_string($text) && !is_numeric($text)) return 0;
+    if (!preg_match('/^\s*(\d+)\s*Weeks?\b/i', (string) $text, $m)) return 0;
+    return (int) $m[1];
+}
+
+/**
  * Which rules govern a given stored record.
  *
  * Records written before this engine carry no terms_version and were signed

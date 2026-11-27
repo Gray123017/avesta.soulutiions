@@ -519,7 +519,7 @@ function loanSummary(array $r, ?string $today = null): array {
     // the due date the total is no longer the figure written at signing.
 
     // Due date: disbursement plus the agreed number of weeks
-    $weeks = (int) preg_replace('/[^0-9]/', '', (string) ($r['sel_dur'] ?? 0));
+    $weeks = av_weeks_from_duration($r['sel_dur'] ?? '');
     $due = null;
     $start = $r['disburse_date'] ?? '';
     if ($start !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) && $weeks > 0) {
