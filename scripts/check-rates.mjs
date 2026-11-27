@@ -23,6 +23,20 @@ const terms = Object.fromEntries(
 const NOT_YET_IN_UI = new Set([8]);
 
 let failures = 0;
+/**
+ * Source with its comments taken out.
+ *
+ * The checks below look for claims about price in the text of a page. A
+ * comment explaining why a claim was removed contains the claim, so scanning
+ * raw source fails the build for the explanation of the fix. Stripping is not
+ * a parser and does not need to be: it only has to stop a comment being read
+ * as something a borrower is shown.
+ */
+const code = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/(^|[\s;{}()])\/\/[^\n]*/g, '$1 ')
+  .replace(/(^|\n)\s*#[^\n]*/g, '$1 ');
+
 const fail = (what, detail) => {
   failures++;
   console.log(`  FAIL  ${what}\n        ${detail}`);
@@ -95,7 +109,16 @@ console.log('\n-- prose that quotes a rate quotes the right one --');
   for (const file of files) {
     let src;
     try { src = readFileSync(file, 'utf8'); } catch { continue; }
-    for (const [whole, percent, weeks] of src.matchAll(/(\d+)%\s+for\s+(\d+)\s+weeks?/gi)) {
+    // Both orders. "8 weeks = 50%" sat in the application form against a
+    // table charging 55% for months, because only the first phrasing was
+    // looked for and nobody writes a price the same way twice.
+    const mentions = [
+      ...[...src.matchAll(/(\d+)%\s+for\s+(\d+)\s+weeks?/gi)]
+        .map(m => [m[0], m[1], m[2]]),
+      ...[...src.matchAll(/(\d+)\s*weeks?\s*(?:=|at|\u2014|-)\s*(\d+)%/gi)]
+        .map(m => [m[0], m[2], m[1]]),
+    ];
+    for (const [whole, percent, weeks] of mentions) {
       checked++;
       if (terms[weeks] === undefined) {
         fail(`${file}: "${whole}"`, `${weeks} weeks is not a published term`);
@@ -107,6 +130,57 @@ console.log('\n-- prose that quotes a rate quotes the right one --');
     }
   }
   if (ok) pass(`${checked} rate mentions in prose agree with rates.json`);
+}
+
+console.log('\n-- what a borrower is told about paying late --');
+{
+  // The terms page said the overdue rate "is not increased" while the engine
+  // applied a delay penalty, and the application form showed every applicant
+  // "7.5% per week overdue" and stored it with their signed record. Both were
+  // written once and never re-read when the table changed.
+  const o = cfg.overdue;
+  let ok = true;
+
+  const legal = code(readFileSync('legal.php', 'utf8'));
+  if (o.stepPercent > 0 && /is not increased/i.test(legal)) {
+    fail('legal.php says the overdue rate "is not increased"',
+         `rates.json raises it by ${o.stepPercent} points every ${o.stepEveryDays} days`);
+    ok = false;
+  }
+  // Any grace the page promises has to be the grace the engine gives. The page
+  // promised three days from 3 October while gracePeriodDays was 0.
+  for (const [whole, word] of legal.matchAll(
+      /grace period of (\w+) days?/gi)) {
+    const words = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+                    six: 6, seven: 7 };
+    const said = word in words ? words[word] : Number(word);
+    if (!Number.isFinite(said)) continue;
+    if (said !== o.gracePeriodDays) {
+      fail(`legal.php: "${whole}"`,
+           `rates.json gives ${o.gracePeriodDays} day(s) of grace`);
+      ok = false;
+    }
+  }
+
+  // No page may carry its own late rate. The engine's is the only one.
+  for (const file of ['app/index.php', 'legal.php', 'assets/avesta/app.js']) {
+    let src;
+    try { src = code(readFileSync(file, 'utf8')); } catch { continue; }
+    const stray = [...src.matchAll(/([\d.]+)\s*%?\s*per\s+week\s+overdue/gi)];
+    for (const m of stray) {
+      fail(`${file}: "${m[0]}"`,
+           'a late rate written into a page is one that cannot be changed in '
+           + 'rates.json; read window.AV_RATES.overdue instead');
+      ok = false;
+    }
+  }
+
+  if (ok) {
+    pass(`the terms page and the form agree with the published late charge `
+       + `(${o.gracePeriodDays}d grace, ${o.startPercent}%`
+       + `${o.stepPercent > 0 ? ` +${o.stepPercent}/${o.stepEveryDays}d` : ' flat'}`
+       + `${o.capPercent != null ? `, capped ${o.capPercent}%` : ''})`);
+  }
 }
 
 console.log('\n-- the server prices from the table, not its own copy --');
@@ -187,7 +261,9 @@ console.log('\n-- the overdue ladder is sane --');
       `(${longestRate}%), so a\n        ${longest}-week loan is held at its term rate by the ` +
       `floor and carries no late\n        charge ` +
       (flat ? 'at all, however long it runs.' : `before day ${day}.`) +
-      ` Recorded in rates.json under\n        overdue._eightWeekGap; the floor itself is checked above.`
+      ` Recorded in rates.json under\n        overdue.` +
+      (flat ? '_flatComment' : '_ladderComment') +
+      `; the floor itself is checked above.`
     );
   }
   if (!failures) pass('the ladder is internally consistent');

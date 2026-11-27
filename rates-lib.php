@@ -138,7 +138,80 @@ function av_rates_terms_for_record(array $record, ?array $cfg = null): array {
             'legacyLatePercentPerWeek' => $cfg['legacy']['latePercentPerWeek'] ?? null,
         ];
     }
-    return ['engine' => 'ladder', 'version' => $version, 'note' => null];
+    return [
+        'engine'    => 'ladder',
+        'version'   => $version,
+        'note'      => null,
+        'recognised' => $version === ($cfg['version'] ?? null)
+                     || isset($cfg['history'][$version]),
+    ];
+}
+
+/**
+ * The late terms that were in force when a loan was signed.
+ *
+ * This exists because the late charge changed on 27 November 2026, from a flat
+ * 35% however long the delay to a ladder that climbs every 28 days. Without
+ * it, av_amount_owing() reads whatever rates.json says today and every loan
+ * already signed would quietly start owing more each month — people who agreed
+ * to a flat 35% repriced without being asked and without anybody being told.
+ *
+ * An agreement is the terms that were on the paper. So the record's
+ * terms_version decides, not the file's.
+ */
+function av_rates_overdue_for_version(?string $version, ?array $cfg = null): array {
+    $cfg = $cfg ?? av_rates_load();
+
+    if ($version !== null && $version === ($cfg['version'] ?? null)) {
+        return $cfg['overdue'];
+    }
+    if ($version !== null && isset($cfg['history'][$version])
+        && is_array($cfg['history'][$version])) {
+        // A history entry holds only the overdue block, so anything it leaves
+        // out keeps today's value — a cap added later still protects an older
+        // agreement, which can only ever help the borrower.
+        return $cfg['history'][$version] + $cfg['overdue'];
+    }
+
+    // A version nobody has heard of means we cannot show what the borrower
+    // agreed to. The answer to that is not to charge them the harshest thing
+    // on the shelf, so they get the gentlest terms this file knows about.
+    return av_rates_gentlest_overdue($cfg);
+}
+
+/**
+ * Of every set of late terms this file knows, the one that charges least.
+ *
+ * Measured rather than named, so adding a term-set cannot leave this pointing
+ * at the wrong one. A year out is far enough for a ladder to have overtaken
+ * any flat rate it started level with.
+ */
+function av_rates_gentlest_overdue(?array $cfg = null): array {
+    $cfg = $cfg ?? av_rates_load();
+
+    $sets = [$cfg['overdue']];
+    foreach ((array) ($cfg['history'] ?? []) as $past) {
+        if (is_array($past)) $sets[] = $past + $cfg['overdue'];
+    }
+
+    $band = function (array $o): float {
+        $days  = 365 - (int) ($o['gracePeriodDays'] ?? 0);
+        $every = max(1, (int) ($o['stepEveryDays'] ?? 28));
+        $b = (float) ($o['startPercent'] ?? 0)
+           + intdiv(max(0, $days), $every) * (float) ($o['stepPercent'] ?? 0);
+        $cap = isset($o['capPercent']) ? (float) $o['capPercent'] : null;
+        return $cap !== null ? min($b, $cap) : $b;
+    };
+
+    usort($sets, fn($a, $b) => $band($a) <=> $band($b));
+    return $sets[0];
+}
+
+/** Today's config with one version's late terms swapped in. */
+function av_rates_cfg_for_version(?string $version, ?array $cfg = null): array {
+    $cfg = $cfg ?? av_rates_load();
+    $cfg['overdue'] = av_rates_overdue_for_version($version, $cfg);
+    return $cfg;
 }
 
 /**

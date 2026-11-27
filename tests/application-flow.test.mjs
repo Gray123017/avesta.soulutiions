@@ -12,7 +12,7 @@ function section(start, end) {
 function boot(weeks=4) {
   const w = new Window({settings:{enableJavaScriptEvaluation:true,suppressInsecureJavaScriptEnvironmentWarning:true}});
   w.document.body.innerHTML = '<input id="disburse_date" value="2026-10-03">' + section('<div class="wiz-panel" id="wiz-3">', '<!-- ═══ STEP 4: DOCUMENTS');
-  w.eval('let selectedDurationWeeks='+weeks+'; const userEditedDates={first_payment:false,last_payment:false}; window.__userEditedDates=userEditedDates; function saveProgress(){} function updateFieldCounter(){}' + section('function addWeeksToDate(', 'const LATE_RATE_PER_WEEK') + section('function updateInstallment()', 'async function clearForm()') + section('function getCheckboxes(', '\nfunction '));
+  w.eval('let selectedDurationWeeks='+weeks+'; const userEditedDates={first_payment:false,last_payment:false}; window.__userEditedDates=userEditedDates; function saveProgress(){} function updateFieldCounter(){}' + section('function addWeeksToDate(', '// The late charge, as the engine') + section('function updateInstallment()', 'async function clearForm()') + section('function getCheckboxes(', '\nfunction '));
   w.document.getElementById('total_repay').value = '2600.00';
   return w;
 }
