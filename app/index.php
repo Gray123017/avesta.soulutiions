@@ -22,7 +22,16 @@ $avSite = defined('AV_SITE') ? AV_SITE : 'lending';
 // used to say the same thing, and the canonical pointed at the home page —
 // which tells Google that loans.php and it.php are copies of it, and it drops
 // them from the results. The IT page is the one people search for by name.
-$avBase = 'https://www.avesta.solutions/';
+// The apex, not www. This is the address a search engine is told to index
+// instead of whichever one the visitor arrived on, and www.avesta.solutions
+// has no DNS record — so every public page was pointing Google at a hostname
+// that does not resolve, and every shared link carried an og:url that goes
+// nowhere. sitemap.xml and robots.txt have to agree with whatever is here;
+// tests/canonical-host.test.mjs fails the build if they drift apart.
+//
+// If a www record is ever added it should redirect here rather than take
+// over: one address, and the apex is the one with the history.
+$avBase = 'https://avesta.solutions/';
 $avSeo = $avSite === 'it' ? [
     'url'   => $avBase . 'it.php',
     'title' => 'IT Services in Ndola & Across Zambia | Avesta Consulting',
@@ -109,7 +118,7 @@ echo '<script>window.AV_SITE=' . json_encode($avSite)
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23163E33'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='bold' font-size='16' fill='%23D98E3B' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='20' fill='%23163E33'/%3E%3Ctext x='90' y='126' font-family='Arial' font-weight='bold' font-size='90' fill='%23D98E3B' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"<?= $avSeo['type'] ?>","name":"Avesta Enterprises","description":"Fast, flexible personal and business loans across Zambia.","url":"https://www.avesta.solutions/","telephone":["+260971013108","+260769974200"],"email":"info@avesta.solutions","address":{"@type":"PostalAddress","streetAddress":"House No. 3, Thom Avenue","addressLocality":"Kansenshi, Ndola","addressCountry":"ZM"},"openingHours":"Mo-Sa 08:00-17:00","currenciesAccepted":"ZMW","paymentAccepted":"Cash, Bank Transfer, Mobile Money","areaServed":{"@type":"City","name":"Ndola"}}
+{"@context":"https://schema.org","@type":"<?= $avSeo['type'] ?>","name":"Avesta Enterprises","description":"Fast, flexible personal and business loans across Zambia.","url":"<?= htmlspecialchars($avBase, ENT_QUOTES) ?>","telephone":["+260971013108","+260769974200"],"email":"info@avesta.solutions","address":{"@type":"PostalAddress","streetAddress":"House No. 3, Thom Avenue","addressLocality":"Kansenshi, Ndola","addressCountry":"ZM"},"openingHours":"Mo-Sa 08:00-17:00","currenciesAccepted":"ZMW","paymentAccepted":"Cash, Bank Transfer, Mobile Money","areaServed":{"@type":"City","name":"Ndola"}}
 </script>
 <meta name="format-detection" content="telephone=yes">
 <style>
