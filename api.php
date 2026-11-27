@@ -802,6 +802,24 @@ if ($method === 'POST' && ($action === 'submit' || $action === '')) {
     $payload['total_interest'] = $canonicalInterest;
     $payload['total_repay'] = $canonicalTotal;
     $payload['total_repayment'] = $canonicalTotal;
+
+    // The duration text carries a rate, and it was the only priced thing on
+    // the record the server did not rewrite — so a record could read
+    // "8 Weeks (50% interest)" while int_rate beside it said 55. That number
+    // is what the applicant read and signed, so the record contradicted its
+    // own paperwork. It now says what is charged.
+    //
+    // What they were shown is kept rather than painted over: if the two ever
+    // disagree it is evidence, and the watchdog reads it to find the records
+    // where they do.
+    $submitted = trim((string) ($payload['sel_dur'] ?? ''));
+    $canonicalDuration = av_canonical_duration($weeks, (float) $canonicalRate);
+    if ($submitted !== '' && $submitted !== $canonicalDuration) {
+        $payload['sel_dur_submitted'] = $submitted;
+    }
+    $payload['sel_dur'] = $canonicalDuration;
+    $payload['loan_duration'] = $canonicalDuration;
+
     $payload['_loan_math_source'] = 'server';
 
     if (empty($payload['_key'])) {
