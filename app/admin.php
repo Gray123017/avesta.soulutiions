@@ -5,7 +5,12 @@
  * web server to hide it. Fetching it directly still hits the login.
  */
 require_once __DIR__ . '/../auth.php';
-$me = av_require_login(['super_admin', 'admin', 'staff'], '../login.php');
+// Root-absolute, not '../login.php'. This file is never served from /app/ —
+// app/.htaccess refuses that, because reaching it directly would skip the line
+// above. It is only ever included by /portal.php at the web root, where '..'
+// points above the document root and only resolves because browsers clamp it
+// back. /apply.php passes the same absolute path.
+$me = av_require_login(['super_admin', 'admin', 'staff'], '/login.php');
 echo '<script>window.AV_USER=' . json_encode([
     'id' => $me['id'], 'name' => $me['name'], 'username' => $me['username'], 'role' => $me['role'],
 ], JSON_UNESCAPED_SLASHES) . ';</script>';
@@ -1570,7 +1575,7 @@ function stopIdleWatch() {
 
 function doLogin() {
   if (!window.AV_USER || !['super_admin', 'admin', 'staff'].includes(window.AV_USER.role)) {
-    window.location.href = '../login.php';
+    window.location.href = '/login.php';     // served at /portal.php, not /app/
     return;
   }
   document.getElementById('app').style.display = 'block';

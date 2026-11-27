@@ -150,6 +150,12 @@ test('the register is staff work; the picker is all a borrower may see',
     // reveals it.
     assert.match(portal, /id="emp-new-card" hidden/);
     assert.ok(portal.includes("if (isAdmin) $('emp-new-card').hidden = false;"));
+    // The portal is served at /portal.php, never from /app/, so it sends people
+    // to /login.php. '../login.php' points above the document root and only
+    // works because browsers clamp it back.
+    assert.ok(!portal.includes("'../login.php'"),
+      'the portal must not send people above the web root to sign in');
+    assert.ok(portal.includes("window.location.href = '/login.php'"));
 
     // ── it is written down ────────────────────────────────────────────────
     const audit = readFileSync(join(dir, 'audit_log.jsonl'), 'utf8')

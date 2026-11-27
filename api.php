@@ -588,23 +588,46 @@ $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
 // ── PING / HEALTH CHECK ──────────────────────────────────────────────────────
 if ($action === 'ping') {
-    $records = loadRecords();
-    jsonOut([
+    // Public, because it is how anything checks the site is answering at all:
+    // the tests wait on it and an uptime monitor has no session. So it says
+    // that the server is up, and nothing a stranger has no business knowing.
+    //
+    // The diagnostics below used to be in this answer for anybody who asked.
+    // A PHP version number tells someone looking for a way in which holes to
+    // try, and how many applications a lender is holding is the lender's
+    // business. They are kept for staff, who are who the "visit
+    // api.php?action=ping" line on the settings page is written for.
+    $out = [
         'ok'      => true,
         'message' => 'Avesta JSON API is running',
-        'records' => count($records),
-        'php'     => phpversion(),
-        'docs_writable'    => is_writable(DOCS_DIR),
-        'recovery_mail_available' => function_exists('mail'),
-        'post_max_size'    => ini_get('post_max_size'),
-        'upload_max_filesize' => ini_get('upload_max_filesize'),
-        'memory_limit'     => ini_get('memory_limit'),
-        'user_ini_active'  => file_exists(__DIR__ . '/.user.ini'),
         'ts'      => date('c'),
-    ]);
+    ];
+    if (av_at_least('staff')) {
+        $out += [
+            'records' => count(loadRecords()),
+            'php'     => phpversion(),
+            'docs_writable'    => is_writable(DOCS_DIR),
+            'recovery_mail_available' => function_exists('mail'),
+            'post_max_size'    => ini_get('post_max_size'),
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'memory_limit'     => ini_get('memory_limit'),
+            'user_ini_active'  => file_exists(__DIR__ . '/.user.ini'),
+        ];
+    }
+    jsonOut($out);
 }
 
 // ── SUBMIT NEW APPLICATION (from index.html) ─────────────────────────────────
+// A browser re-issues a POST as a GET when it follows a 301 or 302, which is
+// what a www → apex redirect and an http → https upgrade both are. Such a
+// request used to fall past the branch below to the friendly default and come
+// back 200 ok:true, so the page told the applicant their application was in
+// while nothing had been stored — not the application, not the NRC scans, not
+// the payslip. An application this server did not store must never answer ok.
+if ($action === 'submit' && $method !== 'POST') {
+    jsonOut(['ok' => false, 'error' => 'POST required'], 405);
+}
+
 if ($method === 'POST' && ($action === 'submit' || $action === '')) {
     // Every page is behind the gate, so an application can only come from a
     // signed-in visitor. Leaving this open would let anyone fill the store
@@ -2246,4 +2269,12 @@ if ($action === 'backup' || $action === 'backupStatus') {
 }
 
 // ── DEFAULT ───────────────────────────────────────────────────────────────────
+// A named action that reached here was not handled: a caller's typo, an action
+// that has been renamed, or a method the branch did not match. Answering those
+// `ok: true` is how a request that did nothing gets read as success — so a
+// request this server did not carry out says so, and only the bare path keeps
+// the friendly reply that uptime checks and the tests rely on.
+if ($action !== '') {
+    jsonOut(['ok' => false, 'error' => 'Unknown action: ' . $action], 404);
+}
 jsonOut(['ok' => true, 'message' => 'Avesta API ready. Use ?action=ping to test.']);
