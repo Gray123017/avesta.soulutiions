@@ -101,6 +101,28 @@ if (!defined('AVESTA_LIB')) {
     header('Vary: Origin');
     header('Content-Type: application/json; charset=utf-8');
 
+    // Every answer from here, not just the two endpoints that said so for
+    // themselves. These answers are the loan book, the account list and the
+    // audit log, and nothing between this server and the person who asked has
+    // any business keeping a copy: not a shared branch machine's disk cache
+    // after somebody signs out, not the back button, not a proxy.
+    //
+    // They were already going out `no-store` — but only because PHP's session
+    // cache limiter adds it when a session starts, which is a default of the
+    // host's PHP configuration and not something this file asked for. Set
+    // session.cache_limiter to '' on a host and every one of these answers
+    // becomes cacheable with nothing here to say otherwise.
+    //
+    // These two lines belong together: the first stops the session module
+    // sending a Cache-Control of its own (which would replace ours when the
+    // session starts, later in the request), the second is the answer we want.
+    // Removing only the second would leave these responses with no directives
+    // at all. This is inside the !AVESTA_LIB block, so an HTML page that
+    // includes this file for fxConvert() keeps the nocache limiter it needs.
+    session_cache_limiter('');
+    header('Cache-Control: private, no-store');
+    header('Pragma: no-cache');
+
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
         http_response_code(200);
         exit;
