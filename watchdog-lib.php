@@ -359,6 +359,40 @@ function av_watchdog_scan(array $input): array {
                         . av_watchdog_refs($undated)]);
     }
 
+    // A record that contradicts its own paperwork. The duration text carries
+    // the rate the applicant read and signed; int_rate is what they are
+    // charged. They disagree where the form worked out a price the table did
+    // not sell — eight weeks was quoted at 50% against a table charging 55%.
+    //
+    // Raised rather than corrected. Which figure is right is not a thing code
+    // can decide: it is what was agreed with that person, and somebody has to
+    // go and look.
+    $mismatched = [];
+    foreach ($records as $r) {
+        $shown = av_shown_rate($r);
+        if ($shown === null) continue;
+        $charged = $r['int_rate'] ?? $r['interest_rate'] ?? null;
+        if ($charged === null || !is_numeric($charged)) continue;
+        if (abs((float) $charged - $shown) < 0.005) continue;
+        $mismatched[] = $r + ['_shown' => $shown, '_charged' => (float) $charged];
+    }
+    if ($mismatched) {
+        $pairs = [];
+        foreach (array_slice($mismatched, 0, 5) as $r) {
+            $pairs[] = ($r['_key'] ?? '?') . ' shown ' . rtrim(rtrim(number_format($r['_shown'], 2), '0'), '.')
+                     . '%, charged ' . rtrim(rtrim(number_format($r['_charged'], 2), '0'), '.') . '%';
+        }
+        $more = count($mismatched) - count($pairs);
+        $add(['kind' => 'rate_shown_differs', 'severity' => 'high', 'standing' => true,
+              'count' => count($mismatched),
+              'headline' => av_watchdog_plural(count($mismatched), 'loan')
+                          . ' charged a different rate from the one on the form',
+              'detail' => 'The figure in brackets is what the applicant read and signed. '
+                        . 'Which one is right is what was agreed with that person, so '
+                        . 'these need looking at by hand: ' . implode('; ', $pairs)
+                        . ($more > 0 ? ' and ' . $more . ' more' : '')]);
+    }
+
     $overdue = [];
     $owed = 0;
     foreach ($records as $r) {

@@ -143,6 +143,39 @@ function av_weeks_from_duration($text): int {
 }
 
 /**
+ * The duration text a record should carry: the term, and the rate it is
+ * actually charged.
+ *
+ * The form worked out its own prices and wrote them into this text. The server
+ * re-prices every application from the table and overwrites int_rate,
+ * total_int and total_repay — but it left this alone, so a record could read
+ * "8 Weeks (50% interest)" while being charged 55%. The number in brackets is
+ * the one the applicant read and signed, which makes the disagreement the
+ * worst kind: not a display bug, a record that contradicts its own paperwork.
+ */
+function av_canonical_duration(int $weeks, float $rate): string {
+    $rate = rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.');
+    return $weeks . ' Week' . ($weeks === 1 ? '' : 's') . ' (' . $rate . '% interest)';
+}
+
+/**
+ * The interest rate an applicant was shown, out of the text they signed, or
+ * null where the record carries no rate to compare.
+ *
+ * Prefers sel_dur_submitted — what the form sent — over sel_dur, which is
+ * rewritten to the charged rate from now on. On a record written before that,
+ * sel_dur is still the text they read.
+ */
+function av_shown_rate(array $record): ?float {
+    foreach (['sel_dur_submitted', 'sel_dur'] as $field) {
+        $text = (string) ($record[$field] ?? '');
+        if ($text === '') continue;
+        if (preg_match('/\(\s*([\d.]+)\s*%/', $text, $m)) return (float) $m[1];
+    }
+    return null;
+}
+
+/**
  * Which rules govern a given stored record.
  *
  * Records written before this engine carry no terms_version and were signed
