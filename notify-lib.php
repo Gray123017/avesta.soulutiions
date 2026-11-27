@@ -52,6 +52,23 @@ function av_notify_defaults(): array {
     ];
 }
 
+/**
+ * Take the notification settings for this request, before reading it.
+ *
+ * The lock has to cover the read: this store is written by reading the whole
+ * file, changing part of it and writing the whole file back, so two requests
+ * that both read it will each write back a copy without the other's change.
+ *
+ * The cache is dropped as well. A request that read the store earlier and then
+ * locked would write back what it cached before the lock, which is the same
+ * lost update wearing a different hat.
+ */
+function av_notify_lock(): bool {
+    if (!av_store_lock(av_notify_path())) return false;
+    av_notify_reset_cache();
+    return true;
+}
+
 function av_notify_load(): array {
     $cached = av_notify_cache();
     if ($cached !== null) return $cached;
@@ -77,6 +94,10 @@ function av_notify_load(): array {
  * way in rather than trusted not to be sent — see the note at the top.
  */
 function av_notify_save(array $in): bool {
+    // Before the load, because this merges into what is already there: two
+    // admins saving at once would each merge into their own copy and the
+    // second write would drop the first one's recipients.
+    av_notify_lock();
     $data = array_replace_recursive(av_notify_load(), $in);
     foreach (['email', 'whatsapp'] as $channel) {
         unset($data[$channel]['api_key'], $data[$channel]['key'], $data[$channel]['token']);

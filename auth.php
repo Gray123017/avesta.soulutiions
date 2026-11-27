@@ -90,6 +90,40 @@ function avStoreRead(string $legacyJsonPath) {
     return null;
 }
 
+/**
+ * Take a store for this request, and hold it.
+ *
+ * Every store here is written the same way: read the whole file, change one
+ * part of it, write the whole file back. Locking only the write keeps the file
+ * from being torn and does nothing about the real problem — two requests both
+ * read the same file, each changes its own part, and each writes back a copy
+ * with none of the other's change. The second write wins, silently.
+ *
+ * That cost a borrower a K500 payment before it was fixed for the loan book
+ * (tests/concurrent-writes.test.mjs). The same shape is in every other store,
+ * so the same lock is.
+ *
+ * Call it BEFORE the read, not before the write. Idempotent per path, and the
+ * handle is kept for the life of the request: asking a second time on a second
+ * handle would wait for a lock this same process already holds, which never
+ * ends. There is no unlock, deliberately — the operating system releases it
+ * when the request finishes, including on an error path that exits in the
+ * middle.
+ */
+function av_store_lock(string $legacyJsonPath): bool {
+    static $held = [];
+
+    $lock = preg_replace('/\.json$/', '', $legacyJsonPath) . '.lock';
+    if (isset($held[$lock])) return true;
+
+    $fp = @fopen($lock, 'c+');
+    if (!$fp) return false;
+    if (!flock($fp, LOCK_EX)) { fclose($fp); return false; }
+
+    $held[$lock] = $fp;
+    return true;
+}
+
 function avStoreWrite(string $legacyJsonPath, $data): bool {
     $guarded = avStorePath($legacyJsonPath);
     $body = AV_GUARD . json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

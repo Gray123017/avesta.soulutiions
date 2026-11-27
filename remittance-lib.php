@@ -52,6 +52,23 @@ function av_remittances_cache(?array $set = null, bool $clear = false): ?array {
     return $data;
 }
 
+/**
+ * Take the remittance store for this request, before reading it.
+ *
+ * The lock has to cover the read: this store is written by reading the whole
+ * file, changing part of it and writing the whole file back, so two requests
+ * that both read it will each write back a copy without the other's change.
+ *
+ * The cache is dropped as well. A request that read the store earlier and then
+ * locked would write back what it cached before the lock, which is the same
+ * lost update wearing a different hat.
+ */
+function av_remittances_lock(): bool {
+    if (!av_store_lock(av_remittances_path())) return false;
+    av_remittances_reset_cache();
+    return true;
+}
+
 function av_remittances_load(): array {
     $cached = av_remittances_cache();
     if ($cached !== null) return $cached;
@@ -331,6 +348,7 @@ function av_remittance_allocate(int $totalNgwee, array $expected): array {
  */
 function av_remittance_record(string $employerId, string $period, int $receivedNgwee,
                               ?array $lines, array $records): array {
+    av_remittances_lock();
     if ($receivedNgwee <= 0) {
         return ['ok' => false, 'error' => 'A remittance has to be an amount above zero.'];
     }
@@ -532,6 +550,7 @@ function av_remittance_put(array $remittance): bool {
  * employer's schedule for the period.
  */
 function av_remittance_allocate_held(string $remittanceId, array $lines, array $records): array {
+    av_remittances_lock();
     $remittance = av_remittance_find($remittanceId);
     if ($remittance === null) {
         return ['ok' => false, 'error' => 'That payment was not found.'];
