@@ -19,6 +19,17 @@ const bogus=await fetch(base+'/api.php?action=noSuchAction');assert.equal(bogus.
 const ping=await fetch(base+'/api.php?action=ping');assert.equal(ping.status,200);
 const pinged=await ping.json();assert.equal(pinged.ok,true);
 for(const f of ['php','records','post_max_size','memory_limit','docs_writable'])assert.ok(!(f in pinged),`ping must not tell a stranger ${f}`);
+// A canonical tag tells a search engine to index this page at that address
+// instead of the one the visitor arrived on, so it has to name a host that
+// answers. Every public page pointed at www.avesta.solutions for months while
+// www had no DNS record at all.
+for(const p of ['/loans.php','/it.php']){
+ const r=await fetch(base+p,{redirect:'follow'});const html=await r.text();
+ const m=html.match(/<link rel="canonical" href="([^"]+)"/);
+ if(!m)continue;
+ assert.ok(!/\/\/www\./.test(m[1]),`${p} is canonical at ${m[1]}, which has no DNS record`);
+ assert.match(m[1],/^https:\/\/avesta\.solutions\//,`${p} -> ${m[1]}`);
+}
 // Nothing in between keeps a copy of an API answer. api.php declares this for
 // itself rather than inheriting it from the host's session.cache_limiter.
 for(const p of ['/api.php','/api.php?action=ping','/api.php?action=rates','/api.php?action=getRecords','/api.php?action=noSuchAction']){

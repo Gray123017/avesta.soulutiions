@@ -282,7 +282,7 @@ footer a{color:var(--gold-deep)}
   <?= ADDRESS ?><br>
   <?= PHONE_1 ?> &middot; <?= PHONE_2 ?><br>
   <a href="mailto:<?= EMAIL ?>"><?= EMAIL ?></a> &middot;
-  <a href="index.php">www.avesta.solutions</a><br>
+  <a href="index.php">avesta.solutions</a><br>
   Monday to Saturday, 08:00&ndash;17:00
   <?php if (LICENCE_NO !== ''): ?>
     <br>Money Lenders Licence No. <?= LICENCE_NO ?>

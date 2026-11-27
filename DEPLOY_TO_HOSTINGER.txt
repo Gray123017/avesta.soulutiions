@@ -59,7 +59,7 @@ WhatsApp API credential is shipped in this repository. Confirm PHP upload
 limits in hPanel after .user.ini has had time to apply.
 
 Default company email: info@avesta.solutions
-Domain: https://www.avesta.solutions/
+Domain: https://avesta.solutions/  (www has no DNS record)
 
 BACKUPS
 

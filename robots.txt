@@ -15,4 +15,4 @@ Disallow: /documents/
 Disallow: /tests/
 Disallow: /api.php
 
-Sitemap: https://www.avesta.solutions/sitemap.xml
+Sitemap: https://avesta.solutions/sitemap.xml
