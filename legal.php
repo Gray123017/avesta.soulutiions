@@ -50,7 +50,7 @@ header('X-Content-Type-Options: nosniff');
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 :root{--navy:#163E33;--navy-2:#1F5344;--gold:#D98E3B;--gold-deep:#96591A;
-  --cream:#F7F3EC;--paper:#fff;--line:#E3DED4;--ink:#12241E;--muted:#66766F}
+  --cream:#F7F3EC;--paper:#fff;--line:#E3DED4;--ink:#12241E;--muted:#63726C}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--cream);
   color:var(--ink);line-height:1.7;padding-bottom:calc(40px + env(safe-area-inset-bottom))}
@@ -60,7 +60,7 @@ header{background:var(--navy);color:#fff;padding:26px 20px 22px}
   display:grid;place-items:center;font-weight:800;color:var(--navy);font-size:15px}
 .hw h1{font-size:17px;font-weight:800;letter-spacing:-.2px}
 .hw p{font-size:11px;color:rgba(255,255,255,.62);letter-spacing:.5px;text-transform:uppercase}
-.hw a.back{margin-left:auto;font-size:12px;color:var(--gold);text-decoration:none;font-weight:700}
+.hw a.back{margin-left:auto;font-size:12px;display:inline-flex;align-items:center;min-height:24px;color:#e3aa6c;text-decoration:none;font-weight:700}
 nav.tabs{background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
 nav.tabs div{max-width:780px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:0 12px}
 nav.tabs a{flex:0 0 auto;padding:14px 15px 12px;font-size:13px;font-weight:600;color:var(--muted);
@@ -80,6 +80,7 @@ li{margin-bottom:7px}
 table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;background:var(--paper)}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
 th{background:var(--navy);color:#fff;font-size:11px;letter-spacing:.6px;text-transform:uppercase}
+footer a{display:inline-flex;align-items:center;min-height:24px}
 footer{max-width:780px;margin:30px auto 0;padding:20px;border-top:1px solid var(--line);
   font-size:12px;color:var(--muted);line-height:1.8}
 footer a{color:var(--gold-deep)}

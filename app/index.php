@@ -160,7 +160,8 @@ echo '<script>window.AV_SITE=' . json_encode($avSite)
   --gold:#D98E3B;        /* Lending — 4.45:1 on navy  */
   --gold-light:#E8AE6E;
   --gold-deep:#96591A;   /* Lending — 5.61:1 on white */
-  --tech:#5B9BFF;        /* Consulting — 4.28:1 on navy  */
+  --tech:#5B9BFF;        /* Consulting — 4.28:1 on navy, so fills and borders only */
+  --tech-text:#8fbbff;   /* the same blue lifted to 4.5:1 for text on a dark ground */
   --tech-light:#8FBBFF;
   --tech-deep:#1F5FA8;   /* Consulting — 6.44:1 on white */
   --lgray:#F7F3EC; --mgray:#E0E0E0; --dgray:#444; --white:#fff;
@@ -200,7 +201,9 @@ nav{position:fixed;top:0;width:100%;background:rgba(22,62,51,.97);backdrop-filte
 .nav-tab:hover{color:var(--gold)}
 .nav-tab.active{color:white;border-bottom-color:var(--gold)}
 .nav-tab:not(.nav-tab-apply):active{transform:translateY(1px)}
-.nav-tab-apply{background:var(--gold);color:var(--navy)!important;font-weight:bold;border-radius:4px;margin:auto 0 auto 8px;padding:8px 16px;height:auto;border-bottom:none!important}
+/* #163e33 on brand gold is 4.45:1, a hair under AA. The gold stays; the
+   label darkens to 5.42:1. Same change as the public site's .button. */
+.nav-tab-apply{background:var(--gold);color:#162e27!important;font-weight:bold;border-radius:4px;margin:auto 0 auto 8px;padding:8px 16px;height:auto;border-bottom:none!important}
 .nav-tab-apply:hover{background:var(--gold-light)!important}
 .nav-tab-apply.active{background:var(--gold-light);border-bottom:none!important}
 .nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none}
@@ -273,7 +276,7 @@ nav{position:fixed;top:0;width:100%;background:rgba(22,62,51,.97);backdrop-filte
 .rate-pill:hover{background:rgba(217,142,59,.2);border-color:var(--gold);transform:translateY(-3px)}
 .rp-week{color:rgba(255,255,255,.7);font-size:8.5pt;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 .rp-rate{color:var(--gold);font-size:26pt;font-weight:bold;line-height:1}
-.rp-label{color:rgba(255,255,255,.5);font-size:8pt;margin-top:4px}
+.rp-label{color:rgba(255,255,255,.62);font-size:8pt;margin-top:4px}
 
 /* ── HOW IT WORKS ────────────────────────────────────────────────────────── */
 .page-section{padding:70px 32px}
@@ -432,13 +435,13 @@ footer{background:var(--navy);border-top:1px solid rgba(217,142,59,.35);box-shad
 .footer-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px}
 .footer-brand{color:white}
 .fb-name{font-size:14pt;font-weight:bold;letter-spacing:.5px}
-.fb-tag{font-size:8.5pt;color:rgba(255,255,255,.45);margin-top:5px}
+.fb-tag{font-size:8.5pt;color:rgba(255,255,255,.58);margin-top:5px}
 .footer-links{display:flex;gap:4px;flex-wrap:wrap}
 .footer-links button{color:rgba(255,255,255,.55);text-decoration:none;font-size:8.5pt;background:none;border:none;cursor:pointer;font-family:Arial,sans-serif;padding:8px 12px;border-radius:5px;transition:color .2s ease,background-color .2s ease}
 .footer-links button:hover{color:var(--gold);background:rgba(217,142,59,.08)}
 .footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)}
-.footer-copy{color:rgba(255,255,255,.38);font-size:7.8pt;letter-spacing:.2px}
-.footer-made{color:rgba(255,255,255,.3);font-size:7.5pt}
+.footer-copy{color:rgba(255,255,255,.58);font-size:7.8pt;letter-spacing:.2px}
+.footer-made{color:rgba(255,255,255,.58);font-size:7.5pt}
 
 /* ── WHATSAPP + SCROLL ───────────────────────────────────────────────────── */
 .wa-float{position:fixed;bottom:24px;right:24px;width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(37,211,102,.4);z-index:998;text-decoration:none;transition:transform .2s}
@@ -1334,7 +1337,9 @@ window.avFetchJson = async function (url, opts, ms) {
    arriving from an IT flyer sees straight away that they are in the right
    place, without the lending side being demoted. */
 .logo-sub{display:block;font-size:7.5pt;font-weight:600;letter-spacing:.6px;
-  text-transform:uppercase;color:var(--gold);opacity:.85;margin-top:1px;line-height:1.2}
+  /* The .85 opacity dropped brand gold to 3.33:1 on the header green.
+     Full strength gold on this ground is 4.9:1. */
+  text-transform:uppercase;color:#e3aa6c;margin-top:1px;line-height:1.2}
 @media(max-width:640px){.logo-sub{font-size:6.5pt;letter-spacing:.4px}}
 @media(max-width:380px){.logo-sub{display:none}}
 </style>
@@ -1414,11 +1419,11 @@ window.avFetchJson = async function (url, opts, ms) {
 ========================================================================= */
 .office-back{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
   background:rgba(217,142,59,.12);border:1px solid rgba(217,142,59,.32);
-  color:var(--gold);border-radius:999px;padding:7px 13px 7px 10px;
+  color:#e3aa6c;border-radius:999px;padding:7px 13px 7px 10px;
   font-family:inherit;font-size:8.5pt;font-weight:700;letter-spacing:.3px;
   cursor:pointer;text-decoration:none;white-space:nowrap;margin-left:auto;
   transition:background .15s,border-color .15s}
-.office-back:hover{background:rgba(217,142,59,.2);border-color:var(--gold)}
+.office-back:hover{background:rgba(217,142,59,.2);border-color:#e3aa6c}
 .office-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .office-back .ob-ico{font-size:10pt;line-height:1}
 [data-arm="consulting"] .office-back,
@@ -1428,7 +1433,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 @media(max-width:860px){.office-back .ob-text{display:none}
   .office-back{padding:7px 10px;border-radius:50%}}
 @media(max-width:640px){.office-back{display:none}}  /* the mobile menu carries it */
-.nav-mobile .mob-back{background:rgba(217,142,59,.12)!important;color:var(--gold)!important;
+.nav-mobile .mob-back{background:rgba(217,142,59,.12)!important;color:#e3aa6c!important;
   font-weight:700!important;border-top:1px solid rgba(255,255,255,.12)!important}
 </style>
 <style>
@@ -1520,11 +1525,11 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
    nobody is offered something their browser cannot do. */
 .install-btn{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
   background:rgba(91,155,255,.14);border:1px solid rgba(91,155,255,.35);
-  color:var(--tech,#5B9BFF);border-radius:999px;padding:7px 13px;margin-left:8px;
+  color:var(--tech-text);border-radius:999px;padding:7px 13px;margin-left:8px;
   font-family:inherit;font-size:8.5pt;font-weight:700;cursor:pointer;white-space:nowrap;
   transition:background .15s,border-color .15s}
-.install-btn:hover{background:rgba(91,155,255,.22);border-color:var(--tech,#5B9BFF)}
-.install-btn:focus-visible{outline:2px solid var(--tech,#5B9BFF);outline-offset:2px}
+.install-btn:hover{background:rgba(91,155,255,.22);border-color:var(--tech,#8fbbff)}
+.install-btn:focus-visible{outline:2px solid var(--tech,#8fbbff);outline-offset:2px}
 @media(max-width:860px){.install-btn .ib-text{display:none}
   .install-btn{padding:7px 10px;border-radius:50%}}
 @media(max-width:640px){.install-btn{display:none}}
@@ -1704,7 +1709,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
     <div class="home-cards">
       <div class="home-cards-title">
         <h2>What Would You Like to Do?</h2>
-        <p>Click a card below to get started</p>
+        <p style="color:#6f6f6f">Click a card below to get started</p>
       </div>
       <div class="cards-grid">
         <div class="nav-card" onclick="showTab('how')">

@@ -28,7 +28,7 @@ p{color:var(--muted)}
 .desktop-nav a.active:after{content:"";position:absolute;bottom:21px;left:0;right:0;height:2px;background:var(--gold)}
 .header-actions{display:flex;align-items:center;gap:22px}
 .portal-link{font-size:.87rem;color:var(--muted)}
-.button{display:inline-flex;justify-content:center;align-items:center;gap:9px;min-height:48px;padding:11px 24px;background:var(--gold);color:var(--green);font-size:.94rem;font-weight:700;border:1px solid transparent;border-radius:7px;text-decoration:none;transition:background-color .12s}
+.button{display:inline-flex;justify-content:center;align-items:center;gap:9px;min-height:48px;padding:11px 24px;background:var(--gold);color:var(--ink);font-size:.94rem;font-weight:700;border:1px solid transparent;border-radius:7px;text-decoration:none;transition:background-color .12s}
 .button:hover{background:var(--goldlight)}
 .button.small{padding:9px 18px;min-height:43px;font-size:.88rem}
 .button.secondary{background:var(--green);color:#fff}.button.secondary:hover{background:var(--green2)}
@@ -57,7 +57,7 @@ p{color:var(--muted)}
 .choice-card.tech{background:#e7eef5;color:#193752;border:1px solid #d6e1ec}
 .choice-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .choice-top span{font-size:.77rem;letter-spacing:.14em;font-weight:650;text-transform:uppercase;color:var(--goldlight)}
-.choice-top .card-number{font-family:Georgia,serif;font-size:1.7rem;letter-spacing:-.07em;opacity:.65}
+.choice-top .card-number{font-family:Georgia,serif;font-size:1.7rem;letter-spacing:-.07em;opacity:.82}
 .tech .choice-top span{color:var(--blue)}
 .choice-card h2{font-family:Georgia,serif;font-weight:500;font-size:2.1rem;margin-bottom:11px}
 .choice-card p{font-size:.95rem;color:#d0dfd6;max-width:370px}.tech p{color:#526b81}
@@ -75,6 +75,7 @@ p{color:var(--muted)}
 .card .icon{height:38px;width:38px;background:var(--soft);color:var(--green);display:grid;place-items:center;border-radius:8px}
 .icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .dark{background:var(--green);color:white}.dark h1,.dark h2{color:#fff}.dark p{color:#cbd9d3}.dark .eyebrow{color:var(--goldlight)}
+.dark .quote-card p,.dark .card p,.dark .quote-card .updated{color:var(--muted)}
 .dark h1 em{color:var(--goldlight)}.dark .hero-note{color:#cbd9d3}.dark .link{color:var(--goldlight)}
 .dark .trust-row{border-color:#ffffff22}.dark .trust-row div{color:#bdcfc5}.dark .trust-row strong{color:var(--goldlight)}
 .quote-card{padding:28px 30px;background:white;color:var(--ink);border-radius:var(--radius);box-shadow:0 22px 60px #06150f25}
@@ -251,3 +252,8 @@ dialog h3{margin:28px 0 14px}
 
 .footer-section-icon{flex-shrink:0;color:var(--gold,#D98E3B)}
 .footer-toggle>span:first-of-type{min-width:0;overflow-wrap:anywhere}
+
+/* A tap target floor for the small standalone links — footer navigation,
+   addresses, back links. Measured at 15-20px tall on a Pixel 7, under the
+   24px WCAG 2.5.8 asks for. Links inside running prose are left alone. */
+.footer-bottom nav a,.footer-bottom a,.footer-grid a,.office-address a,.contact-grid a,.contact-office a{display:inline-flex;align-items:center;min-height:24px}

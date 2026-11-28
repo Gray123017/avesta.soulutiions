@@ -94,10 +94,20 @@
   color: var(--green);
 }
 .av-rotator-controls button:hover { border-color: var(--gold); }
-.av-rotator-dots { display: flex; gap: 7px; margin-left: auto; }
-.av-rotator-dots button { min-width: 0; min-height: 0; width: 9px; height: 9px; padding: 0; border-radius: 999px; background: var(--line); border: 0; }
-.av-rotator-dots button[aria-current="true"] { background: var(--gold); width: 22px; }
-.av-motion .av-rotator-dots button { transition: width 300ms ease, background 300ms ease; }
+.av-rotator-dots { display: flex; gap: 2px; margin-left: auto; }
+/* The dot you see is 9px; the thing you tap is 24px. A 9px target is
+   unhittable on a phone, and 24x24 is the floor WCAG 2.5.8 sets. */
+.av-rotator-dots button {
+  min-width: 24px; min-height: 24px; width: 24px; height: 24px;
+  padding: 0; border: 0; background: none; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.av-rotator-dots button::after {
+  content: ""; display: block;
+  width: 9px; height: 9px; border-radius: 999px; background: var(--line);
+}
+.av-rotator-dots button[aria-current="true"]::after { background: var(--gold); width: 20px; }
+.av-motion .av-rotator-dots button::after { transition: width 300ms ease, background 300ms ease; }
 
 /* ── the drawn explainer ────────────────────────────────────────────────── */
 /* Drawn, not downloaded: a few kilobytes of SVG instead of a few megabytes of
