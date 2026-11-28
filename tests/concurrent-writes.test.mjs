@@ -33,7 +33,7 @@ const hasPhp = spawnSync(php, ['-v']).status === 0;
 
 const LIBS = ['api.php', 'auth.php', 'asset-version.php', 'rates-lib.php', 'categories-lib.php',
               'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
-              'disbursement-lib.php', 'notify-lib.php'];
+              'disbursement-lib.php', 'notify-lib.php', 'mailer-lib.php'];
 
 /** A loan book with two loans in it, in a directory of its own. */
 function book() {

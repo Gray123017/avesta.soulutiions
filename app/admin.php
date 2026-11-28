@@ -993,6 +993,27 @@ window.avFetchJson = async function (url, opts, ms) {
           <button onclick="saveServerNotify()" style="width:100%;background:#163E33;color:white;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Save</button>
           <button onclick="testServerNotify()" style="width:100%;background:#D98E3B;color:#163E33;border:none;padding:10px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">🧪 Send a test now</button>
           <div id="email-notify-status" style="margin-top:10px;font-size:8pt;color:#888"></div>
+
+          <!-- How the server signs in to send. Without this, nothing is sent at
+               all: not these alerts and not the borrower sign-in codes. -->
+          <div style="border-top:1px solid #eee;margin-top:16px;padding-top:14px">
+            <div id="mail-transport-status" style="font-size:8pt;margin-bottom:10px;padding:8px 10px;border-radius:6px;background:#f5f5f5;color:#666">Checking how email is sent…</div>
+            <div style="background:#fff8ee;border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:8pt;color:#6b4a16;line-height:1.7">
+              <strong>Outgoing mailbox.</strong> Avesta signs in to
+              <code>smtp.hostinger.com</code> as <code>info@avesta.solutions</code> and sends as
+              that address, so the domain's SPF record covers it and Gmail accepts it. Enter
+              that mailbox's password — the same one you use in Hostinger webmail. It is stored
+              on the server only, is never sent back to this page, and is kept out of backups
+              and out of the code repository.
+            </div>
+            <label style="font-size:7pt;color:#888;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase" for="mail-pass-input">Mailbox password for info@avesta.solutions</label>
+            <input id="mail-pass-input" type="password" autocomplete="new-password" placeholder="Enter to save on the server" style="width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:6px;font-size:9pt;margin-bottom:10px;outline:none">
+            <div style="display:flex;gap:8px">
+              <button onclick="saveMailPassword()" style="flex:1;background:#163E33;color:white;border:none;padding:9px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">💾 Save password</button>
+              <button onclick="testMailTransport()" style="flex:1;background:#D98E3B;color:#163E33;border:none;padding:9px;border-radius:6px;font-size:9pt;font-weight:700;cursor:pointer">✉️ Test delivery</button>
+            </div>
+            <div id="mail-pass-status" style="margin-top:10px;font-size:8pt;color:#888"></div>
+          </div>
         </div>
         <div id="ntab-content-browser" style="display:none;padding:16px 18px">
           <div style="background:#f3e5f5;border-radius:7px;padding:10px 12px;margin-bottom:14px;font-size:8pt;color:#4a148c;line-height:1.7">
@@ -2799,6 +2820,63 @@ function serverNotifyStatus(text, bad) {
   el.style.color = bad ? '#b4232a' : '#176b4d';
 }
 
+/* How email leaves the server. "Available" here means a mailbox password is
+   configured — not that PHP has a mail() function, which it always does and
+   which is what used to be reported. */
+function showMailTransport(available, detail) {
+  const el = document.getElementById('mail-transport-status');
+  if (!el) return;
+  if (available) {
+    el.style.background = '#d4edda'; el.style.color = '#155724';
+    el.textContent = '✅ ' + (detail || 'Outgoing email is configured.');
+  } else {
+    el.style.background = '#fdf1f1'; el.style.color = '#b4232a';
+    el.textContent = '⚠️ ' + (detail || 'No mailbox password configured.')
+      + ' Borrower sign-in codes cannot be sent until this is set.';
+  }
+}
+
+function mailPassStatus(text, bad) {
+  const el = document.getElementById('mail-pass-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.style.color = bad ? '#b4232a' : '#176b4d';
+}
+
+function saveMailPassword() {
+  const box = document.getElementById('mail-pass-input');
+  const pass = (box.value || '');
+  if (!pass.trim()) { mailPassStatus('Enter the mailbox password first.', true); return; }
+  mailPassStatus('Saving…');
+  window.avFetchJson(getScriptUrl() + '?action=notifyMailSave', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: pass})
+  }, 15000).then(function (res) {
+    const d = (res && res.data) || {};
+    if (!d.ok) { mailPassStatus(d.error || 'The server would not save that.', true); return; }
+    box.value = '';                      // never leave a password on screen
+    showMailTransport(d.mail_available, d.detail);
+    mailPassStatus('Saved on the server. Send a test to confirm it arrives.');
+  }).catch(function () { mailPassStatus('Could not reach the server.', true); });
+}
+
+function testMailTransport() {
+  const to = prompt('Send a test message to which address?\n\n'
+    + 'Use an address you can check — a Gmail one is the useful test, since that '
+    + 'is where the borrower codes are going.');
+  if (!to) return;
+  mailPassStatus('Sending…');
+  window.avFetchJson(getScriptUrl() + '?action=notifyMailTest', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({to: to})
+  }, 30000).then(function (res) {
+    const d = (res && res.data) || {};
+    if (!d.ok) { mailPassStatus('Not sent: ' + (d.error || 'the mail server refused it.'), true); return; }
+    mailPassStatus('Accepted by the mail server. Check the inbox — and the spam folder, '
+      + 'because that is the part that matters.');
+  }).catch(function () { mailPassStatus('Could not reach the server.', true); });
+}
+
 function loadServerNotify() {
   return fetch('/api.php?action=notifySettings', { credentials: 'same-origin' })
     .then(function (r) { return r.json(); })
@@ -2811,6 +2889,7 @@ function loadServerNotify() {
 
       waKeyOnServer = !!d.whatsapp_key_present;
       updateWaStatus();
+      showMailTransport(d.mail_available, d.mail_detail);
 
       // Say plainly why WhatsApp is off, rather than letting somebody switch
       // it on and wonder why nothing arrives.

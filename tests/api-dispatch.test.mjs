@@ -34,7 +34,7 @@ test('an unhandled request is refused, not answered with ok',
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'notify-lib.php']) {
+                     'notify-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });
@@ -137,7 +137,7 @@ test('no answer from the API may be stored by anything in between',
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'notify-lib.php']) {
+                     'notify-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });
@@ -231,7 +231,7 @@ test('ping tells a stranger that the site is up and nothing else',
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'notify-lib.php']) {
+                     'notify-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });

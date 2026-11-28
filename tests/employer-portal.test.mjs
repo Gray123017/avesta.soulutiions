@@ -191,7 +191,7 @@ test('a company login reaches its own payroll and nothing else',
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'employer.php',
                      'login.php', 'logout.php', 'rates-lib.php', 'categories-lib.php',
                      'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
-                     'disbursement-lib.php', 'recovery-lib.php']) {
+                     'disbursement-lib.php', 'recovery-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });

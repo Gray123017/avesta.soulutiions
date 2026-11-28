@@ -26,7 +26,7 @@ test('a borrower sees their own loans, with the working, and nobody else\'s',
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'account.php',
                      'employer.php', 'login.php', 'logout.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'remittance-lib.php', 'disbursement-lib.php', 'recovery-lib.php']) {
+                     'remittance-lib.php', 'disbursement-lib.php', 'recovery-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });

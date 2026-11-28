@@ -34,7 +34,7 @@ async function portal(fn) {
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php']) {
+                     'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php', 'mailer-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });
