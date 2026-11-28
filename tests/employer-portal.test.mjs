@@ -188,7 +188,7 @@ test('a company login reaches its own payroll and nothing else',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-eportal-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'employer.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'employer.php',
                      'login.php', 'logout.php', 'rates-lib.php', 'categories-lib.php',
                      'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
                      'disbursement-lib.php', 'recovery-lib.php']) {

@@ -29,7 +29,7 @@ test('the digest is for admins, and the cron script is not on the web',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-watchdog-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php',
                      'watchdog-lib.php', 'watchdog-cron.php']) {
@@ -148,7 +148,7 @@ test('the cron script runs from the command line and says what it did',
   { skip: !hasPhp, timeout: 30000 }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'avesta-watchdog-cli-'));
   try {
-    for (const f of ['api.php', 'auth.php', 'rates-lib.php', 'categories-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'rates-lib.php', 'categories-lib.php',
                      'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
                      'disbursement-lib.php', 'notify-lib.php', 'watchdog-lib.php',
                      'watchdog-cron.php']) {

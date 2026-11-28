@@ -26,7 +26,7 @@ import { join } from 'node:path';
 const php = process.env.AVESTA_TEST_PHP || 'php';
 const hasPhp = spawnSync(php, ['-v']).status === 0;
 
-const LIBS = ['auth.php', 'rates-lib.php', 'employers-lib.php', 'remittance-lib.php'];
+const LIBS = ['auth.php', 'asset-version.php', 'rates-lib.php', 'employers-lib.php', 'remittance-lib.php'];
 
 function workspace(extra = '') {
   const dir = mkdtempSync(join(tmpdir(), 'avesta-stores-'));

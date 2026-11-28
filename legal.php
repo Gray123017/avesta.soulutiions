@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/asset-version.php';
 /**
  * AVESTA — legal.php
  * Privacy Policy, Terms & Conditions, Complaints Procedure.
@@ -84,7 +85,7 @@ footer{max-width:780px;margin:30px auto 0;padding:20px;border-top:1px solid var(
 footer a{color:var(--gold-deep)}
 @media(max-width:600px){h2{font-size:18px}main{padding:22px 16px 6px}}
 </style>
-<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/responsive.css') ?>">
 </head>
 <body>
 

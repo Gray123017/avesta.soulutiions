@@ -22,7 +22,7 @@ test('staff may read the schedule; only an admin may record what arrived',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-remit-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'remittance-lib.php']) {
       copyFileSync(f, join(dir, f));
@@ -158,7 +158,7 @@ test('splitting a held payment is admin work, and must balance',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-split-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'remittance-lib.php']) copyFileSync(f, join(dir, f));
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });

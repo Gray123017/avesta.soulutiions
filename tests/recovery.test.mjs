@@ -10,7 +10,7 @@ test('Recovery codes: verification, single use, expiry, limits, session invalida
   {skip:spawnSync(php,['-v']).status!==0},()=>{
   const dir=mkdtempSync(join(tmpdir(),'avesta-recovery-'));
   try {
-    for(const file of ['auth.php','recovery-lib.php'])copyFileSync(file,join(dir,file));
+    for(const file of ['auth.php', 'asset-version.php','recovery-lib.php'])copyFileSync(file,join(dir,file));
     writeFileSync(join(dir,'test.php'),`<?php
       $mail=[]; $deliver=true; $checks=0;
       function av_recovery_send(string $email,string $code,string $purpose):bool {

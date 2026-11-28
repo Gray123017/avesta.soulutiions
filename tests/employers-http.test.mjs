@@ -22,7 +22,7 @@ test('the register is staff work; the picker is all a borrower may see',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-employers-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php']) {
       copyFileSync(f, join(dir, f));
     }
