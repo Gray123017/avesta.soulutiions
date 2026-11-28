@@ -1,0 +1,78 @@
+/* Avesta — living backdrops for the page headers.
+ *
+ * Drawn with gradients and moved with one transform, so there is no image to
+ * download, no canvas, no JavaScript and no animation loop: the compositor
+ * does the whole thing on its own thread. The entire file is a couple of
+ * kilobytes and costs a visitor nothing on mobile data.
+ *
+ * Each pattern is a 46px tile and each drift moves by exactly 46px, so the
+ * loop closes on itself and never jumps. Change one number and you have to
+ * change the other — a test checks that they still agree.
+ *
+ * The one hard rule: a backdrop sits behind words that tell somebody what a
+ * loan costs. Every colour here is a low-alpha wash chosen to leave the text
+ * contrast where it was, and the accessibility audit is re-run after any
+ * change to this file.
+ */
+
+.hero[data-backdrop] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;              /* the drifting layer is deliberately oversized */
+}
+
+/* Everything the visitor reads stays above the pattern. */
+.hero[data-backdrop] > * { position: relative; z-index: 1; }
+
+.hero[data-backdrop]::before {
+  content: "";
+  position: absolute;
+  /* Oversized by one tile on every side so the drift never exposes an edge. */
+  top: -46px; right: -46px; bottom: -46px; left: -46px;
+  z-index: 0;
+  pointer-events: none;
+  animation: av-drift-up 44s linear infinite;
+  will-change: transform;
+}
+
+@keyframes av-drift-up   { from { transform: translate3d(0, 0, 0); }
+                           to   { transform: translate3d(0, -46px, 0); } }
+@keyframes av-drift-diag { from { transform: translate3d(0, 0, 0); }
+                           to   { transform: translate3d(-46px, -46px, 0); } }
+
+/* ── the front door: gold motes, barely there ───────────────────────────── */
+.hero[data-backdrop="home"]::before {
+  background-image: radial-gradient(circle at center, rgba(217,142,59,.20) 1.3px, transparent 1.4px);
+  background-size: 46px 46px;
+  animation-duration: 44s;
+}
+
+/* ── lending: motes rising, two layers at different speeds ──────────────── */
+.hero[data-backdrop="lending"]::before {
+  background-image:
+    radial-gradient(circle at center, rgba(217,142,59,.34) 1.5px, transparent 1.6px),
+    radial-gradient(circle at center, rgba(217,142,59,.14) 1px,   transparent 1.1px);
+  background-size: 46px 46px, 23px 23px;
+  animation-duration: 30s;
+}
+
+/* ── IT: a faint network, drifting across ───────────────────────────────── */
+.hero[data-backdrop="it"]::before {
+  background-image:
+    linear-gradient(rgba(91,155,255,.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91,155,255,.11) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(91,155,255,.40) 1.7px, transparent 1.8px);
+  background-size: 46px 46px;
+  animation-name: av-drift-diag;
+  animation-duration: 40s;
+}
+
+/* A phone has less room and a smaller battery; a tighter, calmer pattern. */
+@media (max-width: 680px) {
+  .hero[data-backdrop]::before { animation-duration: 60s; opacity: .8; }
+}
+
+/* Asked to hold still, it holds still — the texture stays, the drift stops. */
+@media (prefers-reduced-motion: reduce) {
+  .hero[data-backdrop]::before { animation: none; }
+}
