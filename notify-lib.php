@@ -25,6 +25,8 @@
  * avesta-secrets.php instead; without one, WhatsApp is simply off.
  */
 
+require_once __DIR__ . '/mailer-lib.php';
+
 require_once __DIR__ . '/auth.php';
 
 /** Where the settings live. Pass a path once, at the top of a test. */
@@ -142,31 +144,38 @@ function av_notify_secrets_path(?string $set = null): string
     return $path ?? (__DIR__ . '/avesta-secrets.php');
 }
 
-function av_notify_whatsapp_key_set(?string $key): array
+/**
+ * Writes one named secret into avesta-secrets.php, leaving every other secret
+ * in the file alone. An empty value removes the entry rather than storing a
+ * blank, so "cleared" and "set to nothing" cannot be confused.
+ *
+ * Shared by the TextMeBot key and the mailbox password. Two of these grew up
+ * separately once already — the panel wrote the WhatsApp key to one place while
+ * the server read it from another — so there is deliberately one writer here
+ * rather than a copy per secret.
+ */
+function av_secret_set(string $name, string $value): array
 {
-    $file = av_notify_secrets_path();
-    $key  = $key === null ? '' : trim($key);
-
-    if ($key !== '' && !av_notify_whatsapp_key_valid($key)) {
-        return ['ok' => false, 'error' => 'That does not look like a TextMeBot key: '
-                                        . '8 to 128 letters, digits, underscores or hyphens.'];
+    if (!preg_match('/^[a-z0-9_]{1,64}$/', $name)) {
+        return ['ok' => false, 'error' => 'That is not a valid secret name.'];
     }
+    $file = av_notify_secrets_path();
 
     $secrets = [];
     if (is_file($file)) {
         $existing = @include $file;
         if (is_array($existing)) $secrets = $existing;
     }
-    if ($key === '') unset($secrets['textmebot_key']);
-    else $secrets['textmebot_key'] = $key;
+    if ($value === '') unset($secrets[$name]);
+    else $secrets[$name] = $value;
 
     // Only scalars, and only sane names. A value that is not a string cannot
     // have come from here, and is not worth carrying forward into code.
     $clean = [];
-    foreach ($secrets as $name => $value) {
-        if (!is_string($name) || !preg_match('/^[a-z0-9_]{1,64}$/', $name)) continue;
-        if (!is_string($value) && !is_int($value) && !is_bool($value)) continue;
-        $clean[$name] = $value;
+    foreach ($secrets as $k => $v) {
+        if (!is_string($k) || !preg_match('/^[a-z0-9_]{1,64}$/', $k)) continue;
+        if (!is_string($v) && !is_int($v) && !is_bool($v)) continue;
+        $clean[$k] = $v;
     }
 
     $body = "<?php\n"
@@ -183,10 +192,40 @@ function av_notify_whatsapp_key_set(?string $key): array
         @unlink($tmp);
         return ['ok' => false, 'error' => 'Could not replace the secrets file on the server.'];
     }
+    return ['ok' => true, 'present' => $value !== ''];
+}
+
+function av_notify_whatsapp_key_set(?string $key): array
+{
+    $key = $key === null ? '' : trim($key);
+
+    if ($key !== '' && !av_notify_whatsapp_key_valid($key)) {
+        return ['ok' => false, 'error' => 'That does not look like a TextMeBot key: '
+                                        . '8 to 128 letters, digits, underscores or hyphens.'];
+    }
+
+    $wrote = av_secret_set('textmebot_key', $key);
+    if (empty($wrote['ok'])) return $wrote;
 
     // The reader memoises, and this request may go on to use it.
     av_notify_whatsapp_key(true);
     return ['ok' => true, 'present' => $key !== ''];
+}
+
+/**
+ * The password for info@avesta.solutions, used by mailer-lib.php to sign in to
+ * smtp.hostinger.com. Without it av_mail_available() is false and no sign-in
+ * code is sent — loudly, which is the point.
+ */
+function av_mail_password_set(?string $password): array
+{
+    $password = $password === null ? '' : trim($password);
+    // Deliberately no character rules: it is a mailbox password chosen in
+    // hPanel, and guessing its shape here would only reject valid ones.
+    if ($password !== '' && strlen($password) > 256) {
+        return ['ok' => false, 'error' => 'That password is too long to be real.'];
+    }
+    return av_secret_set('smtp_password', $password);
 }
 
 function av_notify_whatsapp_key(bool $forget = false): string {
@@ -330,11 +369,17 @@ function av_notify_send(array $message, ?callable $send = null): array {
 /** The real sender. Kept separate so the decision logic above can be tested. */
 function av_notify_deliver(string $channel, string $to, array $message): bool {
     if ($channel === 'email') {
-        $host = $_SERVER['HTTP_HOST'] ?? 'avesta.solutions';
-        $from = 'no-reply@' . preg_replace('/^www\./', '', $host);
-        return @mail($to, $message['subject'], $message['text'],
-            "From: Avesta Enterprises <" . $from . ">\r\n"
-            . "Content-Type: text/plain; charset=UTF-8\r\n");
+        /* This used to send as no-reply@<whatever Host: said>, via mail(). Two
+         * problems: no-reply@avesta.solutions is not a mailbox, so bounces went
+         * nowhere and the domain's DMARC record had nothing to align against;
+         * and taking the domain from the Host header let a request decide who
+         * the mail came from. mailer-lib.php sends as the one real mailbox over
+         * an authenticated connection. */
+        $sent = av_mail_send($to, (string) $message['subject'], (string) $message['text']);
+        if (empty($sent['ok'])) {
+            error_log('Avesta notification mail failed: ' . (string) ($sent['error'] ?? 'unknown'));
+        }
+        return !empty($sent['ok']);
     }
 
     if ($channel === 'whatsapp') {

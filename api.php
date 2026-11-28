@@ -669,11 +669,14 @@ if ($action === 'ping') {
         'ts'      => date('c'),
     ];
     if (av_at_least('staff')) {
+        // Needed for the mail check below; notify-lib.php is not loaded this
+        // early, and ping must not depend on the order of anything else.
+        require_once __DIR__ . '/mailer-lib.php';
         $out += [
             'records' => count(loadRecords()),
             'php'     => phpversion(),
             'docs_writable'    => is_writable(DOCS_DIR),
-            'recovery_mail_available' => function_exists('mail'),
+            'recovery_mail_available' => av_mail_available(),
             'post_max_size'    => ini_get('post_max_size'),
             'upload_max_filesize' => ini_get('upload_max_filesize'),
             'memory_limit'     => ini_get('memory_limit'),
@@ -2237,15 +2240,68 @@ if ($action === 'notifyKeySave') {
     jsonOut(['ok' => true, 'whatsapp_key_present' => $result['present']]);
 }
 
+if ($action === 'notifyMailSave') {
+    /* The mailbox password for info@avesta.solutions. Same rules as the
+     * TextMeBot key above and for the same reasons: super_admin only, stored
+     * in avesta-secrets.php, never sent back to any browser. */
+    requireRole(['super_admin']);
+    require_once __DIR__ . '/notify-lib.php';
+    require_once __DIR__ . '/mailer-lib.php';
+
+    $b = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($b)) $b = [];
+    $clear    = !empty($b['clear']);
+    $password = $clear ? '' : (string) ($b['password'] ?? '');
+
+    if (!$clear && trim($password) === '') {
+        jsonOut(['ok' => false, 'error' => 'Enter the mailbox password, or use Clear to remove it.'], 400);
+    }
+
+    $result = av_mail_password_set($password);
+    if (empty($result['ok'])) {
+        jsonOut(['ok' => false, 'error' => $result['error'] ?? 'Could not save the password.'], 400);
+    }
+    av_audit('notify.mail_password_' . ($result['present'] ? 'set' : 'cleared'), 'smtp');
+    jsonOut(['ok' => true, 'mail_available' => av_mail_available(), 'detail' => av_mail_describe()]);
+}
+
+if ($action === 'notifyMailTest') {
+    /* Sends one real message, because the only honest test of email is email.
+     * The address is the admin's own choice so a test cannot be used to post
+     * mail at a stranger. */
+    requireRole(['super_admin']);
+    require_once __DIR__ . '/mailer-lib.php';
+
+    $b = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($b)) $b = [];
+    $to = trim((string) ($b['to'] ?? ''));
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        jsonOut(['ok' => false, 'error' => 'Enter the address to send the test to.'], 400);
+    }
+
+    $sent = av_mail_send($to, 'Avesta test message',
+        "This is a test from the Avesta portal.\n\n"
+        . "If it reached your inbox and not your spam folder, the sign-in codes\n"
+        . "and application alerts will arrive the same way.\n");
+    av_audit($sent['ok'] ? 'notify.mail_test_sent' : 'notify.mail_test_failed', 'smtp');
+    jsonOut(['ok' => !empty($sent['ok']), 'error' => (string) ($sent['error'] ?? '')]);
+}
+
 if ($action === 'notifySettings' || $action === 'notifySave' || $action === 'notifyTest') {
     requireRole(['admin']);
     require_once __DIR__ . '/notify-lib.php';
 
     if ($action === 'notifySettings') {
+        require_once __DIR__ . '/mailer-lib.php';
         jsonOut(['ok' => true, 'settings' => av_notify_load(),
                  // So the page can say plainly why WhatsApp is off, rather
                  // than letting somebody switch it on and wonder.
-                 'whatsapp_key_present' => av_notify_whatsapp_key() !== '']);
+                 'whatsapp_key_present' => av_notify_whatsapp_key() !== '',
+                 // Same for email. This reports whether a mailbox password is
+                 // configured, not whether PHP happens to have a mail()
+                 // function — which it always does, and which told us nothing.
+                 'mail_available' => av_mail_available(),
+                 'mail_detail'    => av_mail_describe()]);
     }
 
     $b = json_decode((string) file_get_contents('php://input'), true) ?: $_POST;

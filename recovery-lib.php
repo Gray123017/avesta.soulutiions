@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/mailer-lib.php';
 
 const AV_EMAIL_RECOVERY_FILE = __DIR__ . '/email_recovery.json';
 const AV_RECOVERY_TTL = 600;
@@ -31,19 +32,31 @@ function av_recovery_save(array $state): bool {
     return avStoreWrite(AV_EMAIL_RECOVERY_FILE, $state);
 }
 
-/** Transport is server-side only. A true result means accepted for sending, not delivered. */
+/** Transport is server-side only. A true result means the mail server accepted
+ *  it for delivery — which is the strongest thing any sender can honestly say.
+ *
+ *  This used to call mail(). The domain publishes SPF for Hostinger's mail
+ *  servers, but mail() sets From: as a header and leaves the envelope sender as
+ *  the hosting account, so the two never aligned and there is no DKIM to fall
+ *  back on. Codes went to Gmail unauthenticated and were junked, and a borrower
+ *  who never receives a code cannot sign in at all. mailer-lib.php signs in as
+ *  the real mailbox instead; see the note at the top of it. */
 if (!function_exists('av_recovery_send')) {
     function av_recovery_send(string $email, string $code, string $purpose): bool {
-        $from = getenv('AVESTA_RECOVERY_FROM') ?: 'info@avesta.solutions';
-        if (!filter_var($from, FILTER_VALIDATE_EMAIL) || !function_exists('mail')) return false;
         $subject = $purpose === 'verify' ? 'Verify your Avesta recovery email' : 'Your Avesta password reset code';
         $body = "Your Avesta code is: " . $code . "\n\n"
             . "It expires in 10 minutes and can be used once. Do not share this code.\n"
             . "Enter it only at https://avesta.solutions/recovery.php\n\n"
             . "If you did not request this, ignore this email. Your password has not changed.\n"
             . "For help, contact Avesta on 0769 974 200.\n";
-        return @mail($email, $subject, $body, "From: Avesta Enterprises <" . $from . ">\r\n"
-            . "Content-Type: text/plain; charset=UTF-8\r\n");
+        $sent = av_mail_send($email, $subject, $body);
+        // The reason is worth keeping: av_recovery_issue() only sees a bool, and
+        // "no mailbox password configured" is a different problem from "Gmail
+        // refused us", but both arrive here as false.
+        if (empty($sent['ok'])) {
+            error_log('Avesta recovery mail failed: ' . (string) ($sent['error'] ?? 'unknown'));
+        }
+        return !empty($sent['ok']);
     }
 }
 

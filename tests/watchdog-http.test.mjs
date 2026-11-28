@@ -31,7 +31,7 @@ test('the digest is for admins, and the cron script is not on the web',
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
-                     'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php',
+                     'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php', 'mailer-lib.php',
                      'watchdog-lib.php', 'watchdog-cron.php']) {
       copyFileSync(f, join(dir, f));
     }
@@ -150,7 +150,7 @@ test('the cron script runs from the command line and says what it did',
   try {
     for (const f of ['api.php', 'auth.php', 'asset-version.php', 'rates-lib.php', 'categories-lib.php',
                      'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
-                     'disbursement-lib.php', 'notify-lib.php', 'watchdog-lib.php',
+                     'disbursement-lib.php', 'notify-lib.php', 'mailer-lib.php', 'watchdog-lib.php',
                      'watchdog-cron.php']) {
       copyFileSync(f, join(dir, f));
     }

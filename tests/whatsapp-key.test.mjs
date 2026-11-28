@@ -31,7 +31,7 @@ import {createServer} from 'node:net';
 const php = process.env.AVESTA_TEST_PHP || 'php';
 const hasPhp = spawnSync(php, ['-v']).status === 0;
 
-const LIBS = ['auth.php', 'asset-version.php', 'notify-lib.php', 'rates-lib.php',
+const LIBS = ['auth.php', 'asset-version.php', 'notify-lib.php', 'mailer-lib.php', 'rates-lib.php',
               'backup-lib.php', 'categories-lib.php', 'employers-lib.php',
               'remittance-lib.php', 'disbursement-lib.php', 'api.php', 'watchdog-lib.php'];
 
@@ -219,4 +219,84 @@ test('the TextMeBot link does not build a URL out of a browser-held secret', () 
                          admin.indexOf('function openWaFallback') + 700);
   assert.doesNotMatch(fn, /localStorage/,
     'the link used to read the key out of localStorage, which is where it no longer lives');
+});
+
+/* ─────────────────── the mailbox password, same rules ───────────────────
+ *
+ * Added 28 November 2026 with mailer-lib.php. It lives in the same file, is
+ * written by the same single writer (av_secret_set) and carries the same
+ * guarantee: the portal may set it and may learn whether one is set, and may
+ * never read it back. Kept in this file because the harness and the promises
+ * are identical — a second copy of both is how the WhatsApp key ended up with
+ * two homes that could not see each other.
+ */
+
+const MAILPASS = 'hostinger-mailbox-pw-9931';
+
+test('THE ONE THAT MATTERS: the mailbox password is never sent back to a browser',
+  {skip: !hasPhp, timeout: 30000}, async () => {
+  await portal('super_admin', async ({call}) => {
+    const saved = await call('notifyMailSave', {password: MAILPASS});
+    assert.equal(saved.status, 200, saved.text);
+    assert.doesNotMatch(saved.text, new RegExp(MAILPASS), 'the save echoed the password back');
+    assert.match(saved.text, /"mail_available":true/, 'it should confirm email can now be sent');
+
+    const settings = await call('notifySettings');
+    assert.doesNotMatch(settings.text, new RegExp(MAILPASS),
+      'notifySettings hands the mailbox password to anybody with a session and a console');
+    assert.equal(settings.json.mail_available, true);
+  });
+});
+
+test('the mailbox password and the TextMeBot key do not overwrite each other',
+  {skip: !hasPhp, timeout: 30000}, async () => {
+  await portal('super_admin', async ({call, dir, serverSeesKey}) => {
+    await call('notifyKeySave', {key: KEY});
+    await call('notifyMailSave', {password: MAILPASS});
+
+    const body = readFileSync(join(dir, 'avesta-secrets.php'), 'utf8');
+    assert.match(body, new RegExp(KEY), 'saving the mailbox password destroyed the WhatsApp key');
+    assert.match(body, new RegExp(MAILPASS));
+    assert.equal(serverSeesKey(), KEY, 'and notify-lib must still read the key');
+  });
+});
+
+test('an ordinary admin cannot set the mailbox password',
+  {skip: !hasPhp, timeout: 30000}, async () => {
+  await portal('admin', async ({call, dir}) => {
+    const res = await call('notifyMailSave', {password: MAILPASS});
+    assert.equal(res.status, 403, 'the mailbox password belongs to the owner of the business');
+    const file = join(dir, 'avesta-secrets.php');
+    if (existsSync(file)) {
+      assert.doesNotMatch(readFileSync(file, 'utf8'), new RegExp(MAILPASS),
+        'it was written anyway');
+    }
+  });
+});
+
+test('clearing the mailbox password stops email rather than half-sending it',
+  {skip: !hasPhp, timeout: 30000}, async () => {
+  await portal('super_admin', async ({call}) => {
+    await call('notifyMailSave', {password: MAILPASS});
+    const cleared = await call('notifyMailSave', {clear: true});
+    assert.equal(cleared.status, 200, cleared.text);
+    assert.match(cleared.text, /"mail_available":false/);
+
+    // And an empty field must not silently clear it, same as the key.
+    await call('notifyMailSave', {password: MAILPASS});
+    const blank = await call('notifyMailSave', {password: '   '});
+    assert.notEqual(blank.status, 200, 'a blank input wiped the configured password');
+    const still = await call('notifySettings');
+    assert.equal(still.json.mail_available, true, 'and it is still set');
+  });
+});
+
+test('the test-send refuses anything that is not an email address',
+  {skip: !hasPhp, timeout: 30000}, async () => {
+  await portal('super_admin', async ({call}) => {
+    for (const bad of ['', 'not-an-address', 'a@b', 'x@y.com, z@w.com']) {
+      const res = await call('notifyMailTest', {to: bad});
+      assert.equal(res.status, 400, 'accepted "' + bad + '" as a destination');
+    }
+  });
 });
