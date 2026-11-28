@@ -26,6 +26,13 @@ header('Referrer-Policy: same-origin');
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<?php /* The two faces the first screen needs, fetched alongside the stylesheet
+     rather than after the browser has parsed it. The italic is left out on
+     purpose: it is one line of the heading, and swapping it in a moment late
+     costs less than holding up the rest. crossorigin is required on a font
+     preload even from our own server, or it is fetched twice. */ ?>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/avesta/fonts/manrope.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/avesta/fonts/fraunces-normal.woff2">
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/styles.css') ?>">
 <script type="module" src="<?= av_asset('/assets/avesta/app.js') ?>"></script>
 <script type="module" src="<?= av_asset('/assets/avesta/assistant.js') ?>"></script>
@@ -39,6 +46,11 @@ header('Referrer-Policy: same-origin');
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/backdrop.css') ?>">
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/showcase.css') ?>">
 <script src="<?= av_asset('/assets/avesta/showcase.js') ?>" defer></script>
+<!-- Artwork band: the two brand pictures, the monogram panel and the stat
+     strip. Decoration — remove these two tags and the sections fall back to
+     a plain image beside plain text. -->
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/artwork.css') ?>">
+<script src="<?= av_asset('/assets/avesta/artwork.js') ?>" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

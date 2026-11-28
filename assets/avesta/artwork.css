@@ -1,0 +1,210 @@
+/* Avesta — the artwork band, the monogram panel and the numeric stat strip.
+ *
+ * The site had no photography at all. These two pieces carry the brand without
+ * stock imagery: a sculptural A in the house green and gold, and a circuit
+ * study in the same palette. Both are served as WebP with a JPEG fallback at
+ * three widths, so a phone fetches about 13 kB and a desktop about 40 kB.
+ *
+ * Presentation only. Remove the stylesheet and the script and every section
+ * below degrades to a plain image beside plain text — nothing here carries
+ * meaning that is not also in the markup.
+ *
+ * The motion rules are the same ones the rest of the site follows: nothing
+ * moves for a visitor who asked for stillness, and the pointer tilt is gated
+ * on a fine pointer so a thumb on a phone never triggers it.
+ */
+
+/* ── the image, with the offset accent block behind it ─────────────────── */
+
+.art-band {
+  display: grid;
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 860px) {
+  .art-band { grid-template-columns: 1.05fr 1fr; }
+  .art-band.flip .art-figure { order: 2; }
+}
+
+.art-figure { margin: 0; position: relative; }
+
+/* The accent block sits a little down and left of the picture, the way the
+   printed material does it. Purely decorative, so it is hidden from
+   assistive technology by being a pseudo-element. */
+.art-figure::before {
+  content: "";
+  position: absolute;
+  inset: auto auto -14px -14px;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius);
+  background: var(--gold);
+  z-index: 0;
+}
+.art-figure.blue::before { background: var(--blue); }
+
+.art-tilt {
+  position: relative;
+  z-index: 1;
+  transform: perspective(900px) rotateX(0) rotateY(0);
+  transition: transform .25s ease-out;
+  will-change: transform;
+}
+
+.art-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 22px 60px #163e3326;
+}
+
+/* A quiet lift when the picture itself is a link or is hovered. */
+.art-zoom { overflow: hidden; border-radius: var(--radius); }
+.art-zoom img { transition: transform .5s cubic-bezier(.22,1,.36,1); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .art-zoom:hover img { transform: scale(1.04); }
+}
+
+/* ── the figure that floats beside the picture ─────────────────────────── */
+
+/* Inside the picture on a phone, where the page gutter is narrow and a
+   negative offset would hang the badge off the edge of the screen; stepping
+   outside the frame only once there is room for it to do so. */
+.art-badge {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  top: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 13px 18px;
+  box-shadow: 0 16px 40px #163e3322;
+  min-width: 148px;
+}
+.art-badge span { display: block; font-size: .78rem; color: var(--muted); }
+.art-badge strong {
+  display: block;
+  margin-top: 2px;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.95rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  color: var(--green);
+}
+@media (min-width: 720px) { .art-badge { right: -22px; top: 28px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .art-badge { animation: av-art-float 5s ease-in-out infinite; }
+}
+@keyframes av-art-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+
+/* ── the monogram panel: the brand set as a printed card ───────────────── */
+
+.art-monogram {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--green);
+  color: #fff;
+  padding: clamp(24px, 4vw, 40px);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+}
+.art-monogram .rule {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .73rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #ffffffcc;
+  border-bottom: 1px solid #ffffff40;
+  padding-bottom: 12px;
+}
+.art-monogram .say {
+  position: relative;
+  z-index: 1;
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -.03em;
+  color: #fff;
+}
+.art-monogram .say em { font-style: normal; color: var(--goldlight); }
+.art-monogram .foot {
+  position: relative;
+  z-index: 1;
+  font-size: .73rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #ffffffb8;
+}
+/* The oversized letter is decoration behind the words; aria-hidden in the
+   markup, and kept faint enough that the text above it still clears AA. */
+.art-monogram .mark {
+  position: absolute;
+  right: -.06em;
+  bottom: -.28em;
+  z-index: 0;
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(170px, 26vw, 260px);
+  line-height: 1;
+  font-weight: 500;
+  color: #ffffff14;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── numbers worth stating plainly ─────────────────────────────────────── */
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 34px);
+}
+@media (min-width: 760px) { .stat-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.stat-strip div { min-width: 0; }
+.stat-strip strong {
+  display: block;
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  color: var(--green);
+}
+.stat-strip span { display: block; margin-top: 5px; font-size: .88rem; color: var(--muted); }
+
+/* A stat whose value is a word rather than a figure. At the size the numbers
+   want, "Mon–Sat" breaks across two lines and reads as two stats. */
+.stat-strip strong.word {
+  font-size: clamp(1.25rem, 2.1vw, 1.55rem);
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+/* ── the service cards gain their number and a lift ────────────────────── */
+
+.card-grid .card { position: relative; transition: transform .22s ease, box-shadow .22s ease; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card-grid .card:hover { transform: translateY(-4px); box-shadow: 0 18px 44px #163e3318; }
+}
+.card .card-index {
+  font-family: Fraunces, Georgia, serif;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--golddeep);
+}
