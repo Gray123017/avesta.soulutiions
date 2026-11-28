@@ -9,7 +9,11 @@ $me = av_user();
 // should not wait for another mobile-network round trip after the HTML loads.
 $public_data = json_encode([
     'services' => json_decode(file_get_contents(__DIR__ . '/assets/avesta/services.json'), true),
-    'help' => json_decode(file_get_contents(__DIR__ . '/assets/avesta/help.json'), true)
+    'help' => json_decode(file_get_contents(__DIR__ . '/assets/avesta/help.json'), true),
+    // Inlined here rather than fetched: start() reads this block and returns
+    // before it ever reaches the static-JSON fallback, so anything added only
+    // to that fallback silently never appears.
+    'updates' => json_decode(@file_get_contents(__DIR__ . '/assets/avesta/updates.json') ?: 'null', true)
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 header('Content-Type: text/html; charset=utf-8');
@@ -55,6 +59,21 @@ header('Referrer-Policy: same-origin');
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="header">
+ <?php /* Contact above the fold on every page, the way the Zambian banks do
+      it. These details were previously only on the contact page, which is a
+      click away from somebody standing in a queue with a question. Real
+      numbers only — nothing here is a claim. */ ?>
+ <div class="utility-bar">
+  <div class="utility-inner">
+   <span class="utility-hours">Mon–Sat, 08:00–17:00 · Kansenshi, Ndola</span>
+   <span class="utility-links">
+    <a href="tel:+260971013108"><span aria-hidden="true">📞</span> 0971 013 108 <span class="utility-for">Lending</span></a>
+    <a href="tel:+260769974200"><span aria-hidden="true">📞</span> 0769 974 200 <span class="utility-for">IT</span></a>
+    <a href="https://wa.me/260971013108" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💬</span> WhatsApp</a>
+    <a href="mailto:info@avesta.solutions"><span aria-hidden="true">✉️</span> info@avesta.solutions</a>
+   </span>
+  </div>
+ </div>
  <div class="header-inner">
   <a class="brand" href="/" aria-label="Avesta Enterprises home"><span class="brand-mark">AE<span></span></span><span>AVESTA<small>ENTERPRISES</small></span></a>
   <nav class="desktop-nav" aria-label="Main navigation">
