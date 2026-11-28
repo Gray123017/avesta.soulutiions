@@ -1560,6 +1560,10 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 </style>
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/responsive.css') ?>">
 <script src="<?= av_asset('/assets/avesta/device-layout.js') ?>" defer></script>
+<!-- The guided walkthrough. It reads this form and points at it; it never
+     writes to it. Remove these two tags to take it out entirely. -->
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/tour.css') ?>">
+<script src="<?= av_asset('/assets/avesta/tour.js') ?>" defer></script>
 </head>
 <body>
 
