@@ -107,12 +107,95 @@ function av_notify_save(array $in): bool {
 }
 
 /** The WhatsApp key, from the secrets file. Never from the settings store. */
-function av_notify_whatsapp_key(): string {
+/**
+ * Set, or clear, the TextMeBot API key.
+ *
+ * The key used to live in one browser's localStorage, which meant it existed
+ * on a single device and the server — the only thing that actually sends the
+ * alerts — could never see it. It belongs here, in avesta-secrets.php: that
+ * file is in .gitignore and is deliberately absent from av_backup_allowlist(),
+ * so it can reach neither the public repository nor a downloaded backup.
+ *
+ * The file is PHP, and this writes it, so the rules are strict:
+ *
+ *   Nothing from the request is ever interpolated into code. The contents are
+ *   built with var_export over values this function has already validated,
+ *   and the key must match a narrow character set with a sane length.
+ *
+ *   Anything else already in the file is preserved. Somebody's SMTP password
+ *   living alongside it must survive a change of WhatsApp key.
+ *
+ *   The write is atomic — temp file, then rename — so a failure halfway
+ *   through cannot leave a half-written PHP file that fatals on every page.
+ */
+function av_notify_whatsapp_key_valid(string $key): bool
+{
+    // TextMeBot keys are short alphanumeric tokens. Underscores and hyphens
+    // are allowed because providers change their minds; nothing else is.
+    return (bool) preg_match('/^[A-Za-z0-9_-]{8,128}$/', $key);
+}
+
+function av_notify_secrets_path(?string $set = null): string
+{
+    static $path = null;
+    if ($set !== null) $path = $set;
+    return $path ?? (__DIR__ . '/avesta-secrets.php');
+}
+
+function av_notify_whatsapp_key_set(?string $key): array
+{
+    $file = av_notify_secrets_path();
+    $key  = $key === null ? '' : trim($key);
+
+    if ($key !== '' && !av_notify_whatsapp_key_valid($key)) {
+        return ['ok' => false, 'error' => 'That does not look like a TextMeBot key: '
+                                        . '8 to 128 letters, digits, underscores or hyphens.'];
+    }
+
+    $secrets = [];
+    if (is_file($file)) {
+        $existing = @include $file;
+        if (is_array($existing)) $secrets = $existing;
+    }
+    if ($key === '') unset($secrets['textmebot_key']);
+    else $secrets['textmebot_key'] = $key;
+
+    // Only scalars, and only sane names. A value that is not a string cannot
+    // have come from here, and is not worth carrying forward into code.
+    $clean = [];
+    foreach ($secrets as $name => $value) {
+        if (!is_string($name) || !preg_match('/^[a-z0-9_]{1,64}$/', $name)) continue;
+        if (!is_string($value) && !is_int($value) && !is_bool($value)) continue;
+        $clean[$name] = $value;
+    }
+
+    $body = "<?php\n"
+          . "/* Avesta secrets. Written by the portal; never committed, never backed up.\n"
+          . "   In .gitignore and deliberately absent from av_backup_allowlist(). */\n"
+          . "return " . var_export($clean, true) . ";\n";
+
+    $tmp = $file . '.' . bin2hex(random_bytes(4)) . '.tmp';
+    if (@file_put_contents($tmp, $body, LOCK_EX) === false) {
+        return ['ok' => false, 'error' => 'Could not write the secrets file on the server.'];
+    }
+    @chmod($tmp, 0600);
+    if (!@rename($tmp, $file)) {
+        @unlink($tmp);
+        return ['ok' => false, 'error' => 'Could not replace the secrets file on the server.'];
+    }
+
+    // The reader memoises, and this request may go on to use it.
+    av_notify_whatsapp_key(true);
+    return ['ok' => true, 'present' => $key !== ''];
+}
+
+function av_notify_whatsapp_key(bool $forget = false): string {
     static $key = null;
+    if ($forget) $key = null;
     if ($key !== null) return $key;
 
     $key = '';
-    $file = __DIR__ . '/avesta-secrets.php';
+    $file = av_notify_secrets_path();
     if (is_file($file)) {
         $secrets = @include $file;
         if (is_array($secrets)) $key = trim((string) ($secrets['textmebot_key'] ?? ''));

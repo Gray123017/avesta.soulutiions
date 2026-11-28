@@ -2156,6 +2156,87 @@ if ($action === 'watchdogDigest') {
              'message'    => av_watchdog_message($scan['findings'], $scan['window'])]);
 }
 
+if ($action === 'notifyWhatsApp') {
+    /* Send a WhatsApp message using the server's key.
+     *
+     * The portal used to call api.textmebot.com straight from the browser
+     * with the key read out of localStorage. That is why the key was in the
+     * browser at all. With the key where it belongs, the send has to happen
+     * here — which also means every message is audited, rather than leaving
+     * from a tab with nothing recorded.
+     *
+     * An admin could always send these; the change is that the key no longer
+     * has to sit on their device for them to do it. */
+    requireRole(['admin']);
+    require_once __DIR__ . '/notify-lib.php';
+
+    $b = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($b)) $b = [];
+
+    $to   = preg_replace('/[^0-9]/', '', (string) ($b['to'] ?? ''));
+    $text = trim((string) ($b['text'] ?? ''));
+
+    if (strlen($to) < 9 || strlen($to) > 15) {
+        jsonOut(['ok' => false, 'error' => 'That phone number does not look right.'], 400);
+    }
+    if ($text === '' || mb_strlen($text) > 1200) {
+        jsonOut(['ok' => false, 'error' => 'The message is empty or too long.'], 400);
+    }
+    if (av_notify_whatsapp_key() === '') {
+        jsonOut(['ok' => false, 'error' => 'No TextMeBot key is saved on the server yet.',
+                 'needs_key' => true], 409);
+    }
+
+    $sent = av_notify_deliver('whatsapp', $to, ['subject' => '', 'text' => $text]);
+    av_audit('notify.whatsapp_' . ($sent ? 'sent' : 'failed'), $to);
+    jsonOut(['ok' => $sent,
+             'error' => $sent ? null : 'TextMeBot did not accept the message.'], $sent ? 200 : 502);
+}
+
+if ($action === 'notifyManageNumbers') {
+    /* TextMeBot's "add phone" page wants the key in the query string. The
+     * key is no longer in the browser, so the server builds that URL and
+     * redirects. It still ends up in the address bar of the tab that opens —
+     * that is TextMeBot's design and there is no way round it — but it is no
+     * longer in our page source, our storage, or anybody's device. */
+    requireRole(['super_admin']);
+    require_once __DIR__ . '/notify-lib.php';
+    $key = av_notify_whatsapp_key();
+    header('Location: https://api.textmebot.com/addphone.php'
+           . ($key === '' ? '' : '?apikey=' . rawurlencode($key)), true, 302);
+    exit;
+}
+
+if ($action === 'notifyKeySave') {
+    /* The TextMeBot key. super_admin only: requireRole lets super_admin
+     * through any list, so naming it alone is what keeps an ordinary admin
+     * out. A secret belongs to the account that owns the business.
+     *
+     * The key is never sent back — not here, not by notifySettings. The
+     * portal only ever learns whether one is set. */
+    requireRole(['super_admin']);
+    require_once __DIR__ . '/notify-lib.php';
+
+    $b = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($b)) $b = [];
+    $clear = !empty($b['clear']);
+    $key = $clear ? '' : trim((string) ($b['key'] ?? ''));
+
+    // An empty field is not a request to switch WhatsApp off. Clearing has to
+    // be asked for, or a UI that posts a blank input disables every alert
+    // without anybody meaning it.
+    if (!$clear && $key === '') {
+        jsonOut(['ok' => false, 'error' => 'Enter a key, or use Clear to remove the one saved.'], 400);
+    }
+
+    $result = av_notify_whatsapp_key_set($key);
+    if (empty($result['ok'])) {
+        jsonOut(['ok' => false, 'error' => $result['error'] ?? 'Could not save the key.'], 400);
+    }
+    av_audit('notify.key_' . ($result['present'] ? 'set' : 'cleared'), 'whatsapp');
+    jsonOut(['ok' => true, 'whatsapp_key_present' => $result['present']]);
+}
+
 if ($action === 'notifySettings' || $action === 'notifySave' || $action === 'notifyTest') {
     requireRole(['admin']);
     require_once __DIR__ . '/notify-lib.php';
