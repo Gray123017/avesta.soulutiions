@@ -22,16 +22,23 @@ const home = readFileSync('index.php', 'utf8');
 for (const asset of ['app.js', 'styles.css', 'services.json', 'help.json']) {
   assert(home.includes(asset), `Homepage no longer references ${asset}`);
 }
+/* This used to assert that four specific download URLs appeared in
+ * downloads.php, and signed off with a note that the binaries "require
+ * separate live verification". Nobody ever did that verification, and three
+ * of the four files had never been committed — so the guard was holding the
+ * page's dead links in place rather than catching them. Every one of those
+ * three returned 404 to a visitor.
+ *
+ * The invariant that actually matters is the other way round: a link offered
+ * for download must be a file that exists. */
 const downloads = readFileSync('downloads.php', 'utf8');
-for (const link of [
-  '/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip',
-  '/downloads/g-it/G-IT-Setup-x64.exe',
-  '/downloads/moneytrack/Avesta-MoneyTrack-1.2.0-Windows-x64-Setup.exe',
-  '/sentinel/downloads/Avanto-Sentinel-Windows-x64.rar'
-]) {
-  assert(downloads.includes(link), `Software catalogue link missing: ${link}`);
+const offered = [...downloads.matchAll(/'primary_href'\s*=>\s*'([^']+)'/g)].map(m => m[1])
+  .filter(href => /\.(exe|zip|rar|msi|deb|apk|pdf|txt)$/i.test(href));
+assert(offered.length > 0, 'downloads.php offers no files at all');
+for (const href of offered) {
+  assert(existsSync('.' + href), `downloads.php offers ${href}, which is not in this repository`);
 }
-console.log('Avesta static release guard passed. Hostinger binaries require separate live verification.');
+console.log(`Avesta static release guard passed. ${offered.length} download(s), every file present.`);
 
 const preview = readFileSync('preview/depth.html', 'utf8');
 for (const ref of ['optional-depth.css', 'optional-depth.js', 'data-avesta-depth="enabled"']) {

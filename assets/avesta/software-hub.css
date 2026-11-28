@@ -111,3 +111,57 @@ body.software-hub-page{margin:0;background:var(--hub-bg);color:var(--hub-ink);fo
 @media(max-width:1000px){.hub-product-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.hub-product-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.hub-product-tab{min-width:0;width:100%;min-height:60px}.hub-tab-copy strong{white-space:normal}}
 @media(max-width:420px){.hub-product-tabs{grid-template-columns:1fr}.hub-status-grid{grid-template-columns:1fr}}
+
+/* ── status, and what a card is honestly offering ───────────────────────── */
+/* Added 28 Nov 2026, when four of six products had a Download button
+   pointing at a file that had never been committed. The chip says which
+   state a product is really in, so nobody clicks into a 404. */
+.hub-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: 8px; padding: 4px 11px;
+  border-radius: 999px; font-size: .74rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.hub-status::before {
+  content: ""; width: 7px; height: 7px; border-radius: 999px;
+  background: currentColor; flex: none;
+}
+.hub-status[data-tone="ok"]   { color: #1E7A4F; }
+.hub-status[data-tone="ask"]  { color: #A9661F; }
+.hub-status[data-tone="soon"] { color: #5A6B78; }
+
+/* The pulse marks the one you can actually take away right now. */
+@media (prefers-reduced-motion: no-preference) {
+  .hub-status[data-tone="ok"]::before { animation: hub-live 2.4s ease-in-out infinite; }
+}
+@keyframes hub-live {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: .45; transform: scale(.8); }
+}
+
+.hub-note {
+  margin: 10px 0 0; font-size: .82rem; line-height: 1.45;
+  color: var(--muted, #5c7068);
+}
+
+/* ── the panel arriving ─────────────────────────────────────────────────── */
+/* Only ever an entrance: it runs once when a tab is opened, so nothing on
+   this page is permanently in motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .hub-product-panel:not([hidden]) { animation: hub-enter 420ms cubic-bezier(.22,.61,.36,1) both; }
+  .hub-product-panel:not([hidden]) .hub-feature-list li {
+    animation: hub-enter 380ms cubic-bezier(.22,.61,.36,1) both;
+  }
+  .hub-product-panel:not([hidden]) .hub-feature-list li:nth-child(1) { animation-delay: 90ms; }
+  .hub-product-panel:not([hidden]) .hub-feature-list li:nth-child(2) { animation-delay: 160ms; }
+  .hub-product-panel:not([hidden]) .hub-feature-list li:nth-child(3) { animation-delay: 230ms; }
+  .hub-tab:hover .hub-product-icon, .hub-product-panel:not([hidden]) .hub-product-icon {
+    transition: transform 320ms cubic-bezier(.22,.61,.36,1);
+  }
+  .hub-tab:hover .hub-product-icon { transform: translateY(-2px) rotate(-3deg); }
+}
+@keyframes hub-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}

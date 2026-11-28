@@ -55,10 +55,10 @@ test('THE ONE THAT MATTERS: every drift closes its own loop', () => {
 });
 
 test('the words stay above the pattern', () => {
-  assert.match(bare, /\.hero\[data-backdrop\]\s*>\s*\*\s*\{[^}]*z-index:\s*1/,
-    'the hero content must be lifted above the backdrop layer');
-  assert.match(bare, /\.hero\[data-backdrop\]::before\s*\{[^}]*z-index:\s*0/);
-  assert.match(bare, /\.hero\[data-backdrop\]::before\s*\{[^}]*pointer-events:\s*none/,
+  assert.match(bare, /\[data-backdrop\]\s*>\s*\*\s*\{[^}]*z-index:\s*1/,
+    'the header content must be lifted above the backdrop layer');
+  assert.match(bare, /\[data-backdrop\]::before\s*\{[^}]*z-index:\s*0/);
+  assert.match(bare, /\[data-backdrop\]::before\s*\{[^}]*pointer-events:\s*none/,
     'the pattern must not swallow taps meant for the page');
 });
 
@@ -84,11 +84,12 @@ test('the colours are washes, not blocks', () => {
 });
 
 test('each of the three headers is wired to a backdrop, and no other', () => {
-  const used = [...app.matchAll(/data-backdrop="([a-z]+)"/g)].map(m => m[1]).sort();
+  const downloads = readFileSync('downloads.php', 'utf8');
+  const used = [...new Set([...(app + downloads).matchAll(/data-backdrop="([a-z]+)"/g)].map(m => m[1]))].sort();
   assert.deepEqual(used, ['home', 'it', 'lending'],
-    'the front door, lending and IT get backdrops; nothing else does');
+    'the front door, lending, IT and the software hub get backdrops; nothing else does');
   for (const theme of used) {
-    assert.match(bare, new RegExp('\\.hero\\[data-backdrop="' + theme + '"\\]::before'),
+    assert.match(bare, new RegExp('\\[data-backdrop="' + theme + '"\\]::before'),
       theme + ' is set in the markup but has no pattern in the stylesheet');
   }
   // And nothing in the stylesheet points at a theme the markup never sets.
