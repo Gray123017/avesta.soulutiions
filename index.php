@@ -31,6 +31,10 @@ header('Referrer-Policy: same-origin');
 <!-- Optional presentation-only enhancement; remove these two tags to roll back. -->
 <link rel="stylesheet" href="/assets/avesta/motion-safe.css?v=20261021">
 <script src="/assets/avesta/motion-safe.js?v=20261021" defer></script>
+<!-- Presentation layer: reveal, rotating advert, drawn explainer. Decoration
+     only — remove these two tags to roll it back without touching anything else. -->
+<link rel="stylesheet" href="/assets/avesta/showcase.css?v=20261128">
+<script src="/assets/avesta/showcase.js?v=20261128" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
