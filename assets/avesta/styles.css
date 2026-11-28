@@ -257,3 +257,35 @@ dialog h3{margin:28px 0 14px}
    addresses, back links. Measured at 15-20px tall on a Pixel 7, under the
    24px WCAG 2.5.8 asks for. Links inside running prose are left alone. */
 .footer-bottom nav a,.footer-bottom a,.footer-grid a,.office-address a,.contact-grid a,.contact-office a{display:inline-flex;align-items:center;min-height:24px}
+
+/* [hidden] means hidden. The browser's own rule for it is display:none at the
+   lowest possible precedence, so any class that sets a display — .card-grid
+   with display:grid, .av-transcript with display:grid — silently outranks it
+   and the element stays on screen while the script believes it is gone. That
+   has now cost us two bugs in one day: the explainer transcript on 28 Nov, and
+   all four IT service panels showing at once the same afternoon. One rule ends
+   the whole class of it. */
+[hidden] { display: none !important; }
+
+/* The IT service categories. A real tablist, so it reads and keys correctly;
+   scrollable on a phone rather than wrapping into three cramped rows. */
+.service-tabs {
+  display: flex; gap: 6px; margin: 0 0 6px;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.service-tabs::-webkit-scrollbar { display: none; }
+.service-tabs [role="tab"] {
+  flex: none; cursor: pointer; white-space: nowrap;
+  min-height: 44px; padding: 0 18px;
+  font: inherit; font-size: .92rem; font-weight: 600;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.service-tabs [role="tab"]:hover { color: var(--ink); border-color: var(--gold); }
+.service-tabs [role="tab"][aria-selected="true"] {
+  background: var(--green); border-color: var(--green); color: #fff;
+}
+html[data-site="it"] .service-tabs [role="tab"][aria-selected="true"],
+.service-tabs [role="tab"][aria-selected="true"].tech { background: var(--green); }
+.service-tabs [role="tab"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

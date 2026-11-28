@@ -63,18 +63,40 @@ test('Phone service and footer sections start collapsed, expand on tap and retai
  const {w,d}=await boot('it',false,390);
  // Initialize happy-dom's media listener state at the starting phone width.
  w.dispatchEvent(new w.Event('resize'));await flush();
- const services=[...d.querySelectorAll('#service-grid [data-compact-toggle]')];assert.equal(services.length,12);
- for(const button of services){assert.equal(button.getAttribute('aria-expanded'),'false');assert.equal(d.getElementById(button.getAttribute('aria-controls')).hidden,true);}
- services[0].click();assert.equal(services[0].getAttribute('aria-expanded'),'true');assert.equal(d.getElementById(services[0].getAttribute('aria-controls')).hidden,false);
- services[1].click();assert.equal(services[0].getAttribute('aria-expanded'),'false');assert.equal(services[1].getAttribute('aria-expanded'),'true');
- services[1].click();assert.equal(services[1].getAttribute('aria-expanded'),'false');
- const software=services.at(-1);software.click();const details=d.getElementById(software.getAttribute('aria-controls'));assert.ok(details.querySelector('a[href="/downloads.php"]'));
- details.querySelector('[data-enquire]').click();assert.equal(d.querySelector('#it-service').value,'G.I.T Device Health Monitoring');
+
+ // Twelve services, now spread across four tab panels rather than one grid.
+ // All twelve still start collapsed on a phone, whichever panel they sit in.
+ const all=[...d.querySelectorAll('#services [role="tabpanel"] [data-compact-toggle]')];
+ assert.equal(all.length,12);
+ for(const button of all){assert.equal(button.getAttribute('aria-expanded'),'false');assert.equal(d.getElementById(button.getAttribute('aria-controls')).hidden,true);}
+
+ // Each panel is its own accordion: opening one closes its neighbour.
+ const open=[...d.querySelector('#svc-panel-0').querySelectorAll('[data-compact-toggle]')];
+ open[0].click();assert.equal(open[0].getAttribute('aria-expanded'),'true');assert.equal(d.getElementById(open[0].getAttribute('aria-controls')).hidden,false);
+ open[1].click();assert.equal(open[0].getAttribute('aria-expanded'),'false');assert.equal(open[1].getAttribute('aria-expanded'),'true');
+ open[1].click();assert.equal(open[1].getAttribute('aria-expanded'),'false');
+
+ // The service that ships software keeps its downloads link, found by name
+ // rather than by position so reordering services.json cannot break this.
+ const software=all.find(b=>b.textContent.includes('G.I.T Device Health Monitoring'));
+ assert.ok(software,'the software service should be among the tabs');
+ software.click();
+ const details=d.getElementById(software.getAttribute('aria-controls'));
+ assert.ok(details.querySelector('a[href="/downloads.php"]'));
+ details.querySelector('[data-enquire]').click();
+ assert.equal(d.querySelector('#it-service').value,'G.I.T Device Health Monitoring');
+
  const footer=[...d.querySelectorAll('.footer-grid [data-compact-toggle]')];assert.equal(footer.length,3);
  for(const button of footer)assert.equal(button.getAttribute('aria-expanded'),'false');
  footer[0].click();assert.equal(d.getElementById(footer[0].getAttribute('aria-controls')).hidden,false);
  footer[1].click();assert.equal(footer[0].getAttribute('aria-expanded'),'false');assert.ok(d.getElementById(footer[1].getAttribute('aria-controls')).querySelector('a[href="mailto:info@avesta.solutions"]'));
- d.querySelector('#service-search').value='printer';d.querySelector('#service-search').dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('#service-grid .service-card').length,1);assert.equal(d.querySelector('#service-grid [data-compact-toggle]').getAttribute('aria-expanded'),'false');
+
+ // Searching replaces the tabs with results, still collapsed on a phone.
+ d.querySelector('#service-search').value='printer';d.querySelector('#service-search').dispatchEvent(new w.Event('input'));await flush();
+ assert.equal(d.querySelectorAll('#service-results .service-card').length,1);
+ assert.equal(d.querySelector('#service-results [data-compact-toggle]').getAttribute('aria-expanded'),'false');
+ assert.equal(d.querySelector('.service-tabs').hidden,true,'the tabs step aside while a search is running');
+
  w.happyDOM.setWindowSize({width:1280,height:800});await flush();for(const button of d.querySelectorAll('[data-compact-toggle]'))assert.equal(button.getAttribute('aria-expanded'),'true');
  w.happyDOM.setWindowSize({width:320,height:800});await flush();for(const button of d.querySelectorAll('[data-compact-toggle]'))assert.equal(button.getAttribute('aria-expanded'),'false');
  await w.happyDOM.close();

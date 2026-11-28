@@ -36,6 +36,7 @@ header('Referrer-Policy: same-origin');
 <script src="<?= av_asset('/assets/avesta/motion-safe.js') ?>" defer></script>
 <!-- Presentation layer: reveal, rotating advert, drawn explainer. Decoration
      only — remove these two tags to roll it back without touching anything else. -->
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/backdrop.css') ?>">
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/showcase.css') ?>">
 <script src="<?= av_asset('/assets/avesta/showcase.js') ?>" defer></script>
 </head>
