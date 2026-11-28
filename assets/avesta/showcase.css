@@ -1,0 +1,195 @@
+/* Avesta presentation layer: reveal, rotating advert, drawn explainer.
+ *
+ * One rule governs this whole file: it may not hide anything the page needs.
+ * Every rule that sets opacity:0 is nested under .av-motion, a class that only
+ * showcase.js adds, and only after it has checked that motion is wanted. A
+ * blocked script, an old phone or a thrown exception therefore leaves the page
+ * whole rather than blank.
+ */
+
+/* ── reveal on scroll ───────────────────────────────────────────────────── */
+/* Unlike the hover lifts in motion-safe.css, this one is for phones too:
+ * it is gated on the motion preference, not on having a mouse. */
+.av-motion [data-av-reveal]:not([data-av-shown]) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.av-motion [data-av-reveal] {
+  transition: opacity 520ms cubic-bezier(.22,.61,.36,1), transform 520ms cubic-bezier(.22,.61,.36,1);
+  transition-delay: calc(var(--av-i, 0) * 70ms);
+}
+.av-motion [data-av-shown] { opacity: 1; transform: none; }
+
+/* ── the headline, a word at a time ─────────────────────────────────────── */
+.av-word { display: inline-block; }
+.av-motion .hero h1 .av-word:not([data-av-shown]) {
+  opacity: 0;
+  transform: translateY(.42em) rotate(1.2deg);
+}
+.av-motion .hero h1 .av-word {
+  transition: opacity 460ms ease, transform 560ms cubic-bezier(.2,.8,.3,1);
+  transition-delay: calc(var(--av-i, 0) * 55ms);
+}
+.av-motion .hero h1 .av-word[data-av-shown] { opacity: 1; transform: none; }
+
+/* A gold underline that draws itself beneath the emphasised half. */
+.hero h1 em { position: relative; }
+.av-motion .hero h1 em::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -.08em;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--goldlight));
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 760ms cubic-bezier(.22,.61,.36,1) 620ms;
+}
+.av-motion .hero h1[data-av-shown] em::after { transform: scaleX(1); }
+
+/* ── the rotating advert ────────────────────────────────────────────────── */
+/* It sits in the page. It is never fixed, never sticky, never over the top of
+ * anything: a lender whose site throws boxes at you looks like a scam. */
+[data-av-rotator] {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  overflow: hidden;
+}
+[data-av-rotator][data-av-ready] [data-av-slide][data-av-current="false"] { display: none; }
+[data-av-slide] {
+  display: grid;
+  gap: 14px;
+  justify-items: start;        /* or the link's underline runs the card's width */
+  padding: 26px 24px;
+  text-decoration: none;
+  color: inherit;
+}
+/* .av-motion sits on <html>, so it leads the selector — as a descendant of the
+ * rotator it could never match. */
+.av-motion [data-av-rotator][data-av-ready] [data-av-slide][data-av-current="true"] {
+  animation: av-slide-in 480ms cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes av-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.av-slide-eyebrow {
+  font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 700; color: var(--golddeep);
+}
+[data-av-slide].av-slide-it .av-slide-eyebrow { color: var(--blue); }
+.av-slide-head { font-size: 1.5rem; line-height: 1.25; margin: 0; }
+.av-slide-body { margin: 0; color: var(--muted); }
+.av-rotator-controls {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 24px 18px;
+}
+.av-rotator-controls button {
+  border: 1px solid var(--line); background: var(--paper);
+  border-radius: 999px; cursor: pointer;
+  min-width: 44px; min-height: 44px;      /* a real tap target on a phone */
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--green);
+}
+.av-rotator-controls button:hover { border-color: var(--gold); }
+.av-rotator-dots { display: flex; gap: 7px; margin-left: auto; }
+.av-rotator-dots button { min-width: 0; min-height: 0; width: 9px; height: 9px; padding: 0; border-radius: 999px; background: var(--line); border: 0; }
+.av-rotator-dots button[aria-current="true"] { background: var(--gold); width: 22px; }
+.av-motion .av-rotator-dots button { transition: width 300ms ease, background 300ms ease; }
+
+/* ── the drawn explainer ────────────────────────────────────────────────── */
+/* Drawn, not downloaded: a few kilobytes of SVG instead of a few megabytes of
+ * video on somebody's mobile data. */
+[data-av-explainer] {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(170deg, var(--green) 0%, var(--green2) 100%);
+  color: #fff;
+  overflow: hidden;
+}
+.av-stage { position: relative; aspect-ratio: 16 / 9; width: 100%; display: block; }
+/* Direct child only: the play icon also lives inside the stage, and a bare
+ * descendant selector stretches it across the whole frame. */
+.av-stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.av-scene { opacity: 0; }
+[data-av-explainer][data-av-scene="1"] .av-scene-1,
+[data-av-explainer][data-av-scene="2"] .av-scene-2,
+[data-av-explainer][data-av-scene="3"] .av-scene-3,
+[data-av-explainer][data-av-scene="4"] .av-scene-4 { opacity: 1; }
+.av-motion .av-scene { transition: opacity 420ms ease; }
+
+.av-poster {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; gap: 14px; justify-items: center;
+  background: rgba(13,40,33,.55);
+  border: 0; width: 100%; cursor: pointer; color: #fff;
+  font: inherit; text-align: center; padding: 20px;
+}
+[data-av-explainer][data-av-playing="true"] .av-poster { display: none; }
+.av-poster-ring {
+  width: 72px; height: 72px; border-radius: 999px;
+  background: var(--gold); color: var(--green);
+  display: grid; place-content: center;
+  padding-left: 4px;             /* a triangle looks off-centre when it is centred */
+}
+.av-poster-ring svg { width: 28px; height: 28px; }
+.av-motion .av-poster-ring { transition: transform 240ms ease; }
+.av-poster:hover .av-poster-ring { transform: scale(1.06); }
+.av-poster-label { font-weight: 700; font-size: 1.05rem; }
+.av-poster-note { font-size: .85rem; opacity: .85; }
+
+.av-captions {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; background: rgba(0,0,0,.22);
+  min-height: 68px;
+}
+/* styles.css sets p{color:var(--muted)} as a bare element rule, which beats
+ * the white inherited from the panel. On this dark green that reads as grey,
+ * so the caption states its own colour. */
+[data-av-caption] { margin: 0; font-size: .98rem; line-height: 1.45; color: #fff; }
+.av-captions button {
+  border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff;
+  border-radius: 999px; min-width: 44px; min-height: 44px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.av-explainer-foot { padding: 0 20px 18px; }
+.av-explainer-foot button {
+  background: transparent; border: 0; padding: 6px 0;
+  color: rgba(255,255,255,.82); font: inherit; font-size: .88rem;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.av-explainer-foot button:hover { color: #fff; }
+
+.av-progress { display: flex; gap: 5px; padding: 0 20px 16px; }
+.av-progress span { height: 3px; flex: 1; background: rgba(255,255,255,.25); border-radius: 3px; }
+.av-progress span[data-av-done="true"] { background: var(--gold); }
+.av-motion .av-progress span { transition: background 300ms ease; }
+
+/* The transcript is the explainer in words. It is visible until the script
+ * takes over, so a phone that never runs it still gets the whole walkthrough. */
+.av-transcript {
+  margin: 0; padding: 18px 20px 20px 42px;
+  background: rgba(0,0,0,.14);
+  display: grid; gap: 10px;
+  font-size: .95rem; line-height: 1.5;
+}
+.av-transcript li { color: rgba(255,255,255,.92); }
+/* display:grid above outranks the browser's own rule for [hidden], so the
+ * script's hide would quietly do nothing without this. */
+.av-transcript[hidden] { display: none; }
+
+/* ── the counting total ─────────────────────────────────────────────────── */
+[data-av-count] { font-variant-numeric: tabular-nums; }
+
+/* ── and the switch that turns the lot off ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  [data-av-reveal], .av-word, .hero h1 em::after,
+  [data-av-slide], .av-poster-ring, .av-rotator-dots button {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
