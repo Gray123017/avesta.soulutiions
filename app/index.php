@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../asset-version.php';
 /**
  * Second line of defence. .htaccess is not honoured by nginx, and some hosts
  * ignore it entirely — so this file guards itself rather than trusting the
@@ -1557,8 +1558,8 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
 .upload-item.is-working{opacity:.75}
 .upload-item.is-working .upload-filename{color:#946219;font-weight:600}
 </style>
-<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
-<script src="/assets/avesta/device-layout.js?v=20261003" defer></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/responsive.css') ?>">
+<script src="<?= av_asset('/assets/avesta/device-layout.js') ?>" defer></script>
 </head>
 <body>
 

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/asset-version.php';
 // Public presentation; existing PHP account and loan workflows remain authoritative.
 require_once __DIR__ . '/auth.php';
 // Public: this is the front door, and the page a search engine lands on.
@@ -23,18 +24,18 @@ header('Referrer-Policy: same-origin');
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/avesta/styles.css?v=20261003-steady-navigation">
-<script type="module" src="/assets/avesta/app.js?v=20261003-it-flow"></script>
-<script type="module" src="/assets/avesta/assistant.js?v=20261003-chat-minimize"></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/styles.css') ?>">
+<script type="module" src="<?= av_asset('/assets/avesta/app.js') ?>"></script>
+<script type="module" src="<?= av_asset('/assets/avesta/assistant.js') ?>"></script>
 <link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/responsive.css') ?>">
 <!-- Optional presentation-only enhancement; remove these two tags to roll back. -->
-<link rel="stylesheet" href="/assets/avesta/motion-safe.css?v=20261021">
-<script src="/assets/avesta/motion-safe.js?v=20261021" defer></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/motion-safe.css') ?>">
+<script src="<?= av_asset('/assets/avesta/motion-safe.js') ?>" defer></script>
 <!-- Presentation layer: reveal, rotating advert, drawn explainer. Decoration
      only — remove these two tags to roll it back without touching anything else. -->
-<link rel="stylesheet" href="/assets/avesta/showcase.css?v=20261128">
-<script src="/assets/avesta/showcase.js?v=20261128" defer></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/showcase.css') ?>">
+<script src="<?= av_asset('/assets/avesta/showcase.js') ?>" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

@@ -32,7 +32,7 @@ test('an unhandled request is refused, not answered with ok',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-api-dispatch-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'notify-lib.php']) {
       copyFileSync(f, join(dir, f));
@@ -135,7 +135,7 @@ test('no answer from the API may be stored by anything in between',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-api-nostore-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'notify-lib.php']) {
       copyFileSync(f, join(dir, f));
@@ -229,7 +229,7 @@ test('ping tells a stranger that the site is up and nothing else',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-api-ping-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'notify-lib.php']) {
       copyFileSync(f, join(dir, f));

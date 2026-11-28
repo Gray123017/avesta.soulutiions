@@ -31,7 +31,7 @@ import { join } from 'node:path';
 const php = process.env.AVESTA_TEST_PHP || 'php';
 const hasPhp = spawnSync(php, ['-v']).status === 0;
 
-const LIBS = ['api.php', 'auth.php', 'rates-lib.php', 'categories-lib.php',
+const LIBS = ['api.php', 'auth.php', 'asset-version.php', 'rates-lib.php', 'categories-lib.php',
               'backup-lib.php', 'employers-lib.php', 'remittance-lib.php',
               'disbursement-lib.php', 'notify-lib.php'];
 

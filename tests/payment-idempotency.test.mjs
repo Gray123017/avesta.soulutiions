@@ -32,7 +32,7 @@ async function portal(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'avesta-idem-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'remittance-lib.php', 'disbursement-lib.php', 'notify-lib.php']) {
       copyFileSync(f, join(dir, f));

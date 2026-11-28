@@ -205,7 +205,7 @@ test('recording a payout is admin work, and the refusals hold over HTTP',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-disb-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php', 'rates-lib.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php', 'rates-lib.php',
                      'categories-lib.php', 'backup-lib.php', 'employers-lib.php',
                      'remittance-lib.php', 'disbursement-lib.php']) copyFileSync(f, join(dir, f));
     mkdirSync(join(dir, 'assets', 'avesta'), { recursive: true });

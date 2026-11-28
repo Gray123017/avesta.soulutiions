@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../asset-version.php';
 /**
  * Second line of defence. .htaccess is not honoured by nginx, and some hosts
  * ignore it entirely — so this file guards itself rather than trusting the
@@ -832,9 +833,9 @@ window.avFetchJson = async function (url, opts, ms) {
 .acct-temp code{display:block;font-size:16pt;font-weight:800;letter-spacing:1px;
   color:var(--av-gold-light,#E8AE6E);margin:8px 0;font-family:ui-monospace,Menlo,Consolas,monospace}
 </style>
-<link rel="stylesheet" href="/assets/avesta/responsive.css?v=20261003">
-<script src="/assets/avesta/device-layout.js?v=20261003" defer></script>
-<link rel="stylesheet" href="/assets/avesta/sitewide-motion.css?v=20261021">
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/responsive.css') ?>">
+<script src="<?= av_asset('/assets/avesta/device-layout.js') ?>" defer></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/sitewide-motion.css') ?>">
 </head>
 <body>
 

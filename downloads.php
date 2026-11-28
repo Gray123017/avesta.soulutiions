@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/asset-version.php';
 $products = [
   [
     'id' => 'asset-tracker',
@@ -87,9 +88,9 @@ $products = [
 <meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker, G.I.T Device Health and Avesta MoneyTrack, with Windows downloads and setup support.">
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/assets/avesta/software-hub.css?v=20261008a">
-<script src="/assets/avesta/software-tabs.js?v=20261008a" defer></script>
-<link rel="stylesheet" href="/assets/avesta/sitewide-motion.css?v=20261021">
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/software-hub.css') ?>">
+<script src="<?= av_asset('/assets/avesta/software-tabs.js') ?>" defer></script>
+<link rel="stylesheet" href="<?= av_asset('/assets/avesta/sitewide-motion.css') ?>">
 </head>
 <body class="software-hub-page">
 <div class="hub-shell">

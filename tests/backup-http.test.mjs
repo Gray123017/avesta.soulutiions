@@ -23,7 +23,7 @@ test('only a super admin can take a backup, and only one at a time',
   const dir = mkdtempSync(join(tmpdir(), 'avesta-backup-http-'));
   let server;
   try {
-    for (const f of ['api.php', 'auth.php', 'portal.php', 'apply.php',
+    for (const f of ['api.php', 'auth.php', 'asset-version.php', 'portal.php', 'apply.php',
                      'rates-lib.php', 'categories-lib.php', 'backup-lib.php']) {
       copyFileSync(f, join(dir, f));
     }

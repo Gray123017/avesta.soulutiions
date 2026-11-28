@@ -1,4 +1,4 @@
-import {money,quote,rates,schedule,today,escapeHTML as e} from './domain.js?v=20261003-steady-navigation';
+import {money,quote,rates,schedule,today,escapeHTML as e} from './domain.js?v=6bc1958da9';
 const $=(s,root=document)=>root.querySelector(s);
 const $$=(s,root=document)=>[...root.querySelectorAll(s)];
 const main=$('#main');
