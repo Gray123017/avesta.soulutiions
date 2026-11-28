@@ -50,7 +50,7 @@ function av_share(string $key = ''): array
             'path'  => 'index.php?page=lending',
             'title' => 'Short-term loans in Ndola & across Zambia | Avesta Lending',
             'og'    => 'Avesta Lending — short-term finance, clearly explained',
-            'desc'  => 'Borrow for one to four weeks with flat interest. The amount, the cost and '
+            'desc'  => 'Borrow for one to eight weeks with flat interest. The amount, the cost and '
                      . 'the repayment dates are stated before you commit.',
             'image' => 'assets/avesta/share/lending.png',
         ],

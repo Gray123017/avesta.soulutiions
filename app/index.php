@@ -46,7 +46,7 @@ $avSeo = $avSite === 'it' ? [
 ] : [
     'url'   => $avBase . 'loans.php',
     'title' => 'Short-Term Loans in Ndola & Across Zambia | Avesta Lending',
-    'desc'  => 'Short-term personal and business loans from one to four weeks, anywhere in Zambia. '
+    'desc'  => 'Short-term personal and business loans from one to eight weeks, anywhere in Zambia. '
              . 'Terms stated up front, repayment calculator, and disbursement by cash, mobile money '
              . 'or bank transfer.',
     'keys'  => 'loans Zambia, quick loans Ndola, personal loans Copperbelt, business loans Lusaka, '
@@ -1669,7 +1669,7 @@ html[data-site="it"] .office-back:hover{background:rgba(91,155,255,.22);border-c
           <button type="button" class="arm arm-lend" onclick="showTab('apply')">
             <span class="arm-tag">Avesta Lending</span>
             <span class="arm-title">Need cash this week?</span>
-            <span class="arm-sub">Short-term loans, 1 to 4 weeks. Transparent terms, quick disbursement.</span>
+            <span class="arm-sub">Short-term loans, 1 to 8 weeks. Transparent terms, quick disbursement.</span>
             <span class="arm-go">Apply for a loan &rarr;</span>
           </button>
         </div>
@@ -4952,7 +4952,7 @@ function resumeApplication() {
           document.getElementById('custom-dur-detail').style.display = '';
           updateLongTermDur(); // this sets selectedDurationWeeks internally
         } else {
-          // Standard 1-4 week tiles: derive weeks from the saved sel_dur text
+          // Standard short-term tiles: derive weeks from the saved sel_dur text
           const durText = data.sel_dur || '';
           const m = durText.match(/^(\d+)\s*Week/);
           if (m) selectedDurationWeeks = parseInt(m[1]);
