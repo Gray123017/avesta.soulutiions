@@ -69,11 +69,17 @@ for (const mode of ['admin', 'staff']) {
   });
 }
 
-test('Asset Tracker has a direct ZIP download without the pending-upload notice', () => {
+test('Asset Tracker offers no download, because its build is not in the repository', () => {
+  /* This test used to assert the opposite: that the card carried a direct
+   * ZIP link. It did — and the ZIP had never been committed, so the link
+   * 404'd. The card now says the build is not published here and offers a
+   * way to ask for it. */
   const w = new Window();
   w.document.write(execFileSync('php', ['downloads.php'], {encoding: 'utf8'}));
-  const a = w.document.querySelector('#asset-tracker a[download]');
-  assert.equal(a.getAttribute('href'), '/downloads/asset-tracker/GIT-Asset-Tracker-1.5.1-Windows.zip');
-  assert.ok(!w.document.querySelector('#asset-tracker').textContent.includes('upload to this website is pending'));
+  const card = w.document.querySelector('#asset-tracker');
+  assert.equal(card.querySelector('a[download]'), null,
+    'no download link may be offered for a build that is not here');
+  assert.match(card.textContent, /not published here yet/);
+  assert.ok(card.querySelector('a[href^="mailto:"]'), 'it has to offer a way to ask');
   w.happyDOM.abort();
 });

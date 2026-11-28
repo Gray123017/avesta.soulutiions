@@ -1,5 +1,9 @@
 /* Avesta — living backdrops for the page headers.
  *
+ * Any header can carry one: put data-backdrop="home|lending|it" on it. It
+ * started out scoped to .hero and was widened when the software hub wanted
+ * the same treatment.
+ *
  * Drawn with gradients and moved with one transform, so there is no image to
  * download, no canvas, no JavaScript and no animation loop: the compositor
  * does the whole thing on its own thread. The entire file is a couple of
@@ -15,16 +19,16 @@
  * change to this file.
  */
 
-.hero[data-backdrop] {
+[data-backdrop] {
   position: relative;
   isolation: isolate;
   overflow: hidden;              /* the drifting layer is deliberately oversized */
 }
 
 /* Everything the visitor reads stays above the pattern. */
-.hero[data-backdrop] > * { position: relative; z-index: 1; }
+[data-backdrop] > * { position: relative; z-index: 1; }
 
-.hero[data-backdrop]::before {
+[data-backdrop]::before {
   content: "";
   position: absolute;
   /* Oversized by one tile on every side so the drift never exposes an edge. */
@@ -69,10 +73,10 @@
 
 /* A phone has less room and a smaller battery; a tighter, calmer pattern. */
 @media (max-width: 680px) {
-  .hero[data-backdrop]::before { animation-duration: 60s; opacity: .8; }
+  [data-backdrop]::before { animation-duration: 60s; opacity: .8; }
 }
 
 /* Asked to hold still, it holds still — the texture stays, the drift stops. */
 @media (prefers-reduced-motion: reduce) {
-  .hero[data-backdrop]::before { animation: none; }
+  [data-backdrop]::before { animation: none; }
 }
