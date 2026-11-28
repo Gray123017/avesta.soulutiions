@@ -189,7 +189,7 @@ test('the tilt finds figures that appear after the first render', () => {
 
 test('THE ONE THAT MATTERS: the fonts exist and the stylesheet points at them', () => {
   const faces = [...styles.matchAll(/src:url\((fonts\/[^)]+)\)/g)].map(m => m[1]);
-  assert.ok(faces.length >= 3, 'expected three @font-face sources, found ' + faces.length);
+  assert.equal(faces.length, 2, 'expected two @font-face sources, found ' + faces.length);
   for (const f of faces) {
     assert.ok(existsSync('assets/avesta/' + f), 'styles.css asks for ' + f + ', which is not in the repo');
   }
@@ -200,7 +200,7 @@ test('THE ONE THAT MATTERS: the fonts exist and the stylesheet points at them', 
 test('text is readable before the fonts arrive, and the first two are preloaded', () => {
   const faceBlock = styles.slice(0, styles.indexOf(':root'));
   const faces = faceBlock.match(/@font-face\{[^}]*\}/g) || [];
-  assert.ok(faces.length >= 3);
+  assert.equal(faces.length, 2);
   for (const f of faces) {
     assert.match(f, /font-display:swap/,
       'without swap the text is invisible until the font lands, which on a slow '
@@ -222,8 +222,21 @@ test('the typography budget holds', () => {
     if (f.endsWith('.woff2')) total += statSync('assets/avesta/fonts/' + f).size;
   }
   const kb = total / 1024;
-  assert.ok(kb < 120, `the fonts come to ${kb.toFixed(1)} kB; keep the set under 120`);
+  assert.ok(kb < 70, `the fonts come to ${kb.toFixed(1)} kB; keep the set under 70`);
   assert.ok(kb > 40, `only ${kb.toFixed(1)} kB of fonts — a file is probably missing`);
+});
+
+test('the italic stays dropped unless somebody decides otherwise', () => {
+  /* It was 44.6 kB of a 105 kB set for one line of each heading. Dropped on
+   * 28 November; the emphasis is carried by weight, colour and the gold rule
+   * instead. Re-adding it is a decision about mobile data, not a tidy-up. */
+  assert.ok(!existsSync('assets/avesta/fonts/fraunces-italic.woff2'),
+    'the italic file is back; that is 44.6 kB on every first visit');
+  assert.doesNotMatch(styles, /font-style:italic[^}]*fraunces-italic/,
+    'an italic @font-face has reappeared');
+  assert.match(styles, /\.hero h1 em,\.page-head h1 em\{font-style:normal/,
+    'the emphasised heading line must pin font-style:normal, or the browser '
+    + 'skews the roman into a fake italic, which looks mechanical on a serif');
 });
 
 test('the fonts are licensed and the licences ship with them', () => {

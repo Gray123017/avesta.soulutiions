@@ -4,9 +4,14 @@
    covers every weight. Licences and the byte costs are in fonts/README.txt.
 
    font-display:swap deliberately: on a slow Zambian connection, text in the
-   fallback face immediately beats no text at all. */
+   fallback face immediately beats no text at all.
+
+   No italic file: it was 44.6 kB of a 105 kB set for one line of each
+   heading. The emphasised line is set in the roman at a heavier weight, in
+   the second brand colour, over the gold rule it already had — which is
+   more emphasis than a slant was giving it. font-style is pinned to normal
+   on those lines so no browser skews the roman into a fake italic. */
 @font-face{font-family:Fraunces;font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/fraunces-normal.woff2) format("woff2")}
-@font-face{font-family:Fraunces;font-style:italic;font-weight:400 700;font-display:swap;src:url(fonts/fraunces-italic.woff2) format("woff2")}
 @font-face{font-family:Manrope;font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/manrope.woff2) format("woff2")}
 :root{--green:#163e33;--green2:#205444;--ink:#162e27;--muted:#5c7068;--gold:#d98e3b;--goldlight:#f0bd81;--golddeep:#915517;--blue:#276aac;--line:#dbe4df;--paper:#fff;--soft:#f2f6f3;--cream:#faf7f1;--radius:16px;--shadow:0 14px 44px #163e330b}
 *{box-sizing:border-box}
@@ -56,7 +61,7 @@ p{color:var(--muted)}
 .hero{position:relative;background:var(--cream);border-bottom:1px solid var(--line)}
 .hero-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:85px;align-items:center;padding:84px 0 72px}
 .eyebrow{text-transform:uppercase;font-size:.76rem;letter-spacing:.16em;line-height:1.6;font-weight:700;color:var(--golddeep);margin-bottom:22px}
-.hero h1 em,.page-head h1 em{font-style:italic;color:var(--green2)}
+.hero h1 em,.page-head h1 em{font-style:normal;font-weight:600;color:var(--green2)}
 .hero-copy>p{margin-top:24px;font-size:1.06rem;line-height:1.75;max-width:500px}
 .actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px;align-items:center}
 .hero-note{font-size:.85rem;margin-top:25px!important;display:flex;gap:12px;align-items:center}
