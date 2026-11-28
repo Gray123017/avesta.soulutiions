@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/asset-version.php';
+require_once __DIR__ . '/share-tags.php';
 $products = [
   [
     'id' => 'asset-tracker',
@@ -84,8 +85,11 @@ $products = [
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Avesta Software · Applications & Downloads</title>
-<meta name="description" content="Avesta Software hub for Avanto Sentinel, GIT Asset Tracker, G.I.T Device Health and Avesta MoneyTrack, with Windows downloads and setup support.">
+<?php av_share_head('downloads', false, [
+  'title' => 'Avesta Software · Applications & Downloads',
+  'desc'  => 'Avesta Software hub for Avanto Sentinel, GIT Asset Tracker, G.I.T Device Health '
+           . 'and Avesta MoneyTrack, with Windows downloads and setup support.',
+]); ?>
 <meta name="theme-color" content="#234f3f">
 <link rel="icon" href="/icons/icon-192.png">
 <link rel="stylesheet" href="<?= av_asset('/assets/avesta/software-hub.css') ?>">

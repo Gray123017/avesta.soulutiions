@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/asset-version.php';
+require_once __DIR__ . '/share-tags.php';
 // Public presentation; existing PHP account and loan workflows remain authoritative.
 require_once __DIR__ . '/auth.php';
 // Public: this is the front door, and the page a search engine lands on.
@@ -19,8 +20,9 @@ header('Referrer-Policy: same-origin');
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Avesta Enterprises · Lending & IT Consulting</title>
-<meta name="description" content="Short-term lending and practical IT services across Zambia. Avesta Enterprises, Kansenshi, Ndola.">
+<?php /* Title, description, canonical, preview card and structured data, all
+     server-side: WhatsApp and the other preview fetchers never run the scripts. */
+   av_share_head(av_share_key_from_query(), true); ?>
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#163E33">
 <link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
