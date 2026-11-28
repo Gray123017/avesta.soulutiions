@@ -304,3 +304,72 @@ dialog h3{margin:28px 0 14px}
 html[data-site="it"] .service-tabs [role="tab"][aria-selected="true"],
 .service-tabs [role="tab"][aria-selected="true"].tech { background: var(--green); }
 .service-tabs [role="tab"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ── the utility bar ──────────────────────────────────────────────────────
+   Contact above the fold on every page, which is how the Zambian banks lay
+   their sites out and a fair reason why: somebody with a question should not
+   have to find the contact page first. It sits above the nav, so it scrolls
+   away with the rest of the header rather than taking up sticky height.
+   The second phone number and the email drop on a phone, where the WhatsApp
+   link is the one people actually use. */
+.utility-bar{background:var(--ink);color:#fff;font-size:.8rem;line-height:1.4}
+.utility-inner{width:min(1320px,calc(100% - 64px));margin:auto;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:38px;flex-wrap:wrap}
+.utility-hours{color:#ffffffb8;letter-spacing:.01em}
+.utility-links{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.utility-links a{display:inline-flex;align-items:center;gap:6px;color:#fff;padding:7px 9px;border-radius:6px;min-height:24px;white-space:nowrap}
+.utility-links a:hover{background:#ffffff1f}
+.utility-links a:focus-visible{outline:3px solid var(--goldlight);outline-offset:2px}
+.utility-for{color:var(--goldlight);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:900px){
+  .utility-hours{display:none}
+  .utility-inner{justify-content:center;width:calc(100% - 28px)}
+}
+@media (max-width:620px){
+  /* Keep the one line that matters on a small screen. */
+  .utility-links a[href^="mailto"],.utility-links a[href^="tel:+260769974200"]{display:none}
+  .utility-for{display:none}
+}
+
+/* ── the division cards list what is actually inside them ─────────────────
+   Taken from how the Zambian banks lay out a home page: the products are on
+   the front page as links, not behind a click. The card used to be one large
+   anchor wrapping everything, which cannot contain further links at all —
+   it is now an article whose heading is the link, which also stops a screen
+   reader announcing the whole card as a single enormous link. */
+.choice-card h2 a{color:inherit}
+.choice-card h2 a:hover{text-decoration:underline;text-underline-offset:3px}
+.choice-links{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 14px}
+.choice-links a{display:block;padding:7px 0;font-size:.88rem;color:#dbe8e1;min-height:24px}
+.choice-links a:before{content:"›";margin-right:8px;color:var(--goldlight)}
+.choice-links a:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.choice-card.tech .choice-links a{color:#3d5f7d}
+.choice-card.tech .choice-links a:before{color:var(--blue)}
+.choice-card.tech .choice-links a:hover{color:#193752}
+.choice-bottom a{color:inherit}
+.choice-bottom a:hover strong{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:420px){.choice-links{grid-template-columns:1fr}}
+
+/* ── the updates strip ────────────────────────────────────────────────────
+   Three short notices, newest first, from updates.json. The section renders
+   nothing when the file is empty and hides itself once the newest notice
+   goes stale, so it cannot sit on the home page looking abandoned. */
+.update-grid{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:720px){.update-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
+.update-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;display:flex;flex-direction:column;gap:9px}
+.update-card time{font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--golddeep);font-weight:700}
+.update-card h3{margin:0}
+.update-card p{margin:0}
+.update-card .link{margin-top:auto;padding-top:8px;align-self:flex-start}
+
+/* ── find us ──────────────────────────────────────────────────────────────
+   The bank-style branch locator, for a business with one office: no radio
+   buttons and no search, just where it is and the two ways people actually
+   make contact. */
+.find-band{background:var(--green);color:#fff;padding:clamp(34px,5vw,54px) 0}
+.find-grid{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:26px}
+.find-band h2{margin:7px 0 0;color:#fff}
+.find-band p{color:#cddcd4;margin-top:9px}
+.find-band .eyebrow.gold{color:var(--goldlight)}
+.find-actions{display:flex;flex-wrap:wrap;gap:12px}
+.find-band .button.outline.light{background:transparent;border:1.5px solid #ffffff66;color:#fff}
+.find-band .button.outline.light:hover{background:#ffffff1a;border-color:#fff}

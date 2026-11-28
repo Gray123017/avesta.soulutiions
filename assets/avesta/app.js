@@ -3,7 +3,7 @@ const $=(s,root=document)=>root.querySelector(s);
 const $$=(s,root=document)=>[...root.querySelectorAll(s)];
 const main=$('#main');
 let appSaving=false;
-let services=[],help=[],filter='All',route=currentRoute(),calcWeeks=2,appStep=0,appData={},appFiles={},records=[],currentRecord=null,toastTimer;
+let services=[],help=[],updates=[],filter='All',route=currentRoute(),calcWeeks=2,appStep=0,appData={},appFiles={},records=[],currentRecord=null,toastTimer;
 const pageTitles={'/':'Lending & IT Consulting','/lending':'Avesta Lending','/it':'Avesta Consulting','/calculator':'Loan Calculator','/how-it-works':'How It Works','/currency':'Currency Converter','/apply':'Loan Application','/about':'About Avesta','/contact':'Contact','/portal':'Private Portal','/privacy':'Privacy','/terms':'Terms','/complaints':'Complaints'};
 const lendingPaths=['/lending','/how-it-works','/calculator','/currency','/apply'];
 const icon=(name)=>{const paths={clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',check:'<path d="M5 12l4 4L19 6"/>',phone:'<path d="M7 3H4v5c0 7 5 12 12 12h5v-3l-5-2-2 2c-3-1-6-4-7-7l2-2z"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',pin:'<path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.5"/>',shield:'<path d="m12 3 8 3v5c0 5-4 9-8 10-4-1-8-5-8-10V6z"/><path d="m8 12 3 3 5-6"/>',file:'<path d="M14 3H5v18h14V8zM14 3v5h5M8 12h8M8 16h6"/>',tech:'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8M12 16v5"/>'};return `<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${paths[name]||paths.check}</svg></span>`;};
@@ -36,6 +36,31 @@ const artFigure=(name,alt,w,h,{badge='',tilt=true,zoom=false,accent='',eager=fal
 /* The lowest published rate, taken from rates.json rather than written out,
    so the figure on the picture cannot drift from the one in the calculator. */
 const lowestRate=()=>Math.min(...Object.values(rates));
+/* Short notices for the home page, from updates.json.
+   Two rules keep this from becoming a liability. It renders nothing when
+   there is nothing to say, and it hides itself once the newest notice is
+   older than the file's _staleAfterDays — a lender showing "latest news"
+   from half a year ago looks abandoned, which is worse than showing none. */
+function freshUpdates(file){
+ if(!file||!Array.isArray(file.updates))return [];
+ const days=Number(file._staleAfterDays)>0?Number(file._staleAfterDays):120;
+ const cutoff=Date.now()-days*86400000;
+ return file.updates
+  .filter(u=>u&&u.title&&u.date&&!Number.isNaN(Date.parse(u.date)))
+  .sort((a,b)=>Date.parse(b.date)-Date.parse(a.date))
+  .filter(u=>Date.parse(u.date)>=cutoff)
+  .slice(0,3);
+}
+const updateDate=iso=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Lusaka'}).format(new Date(iso+'T12:00:00Z'));
+function updatesStrip(){
+ if(!updates.length)return '';
+ return `<section class="section soft"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Latest from Avesta</div><h2>What has changed.</h2></div></div><div class="update-grid">${
+  updates.map(u=>`<article class="update-card"><time datetime="${e(u.date)}">${e(updateDate(u.date))}</time><h3>${e(u.title)}</h3>${u.body?`<p>${e(u.body)}</p>`:''}${u.href?`<a class="link" href="${e(u.href)}">${e(u.label||'Read more')}</a>`:''}</article>`).join('')
+ }</div></div></section>`;
+}
+/* One office, so the bank-style branch locator becomes a plain "here is where
+   we are and how to reach us" band. */
+const findUs=()=>`<section class="find-band"><div class="wrap"><div class="find-grid"><div><div class="eyebrow gold">Find us</div><h2>House No. 3, Thom Avenue</h2><p>Kansenshi, Ndola, Zambia · Monday to Saturday, 08:00&ndash;17:00</p></div><div class="find-actions"><a class="button" href="https://maps.google.com/?q=Thom+Avenue+Kansenshi+Ndola" target="_blank" rel="noopener noreferrer">Get directions</a><a class="button outline light" href="https://wa.me/260971013108" target="_blank" rel="noopener noreferrer">Message on WhatsApp</a><a class="button outline light" href="/contact">All contact details</a></div></div></div></section>`;
 const artBadge=(label,value)=>`<div class="art-badge"><span>${e(label)}</span><strong>${e(value)}</strong></div>`;
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),5000);}
 function currentRoute(){return '/'+(new URLSearchParams(location.search).get('page')||'');}
@@ -65,16 +90,16 @@ function shell(){
 function home(){return `
 <section class="hero" data-backdrop="home"><div class="wrap"><div class="hero-grid">
  <div class="hero-copy"><div class="eyebrow">Ndola roots. Zambia-wide reach.</div><h1>A little support.<br><em>A lot of possibility.</em></h1><p>Finance when you need it. Technology that keeps you moving. Avesta brings straightforward lending and practical IT support to people and businesses across Zambia.</p><div class="actions"><a class="button secondary" href="/lending">Explore our loans</a><a class="link" href="/it">Find IT support</a></div><p class="hero-note"><span></span> One company. Two ways to help you get going.</p></div>
- <div><a class="choice-card" href="/lending"><div class="choice-top"><span>Avesta Lending</span><span class="card-number">01</span></div><h2>Your next step, funded.</h2><p>Short-term finance with the amount, interest and repayments clearly explained.</p><div class="choice-bottom"><span>1–8 week terms · ZMW</span><strong>Explore lending</strong></div></a><a class="choice-card tech" href="/it"><div class="choice-top"><span>Avesta Consulting</span><span class="card-number">02</span></div><h2>Get back to working.</h2><p>Repairs, networks, websites and security. Practical support for the technology you rely on.</p><div class="choice-bottom"><span>12 services · Remote & on-site</span><strong>Explore IT services</strong></div></a></div>
-</div><div class="trust-row"><div><strong>Clear</strong> Terms and costs up front</div><div><strong>Local</strong> Head office in Kansenshi, Ndola</div><div><strong>Flexible</strong> Support that fits your needs</div></div></div></section>
+ <div><article class="choice-card"><div class="choice-top"><span>Avesta Lending</span><span class="card-number">01</span></div><h2><a href="/lending">Your next step, funded.</a></h2><p>Short-term finance with the amount, interest and repayments clearly explained.</p><ul class="choice-links"><li><a href="/apply">Apply for a loan</a></li><li><a href="/calculator">Loan calculator</a></li><li><a href="/how-it-works">How lending works</a></li><li><a href="/currency">Currency converter</a></li></ul><div class="choice-bottom"><span>1–8 week terms · ZMW</span><a href="/lending"><strong>Explore lending</strong></a></div></article><article class="choice-card tech"><div class="choice-top"><span>Avesta Consulting</span><span class="card-number">02</span></div><h2><a href="/it">Get back to working.</a></h2><p>Repairs, networks, websites and security. Practical support for the technology you rely on.</p><ul class="choice-links"><li><a href="/it#services">All IT services</a></li><li><a href="/it#help">Try the help guide</a></li><li><a href="/it#enquiry">Request support</a></li><li><a href="/downloads.php">G.I.T software</a></li></ul><div class="choice-bottom"><span>Remote &amp; on-site</span><a href="/it"><strong>Explore IT services</strong></a></div></article></div><div class="trust-row"><div><strong>Clear</strong> Terms and costs up front</div><div><strong>Local</strong> Head office in Kansenshi, Ndola</div><div><strong>Flexible</strong> Support that fits your needs</div></div></div></section>
 <section class="section"><div class="wrap"><div class="art-band">${
  artFigure('sculpture','A sculpted letter A in Avesta green with a brushed gold band across it, standing on pale stone',1120,896,
    {badge:artBadge('Flat interest from',lowestRate()+'%'),eager:true})
 }<div><div class="eyebrow">One company. Two ways to help.</div><h2>Built in Ndola, for the way Zambia actually works.</h2><p style="margin-top:18px">Lending with the cost written down before you sign, and IT support that explains the problem in words you can repeat to somebody else. Both run by the same small team, from the same office in Kansenshi.</p><div class="stat-strip" style="margin-top:30px"><div><strong>${lowestRate()}%</strong><span>Lowest flat rate, on a one-week loan</span></div><div><strong>1–${Math.max(...Object.keys(rates).map(Number))}</strong><span>Week terms to choose from</span></div><div><strong>2</strong><span>Divisions, one local team</span></div><div><strong class="word">Mon–Sat</strong><span>08:00–17:00, Kansenshi, Ndola</span></div></div></div></div></div></section>
+${updatesStrip()}
 <section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Start with what you need</div><h2>Good decisions start with clarity.</h2></div><p>Compare your options, ask a question, or take the first step. We’re here to help.</p></div><div class="card-grid"><article class="card">${icon('file')}<h3>Understand your loan</h3><p>See the process, documents and published terms before you apply.</p><a class="link" href="/how-it-works">How lending works</a></article><article class="card">${icon('clock')}<h3>Plan your repayments</h3><p>Choose an amount and term to see the full cost and repayment schedule.</p><a class="link" href="/calculator">Use the calculator</a></article><article class="card">${icon('tech')}<h3>Solve a technology problem</h3><p>Find the right service or try our practical IT help guide.</p><a class="link" href="/it#help">Find IT help</a></article></div></div></section>
 <section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">In about a minute</div><h2>How borrowing from Avesta works.</h2></div><p>Drawn rather than filmed, so it costs you no data to watch.</p></div>${explainer()}</div></section>
 <section class="section soft"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Two sides of Avesta</div><h2>Whichever one you came for.</h2></div></div>${rotator()}</div></section>
-<section class="section"><div class="wrap">${cta('Let’s work out the next step.','Speak to the team by phone, WhatsApp or email, or visit our Ndola office.','/contact','Get in touch')}</div></section>`;}
+${findUs()}`;}
 const adverts=[
  ['Avesta Lending','lending','Short-term finance, clearly explained.','Borrow for 1 to 8 weeks with flat interest of 15% to 55%. The amount, the cost and the repayment dates are stated before you commit.','/lending','Explore lending'],
  ['Avesta Consulting','it','Less downtime. More doing.','Repairs, networks and Wi-Fi, printers, websites, data, CCTV and cybersecurity. Remote across Zambia, on-site by arrangement.','/it','Explore IT services'],
@@ -225,8 +250,8 @@ function render(){
 async function start(){
  try{
   const data=JSON.parse($('#avesta-public-data')?.textContent||'null');
-  if(Array.isArray(data?.services)&&Array.isArray(data?.help)){services=data.services;help=data.help;render();return;}
+  if(Array.isArray(data?.services)&&Array.isArray(data?.help)){services=data.services;help=data.help;updates=freshUpdates(data.updates);render();return;}
  }catch{/* Older HTML can still use the static JSON fallback. */}
- try{[services,help]=await Promise.all([request('/assets/avesta/services.json'),request('/assets/avesta/help.json')]);render();}catch(err){main.innerHTML=head('Avesta Enterprises','We couldn’t load the page.','Please reload or contact Avesta on 0971 013 108.')+`<section class="section"><div class="wrap"><p class="error">${e(err.message)}</p><button class="button secondary" id="reload-page">Reload</button></div></section>`;$('#reload-page').onclick=()=>location.reload();}
+ try{const [svc,hlp,upd]=await Promise.all([request('/assets/avesta/services.json'),request('/assets/avesta/help.json'),request('/assets/avesta/updates.json').catch(()=>null)]);services=svc;help=hlp;updates=freshUpdates(upd);render();}catch(err){main.innerHTML=head('Avesta Enterprises','We couldn’t load the page.','Please reload or contact Avesta on 0971 013 108.')+`<section class="section"><div class="wrap"><p class="error">${e(err.message)}</p><button class="button secondary" id="reload-page">Reload</button></div></section>`;$('#reload-page').onclick=()=>location.reload();}
 }
 start();

@@ -1,0 +1,15 @@
+{
+  "_comment": "Short notices for the home page. Gray edits this file; nothing else needs touching. Newest first — the page sorts by date anyway, shows at most three, and renders nothing at all when the list is empty.",
+  "_staleAfterDays": 120,
+  "_staleComment": "If the newest notice is older than this, the whole section hides itself. A site showing 'latest news' from half a year ago looks abandoned, which is worse than showing none — and a lender cannot afford to look abandoned. Raise the number if a notice should stay up longer.",
+  "_fields": "date (YYYY-MM-DD), title, body (one or two sentences), href (optional, a page on this site), label (optional link text, defaults to 'Read more')",
+  "updates": [
+    {
+      "date": "2026-11-28",
+      "title": "Eight-week loans are now available",
+      "body": "You can borrow over eight weeks at 55% flat interest, alongside the existing one to four week terms. The calculator shows the full repayment before you apply.",
+      "href": "/calculator",
+      "label": "Work out a repayment"
+    }
+  ]
+}

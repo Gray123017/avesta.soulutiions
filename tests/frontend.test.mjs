@@ -51,7 +51,11 @@ test('PHP exchange rates adapt and stale rates are disclosed; failure enables ma
 test('IT service filtering, safe guide and enquiry preparation work without submissions',async()=>{
  const {w,d,calls}=await boot('it');assert.equal(d.querySelectorAll('main a[href^="/it.php"]').length,0);const support=new URL(d.querySelector('#enquiry a[href^="https://wa.me/"]').href);assert.equal(support.pathname,'/260769974200');assert.equal(support.searchParams.get('text'),'Hello Avesta Consulting, I need IT support.');assert.equal(d.querySelectorAll('.service-card').length,12);assert.ok(d.querySelector('.service-card a[href="/downloads.php"]'));d.querySelector('[data-help="printer"]').click();assert.ok(d.querySelector('#help-result a[href^="https://support.microsoft.com"]'));
  for(const [id,v] of [['it-name','Test'],['it-phone','000'],['it-location','Ndola'],['it-details','Printer offline']])d.getElementById(id).value=v;
- d.querySelector('#enquiry-form').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.ok(d.querySelector('#enquiry-result a[href^="https://wa.me/"]'));assert.equal(calls.length,2);await w.happyDOM.close();
+ d.querySelector('#enquiry-form').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.ok(d.querySelector('#enquiry-result a[href^="https://wa.me/"]'));/* services.json, help.json and updates.json: this harness has no
+    server-rendered #avesta-public-data block, so start() falls through
+    to the static-JSON path and fetches all three. Preparing the enquiry
+    itself still sends nothing, which is what this count is guarding. */
+ assert.equal(calls.length,3);await w.happyDOM.close();
 });
 test('G.I.T gives source links locally and escapes chat content',async()=>{
  const {w,d,calls}=await boot();w.__guide=guideAnswer;w.__guided=createGuidedHelp;w.eval(readFileSync('assets/avesta/assistant.js','utf8').replace(/^import .*$/gm,'').replace(/^let guidePromise;/m,'const guideAnswer=window.__guide,createGuidedHelp=window.__guided;let guidePromise;'));
