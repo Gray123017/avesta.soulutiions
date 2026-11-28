@@ -2238,9 +2238,8 @@ function notifyBorrower(r, newStatus) {
   const borrowerPhone = (r.phone || r.b_phone || '').replace(/[^0-9]/g,'');
   if (!borrowerPhone) return;
 
-  // Get admin's TextMeBot key (reuse same key to send to borrower's number)
-  const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (!saved.key) return;
+  // The key lives on the server now; the browser only needs to know one is set.
+  if (!waKeyOnServer) return;
 
   const name   = (r.full_name || 'Valued Customer').split(' ')[0];
   const amt    = 'ZMW ' + parseFloat(r.loan_amount||0).toLocaleString();
@@ -2258,15 +2257,11 @@ function notifyBorrower(r, newStatus) {
   };
 
   const text = messages[newStatus] || ('Your loan application status: ' + newStatus + '. Ref: ' + ref + ' - Avesta Enterprises.');
-  const url = 'https://api.textmebot.com/send.php?recipient=' + borrowerPhone +
-    '&apikey=' + saved.key + '&text=' + encodeURIComponent(text);
-
-  // Fire and forget via Image ping (no CORS issue)
-  const img = new Image();
-  img.src = url;
-  img.onerror = img.onload = () => {};
-  showToast('📱 Borrower notified via WhatsApp (' + borrowerPhone.slice(-4).padStart(borrowerPhone.length,'*') + ')', 'green');
-  console.log('Borrower notification sent to', borrowerPhone, 'for status:', newStatus);
+  // Sent by the server, which holds the key and records that it went.
+  avSendWhatsApp(borrowerPhone, text).then(function (sent) {
+    if (sent) showToast('📱 Borrower notified via WhatsApp (' +
+      borrowerPhone.slice(-4).padStart(borrowerPhone.length, '*') + ')', 'green');
+  });
 }
 
 function saveBorrowerNotifPref() {
@@ -2274,7 +2269,7 @@ function saveBorrowerNotifPref() {
   localStorage.setItem('avesta_borrower_notif_enabled', JSON.stringify(enabled));
   const st = document.getElementById('borrower-notif-status');
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (enabled && (!saved.number || !saved.key)) {
+  if (enabled && (!saved.number || !waKeyOnServer)) {
     st.style.color = '#c0392b';
     st.textContent = '⚠️ TextMeBot not configured yet — set up WhatsApp notifications above first';
   } else {
@@ -2519,8 +2514,7 @@ function notifyBorrowerFromModal() {
   if (!key) return;
   const r = allRecords.find(x => x._key === key);
   if (!r) return;
-  const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (!saved.key) {
+  if (!waKeyOnServer) {
     showToast('WhatsApp notifications are not configured. Open Notification Settings to continue.', 'gold');
     return;
   }
@@ -2699,10 +2693,28 @@ function showNotifyTab(tab) {
 
 // ── WHATSAPP (TextMeBot) ───────────────────────────────────────────────────
 function openWaFallback() {
-  // TextMeBot addphone page requires the API key as a URL parameter
-  const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  const key = (saved.key || '').trim();
-  window.open('https://api.textmebot.com/addphone.php?apikey=' + encodeURIComponent(key), '_blank');
+  /* TextMeBot's add-phone page wants the key in the query string, and the
+     key is no longer in this browser. The server builds that URL and
+     redirects, so nothing secret passes through the page. */
+  window.open(getScriptUrl() + '?action=notifyManageNumbers', '_blank', 'noopener');
+}
+
+let waKeyOnServer = false;   // set from notifySettings; never the key itself
+
+/* One way out for WhatsApp. The key lives on the server now, so the browser
+   asks the server to send rather than calling TextMeBot with a secret of its
+   own. Every send is audited server-side as a result. */
+async function avSendWhatsApp(to, text) {
+  try {
+    const res = await window.avFetchJson(getScriptUrl() + '?action=notifyWhatsApp', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({to: to, text: text})
+    }, 15000);
+    const d = (res && res.data) || {};
+    if (d.needs_key) { showToast('No TextMeBot key saved on the server yet.', 'red'); return false; }
+    if (!d.ok) { showToast(d.error || 'WhatsApp message was not accepted.', 'red'); return false; }
+    return true;
+  } catch (e) { showToast('Could not reach the server to send that message.', 'red'); return false; }
 }
 
 function saveWaSettings() {
@@ -2712,10 +2724,22 @@ function saveWaSettings() {
     updateWaStatus('⚠️ Please enter both your number and API key');
     return;
   }
-  localStorage.setItem('avesta_wa_settings', JSON.stringify({number, key}));
-  updateWaStatus();
-  showToast('WhatsApp notification settings saved.', 'green');
-  toggleWaPanel(true);
+  // The number is not a secret and stays here; the key goes to the server,
+  // where notify-lib.php can actually use it. It used to live in this
+  // browser only, which is why alerts died whenever the cache was cleared.
+  localStorage.setItem('avesta_wa_settings', JSON.stringify({number}));
+  window.avFetchJson(getScriptUrl() + '?action=notifyKeySave', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({key: key})
+  }, 15000).then(function (res) {
+    const d = (res && res.data) || {};
+    if (!d.ok) { updateWaStatus('⚠️ ' + (d.error || 'The server would not save that key.')); return; }
+    document.getElementById('wa-key-input').value = '';
+    waKeyOnServer = true;
+    updateWaStatus();
+    showToast('Saved on the server — every device and the alerts now use it.', 'green');
+    toggleWaPanel(true);
+  }).catch(function () { updateWaStatus('⚠️ Could not reach the server.'); });
 }
 
 function updateWaStatus(msg) {
@@ -2723,7 +2747,7 @@ function updateWaStatus(msg) {
   if (!el) return;
   if (msg) { el.style.background='#fff3cd'; el.style.color='#856404'; el.textContent = msg; return; }
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (saved.number && saved.key) {
+  if (saved.number && waKeyOnServer) {
     el.style.background = '#d4edda';
     el.style.color = '#155724';
     el.textContent = '✅ Active — alerts go to ' + saved.number;
@@ -2736,9 +2760,8 @@ function updateWaStatus(msg) {
 
 function sendWhatsAppAlert(r) {
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (!saved.number || !saved.key) return;
+  if (!saved.number || !waKeyOnServer) return;
   const number = saved.number.replace(/[^0-9]/g,'');
-  const key    = saved.key.trim();
   const name   = (r.full_name    || 'Unknown').slice(0,30);
   const amount = 'ZMW ' + parseFloat(r.loan_amount||0).toLocaleString();
   const phone  = r.phone || '-';
@@ -2749,28 +2772,17 @@ function sendWhatsAppAlert(r) {
                  encodeURIComponent(amount) + '%0ADuration: ' + 
                  encodeURIComponent(dur) + '%0APhone: ' + 
                  encodeURIComponent(phone) + '%0ARef: ' + ref;
-  const url = 'https://api.textmebot.com/send.php?recipient=' + number + '&apikey=' + key + '&text=' + text;
-  const img = new Image();
-  img.src = url;
-  console.log('WA alert fired for', name);
+  avSendWhatsApp(number, decodeURIComponent(text.replace(/%0A/g, '\n')));
 }
 
 function testWa() {
   const saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (!saved.number || !saved.key) {
-    alert('Please save your WhatsApp number and API key first.');
-    return;
-  }
-  const number = saved.number.replace(/[^0-9]/g,'');
-  const key    = saved.key.trim();
-  const text   = encodeURIComponent('Test from Avesta Admin - notifications are working!');
-  const url    = 'https://api.textmebot.com/send.php?recipient=' + number + '&apikey=' + key + '&text=' + text;
-  const img    = new Image();
-  img.src = url;
-  // Open URL in new tab so admin can see any error response
-  const tab = window.open(url, '_blank');
-  if (tab) setTimeout(() => { try { tab.close(); } catch(e){} }, 5000);
-  showToast('Test message sent. Check WhatsApp shortly.', 'green');
+  if (!saved.number) { alert('Please save your WhatsApp number first.'); return; }
+  if (!waKeyOnServer) { alert('No TextMeBot key is saved on the server yet.'); return; }
+  avSendWhatsApp(saved.number.replace(/[^0-9]/g, ''),
+    'Test from Avesta Admin - notifications are working!').then(function (sent) {
+      if (sent) showToast('Test message sent. Check WhatsApp shortly.', 'green');
+    });
 }
 
 // ── EMAIL ALERTS ────────────────────────────────────────────────────────────
@@ -2797,6 +2809,9 @@ function loadServerNotify() {
       if (box) box.value = (d.settings.email.to || []).join(', ');
       if (on)  on.checked = !!d.settings.email.on;
 
+      waKeyOnServer = !!d.whatsapp_key_present;
+      updateWaStatus();
+
       // Say plainly why WhatsApp is off, rather than letting somebody switch
       // it on and wonder why nothing arrives.
       if (!d.whatsapp_key_present) {
@@ -2806,9 +2821,10 @@ function loadServerNotify() {
           note.id = 'wa-key-note';
           note.style.cssText = 'background:#fdf1f1;border-radius:7px;padding:10px 12px;'
             + 'margin-top:10px;font-size:8pt;color:#b4232a;line-height:1.7';
-          note.textContent = 'Server-sent WhatsApp alerts are off: no API key is configured '
-            + 'on the server. Add textmebot_key to avesta-secrets.php. It is deliberately '
-            + 'kept out of the saved settings so it never ends up in a backup.';
+          note.textContent = 'Server-sent WhatsApp alerts are off: no API key is saved on '
+            + 'the server yet. Add it in the WhatsApp tab above — it is written to '
+            + 'avesta-secrets.php, which is deliberately left out of backups and out of '
+            + 'the public repository, so it never leaves this server.';
           wa.appendChild(note);
         }
       }
@@ -3120,16 +3136,21 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-// ─── LOAD WA SETTINGS ON STARTUP ─────────────────────────────────────────────
-// Load WA settings on startup
-(function loadWaRuntime() {
-  // Do not ship notification credentials in browser code. Configure them after deployment.
-  let saved = JSON.parse(localStorage.getItem('avesta_wa_settings')||'{}');
-  if (saved.number && saved.key) {
-    window.WA_NUMBER  = saved.number;
-    window.WA_API_KEY = saved.key;
-    window.WA_ENABLED = true;
-  }
+// ─── WHATSAPP KEY STATE ON STARTUP ───────────────────────────────────────────
+/* This used to copy the API key onto window.WA_API_KEY, where any script or
+   extension on the page could read it — and nothing ever read those globals.
+   What the browser actually needs is one bit: does the server hold a key? It
+   has to be asked on load, not only when somebody opens the email tab, or the
+   alerts below all skip silently on a fresh page. */
+(function loadWaKeyState() {
+  fetch('/api.php?action=notifySettings', {credentials: 'same-origin'})
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || !d.ok) return;
+      waKeyOnServer = !!d.whatsapp_key_present;
+      updateWaStatus();
+    })
+    .catch(function () { /* leave it off; a send will say so plainly */ });
 })();
 
 // ─── CURRENCY CONVERTER (page-fx) ────────────────────────────────────────────
