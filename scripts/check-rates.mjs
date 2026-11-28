@@ -20,7 +20,7 @@ const terms = Object.fromEntries(
 // Terms that are priced but deliberately not yet offered in the interface.
 // Adding one here is a conscious act; removing a term from the UI without
 // listing it makes the build fail, which is the point.
-const NOT_YET_IN_UI = new Set([8]);
+const NOT_YET_IN_UI = new Set([]);   // eight weeks opened for sale 28 Nov 2026
 
 let failures = 0;
 /**
