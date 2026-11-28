@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/asset-version.php';
+require_once __DIR__ . '/share-tags.php';
 /**
  * AVESTA — legal.php
  * Privacy Policy, Terms & Conditions, Complaints Procedure.
@@ -43,8 +44,13 @@ header('X-Content-Type-Options: nosniff');
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title><?= $titles[$page] ?> — <?= TRADING_NAME ?></title>
-<meta name="description" content="<?= $titles[$page] ?> for <?= TRADING_NAME ?>, a micro-lending and IT services business in Ndola, Zambia.">
+<?php av_share_head('legal', false, [
+  'title' => $titles[$page] . ' — ' . TRADING_NAME,
+  'og'    => $titles[$page] . ' — ' . TRADING_NAME,
+  'desc'  => $titles[$page] . ' for ' . TRADING_NAME . ', a micro-lending and IT services '
+           . 'business based in Kansenshi, Ndola, Zambia.',
+  'url'   => AV_SHARE_BASE . 'legal.php?p=' . rawurlencode($page),
+]); ?>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#163E33">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">

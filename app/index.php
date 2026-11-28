@@ -138,9 +138,18 @@ echo '<script>window.AV_SITE=' . json_encode($avSite)
 <meta property="og:description" content="<?= htmlspecialchars($avSeo['desc']) ?>">
 <meta property="og:url" content="<?= htmlspecialchars($avSeo['url']) ?>">
 <meta property="og:locale" content="en_ZM">
+<?php /* The preview image. Everything above was already here; without these
+     four lines a shared loans link still renders as a card with no picture. */
+  require_once __DIR__ . '/../share-tags.php';
+  $avCard = av_share($avSite === 'it' ? 'it' : 'lending'); ?>
+<meta property="og:image" content="<?= htmlspecialchars($avCard['imageUrl'], ENT_QUOTES) ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Avesta Enterprises — lending and IT consulting, Ndola, Zambia">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="<?= htmlspecialchars($avSeo['og']) ?>">
 <meta name="twitter:description" content="<?= htmlspecialchars($avSeo['desc']) ?>">
+<meta name="twitter:image" content="<?= htmlspecialchars($avCard['imageUrl'], ENT_QUOTES) ?>">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23163E33'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='bold' font-size='16' fill='%23D98E3B' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='20' fill='%23163E33'/%3E%3Ctext x='90' y='126' font-family='Arial' font-weight='bold' font-size='90' fill='%23D98E3B' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">
